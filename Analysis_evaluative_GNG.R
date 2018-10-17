@@ -9,7 +9,8 @@ library(openxlsx)
 library(pastecs)
 # install.packages("ggplot2")
 library(ggplot2)
-
+# install.packages("ez")
+library(ez)
 
 # clear environment
 rm(list=ls())
@@ -17,6 +18,8 @@ rm(list=ls())
 # create data frame for saving values for each subject in the for-loop
 df4save = NULL
 
+# force R to not use exponential notation
+options(scipen = 999)
 
 ####################   load   #######################################
 ####################   data   #######################################
@@ -37,11 +40,76 @@ for (subject in logfiles)                                                       
 
 
 
+####################     exclude      #####################################
+####################  GNG outliers   #####################################
 
-####################     define    #####################################
-####################   conditions  #####################################
+# assign NA to GNG rt_values < 150 or > 500 ms (according to Pourtois)
+tmp$t_rt[which((tmp$t_resp != 45 & tmp$t_resp != 46 & tmp$t_resp != 47) & tmp$t_rt < 150 | tmp$t_rt > 500)] <- NA
 
-# FA = false alarm; FH = Fast Hit
+# count number of outliers
+count_outlier_GNG <- length(which(is.na(tmp$t_rt))) 
+
+# remove the rows with rt_values = NA
+tmp <- tmp[!(is.na(tmp$t_rt)),]
+
+
+
+
+####################       define      #####################################
+####################  GNG conditions  #####################################
+
+# FA = False Alarm; FH = Fast Hit; CI = Correctly Inhibited; SH = Slow Hit
+
+GNG_FA <- subset(tmp, t_resp == 43 | t_resp == 44)
+GNG_FH <- subset(tmp, t_resp == 41)
+GNG_CI <- subset(tmp, t_resp == 45 | t_resp == 46)
+GNG_SH <- subset(tmp, t_resp == 42)
+GNG_miss <- subset(tmp, t_resp == 47)
+GNG_wrong_key <- subset(tmp,  t_resp == 48 | t_resp == 49)
+
+
+
+
+####################   calculate  #####################################
+####################    GNG RT    ##################################### 
+
+# not calculated for CI, because there is no rt
+GNG_mean_FA <- mean(GNG_FA$t_rt)
+GNG_mean_FH <- mean(GNG_FH$t_rt)
+GNG_mean_SH <- mean(GNG_SH$t_rt)
+
+GNG_sd_FA <- sd(GNG_FA$t_rt)
+GNG_sd_FH <- sd(GNG_FH$t_rt)
+GNG_sd_SH <- sd(GNG_SH$t_rt)
+
+GNG_cov_FA <- sd(GNG_FA$t_rt)/mean(GNG_FA$t_rt) * 100
+GNG_cov_FH <- sd(GNG_FH$t_rt)/mean(GNG_FH$t_rt) * 100
+GNG_cov_SH <- sd(GNG_SH$t_rt)/mean(GNG_SH$t_rt) * 100
+
+
+####################   calculate GNG     #####################################
+####################  % response types   ##################################### 
+
+GNG_count_FA <- length(GNG_FA$t_rt)
+GNG_count_FH <- length(GNG_FH$t_rt)
+GNG_count_CI <- length(GNG_CI$t_rt)
+GNG_count_SH <- length(GNG_SH$t_rt)
+GNG_count_miss <- length(GNG_miss$t_rt)
+
+GNG_all_resp_without_outliers_wrong_keys <- GNG_count_FA + GNG_count_FH + GNG_count_CI + GNG_count_SH + GNG_count_miss 
+
+GNG_percent_FA <- (GNG_count_FA/GNG_all_resp_without_outliers_wrong_keys)*100
+GNG_percent_FH <- (GNG_count_FH/GNG_all_resp_without_outliers_wrong_keys)*100
+GNG_percent_CI <- (GNG_count_CI/GNG_all_resp_without_outliers_wrong_keys)*100
+GNG_percent_SH <- (GNG_count_SH/GNG_all_resp_without_outliers_wrong_keys)*100
+GNG_percent_miss <- (GNG_count_miss/GNG_all_resp_without_outliers_wrong_keys)*100
+
+
+
+####################       define      #####################################
+####################  word conditions  #####################################
+
+# FA = False Alarm; FH = Fast Hit; CI = Correctly Inhibited; SH = Slow Hit
 
 neg_after_FA <- subset(tmp, (w_type == 143 | w_type == 144) & w_resp == 51)
 pos_after_FA <- subset(tmp, (w_type == 243 | w_type == 244) & w_resp == 52)
@@ -49,43 +117,77 @@ pos_after_FA <- subset(tmp, (w_type == 243 | w_type == 244) & w_resp == 52)
 neg_after_FH <- subset(tmp, w_type == 141 & w_resp == 51)
 pos_after_FH <- subset(tmp, w_type == 241 & w_resp == 52)
 
+neg_after_CI <- subset(tmp, (w_type == 145 | w_type == 146) & w_resp == 51)
+pos_after_CI <- subset(tmp, (w_type == 245 | w_type == 246) & w_resp == 52)
 
+neg_after_SH <- subset(tmp, w_type == 142 & w_resp == 51)
+pos_after_SH <- subset(tmp, w_type == 242 & w_resp == 52)
+
+# <- subset(tmp, (w_type == 141 | w_type == 142 | w_type == 143 | w_type == 144 | w_type == 145 | w_type == 146) & w_resp == 51) # not included: word after miss go
+#pos_word <- subset(tmp, (w_type == 241 | w_type == 242 | w_type == 243 | w_type == 244 | w_type == 245 | w_type == 246) & w_resp == 52) # not included: word after miss go
+
+#word_after_FA  <- subset(tmp,
+#word_after_FH  <- subset(tmp,
+#word_after_CI  <- subset(tmp,
+#word_after_SH  <- subset(tmp,
 
 
 ##################   calculate priming   ##################################
 ##################  effect with median   ##################################
 
-# calculate median before exclusion of outliers
+# calculate median before exclusion of word outliers
 
 median_neg_after_FA <- median(neg_after_FA$w_rt)
 median_pos_after_FA <- median(pos_after_FA$w_rt)
 median_neg_after_FH <- median(neg_after_FH$w_rt)
 median_pos_after_FH <- median(pos_after_FH$w_rt)
+median_neg_after_CI <- median(neg_after_CI$w_rt)
+median_pos_after_CI <- median(pos_after_CI$w_rt)
+median_neg_after_SH <- median(neg_after_SH$w_rt)
+median_pos_after_SH <- median(pos_after_SH$w_rt)
 
-median_priming_after_error <- median_pos_after_FA - median_neg_after_FA
-median_priming_after_correct <- median_neg_after_FH - median_pos_after_FH
+median_priming_after_FA <- median_pos_after_FA - median_neg_after_FA
+median_priming_after_FH <- median_neg_after_FH - median_pos_after_FH
 median_priming_overall <- (median_pos_after_FA + median_neg_after_FH) - (median_neg_after_FA + median_pos_after_FH) 
 
 
 
 
-####################     exclude   #####################################
-####################    outliers   #####################################
+####################     exclude      #####################################
+####################  word outliers   #####################################
 
-# assign NA to rt_values deviating more than 3 median absolute deviations
-
+# assign NA to rt_values deviating more than 3 median absolute deviations (MAD; better use 2.5?)
+neg_after_FA$w_rt[which((abs(neg_after_FA$w_rt - median(neg_after_FA$w_rt))/mad(neg_after_FA$w_rt))>3)] <- NA
 pos_after_FA$w_rt[which((abs(pos_after_FA$w_rt - median(pos_after_FA$w_rt))/mad(pos_after_FA$w_rt))>3)] <- NA
 neg_after_FH$w_rt[which((abs(neg_after_FH$w_rt - median(neg_after_FH$w_rt))/mad(neg_after_FH$w_rt))>3)] <- NA
 pos_after_FH$w_rt[which((abs(pos_after_FH$w_rt - median(pos_after_FH$w_rt))/mad(pos_after_FH$w_rt))>3)] <- NA
+neg_after_CI$w_rt[which((abs(neg_after_CI$w_rt - median(neg_after_CI$w_rt))/mad(neg_after_CI$w_rt))>3)] <- NA
+pos_after_CI$w_rt[which((abs(pos_after_CI$w_rt - median(pos_after_CI$w_rt))/mad(pos_after_CI$w_rt))>3)] <- NA
+neg_after_SH$w_rt[which((abs(neg_after_SH$w_rt - median(neg_after_SH$w_rt))/mad(neg_after_SH$w_rt))>3)] <- NA
+pos_after_SH$w_rt[which((abs(pos_after_SH$w_rt - median(pos_after_SH$w_rt))/mad(pos_after_SH$w_rt))>3)] <- NA
+
+# Alternative: assign NA to rt_values deviating more than 2.5 standard deviations around the mean (this corresponds to Pourtois, but MAD is better practice)
+# neg_after_FA$w_rt[which((abs(neg_after_FA$w_rt - mean(neg_after_FA$w_rt))/sd(neg_after_FA$w_rt)) > 2.5)] <- NA
+# pos_after_FA$w_rt[which((abs(pos_after_FA$w_rt - mean(pos_after_FA$w_rt))/sd(pos_after_FA$w_rt)) > 2.5)] <- NA
+# neg_after_FH$w_rt[which((abs(neg_after_FH$w_rt - mean(neg_after_FH$w_rt))/sd(neg_after_FH$w_rt)) > 2.5)] <- NA
+# pos_after_FH$w_rt[which((abs(pos_after_FH$w_rt - mean(pos_after_FH$w_rt))/sd(pos_after_FH$w_rt)) > 2.5)] <- NA
+# neg_after_CI$w_rt[which((abs(neg_after_CI$w_rt - mean(neg_after_CI$w_rt))/sd(neg_after_CI$w_rt)) > 2.5)] <- NA
+# pos_after_CI$w_rt[which((abs(pos_after_CI$w_rt - mean(pos_after_CI$w_rt))/sd(pos_after_CI$w_rt)) > 2.5)] <- NA
+# neg_after_SH$w_rt[which((abs(neg_after_SH$w_rt - mean(neg_after_SH$w_rt))/sd(neg_after_SH$w_rt)) > 2.5)] <- NA
+# pos_after_SH$w_rt[which((abs(pos_after_SH$w_rt - mean(pos_after_SH$w_rt))/sd(pos_after_SH$w_rt)) > 2.5)] <- NA
 
 # count number of outliers
-count_outlier <- length(which(is.na(neg_after_FA$w_rt))) + length(which(is.na(pos_after_FA$w_rt))) + length(which(is.na(neg_after_FH$w_rt))) + length(which(is.na(pos_after_FH$w_rt)))
+count_outlier_words_FA_FH <- length(which(is.na(neg_after_FA$w_rt))) + length(which(is.na(pos_after_FA$w_rt))) + length(which(is.na(neg_after_FH$w_rt))) + length(which(is.na(pos_after_FH$w_rt)))
 
 # remove the rows with rt_values = NA
 neg_after_FA <- neg_after_FA[!(is.na(neg_after_FA$w_rt)),]
 pos_after_FA <- pos_after_FA[!(is.na(pos_after_FA$w_rt)),]
 neg_after_FH <- neg_after_FH[!(is.na(neg_after_FH$w_rt)),]
 pos_after_FH <- pos_after_FH[!(is.na(pos_after_FH$w_rt)),]
+neg_after_CI <- neg_after_CI[!(is.na(neg_after_CI$w_rt)),]
+pos_after_CI <- pos_after_CI[!(is.na(pos_after_CI$w_rt)),]
+neg_after_SH <- neg_after_SH[!(is.na(neg_after_SH$w_rt)),]
+pos_after_SH <- pos_after_SH[!(is.na(pos_after_SH$w_rt)),]
 
 
 
@@ -97,14 +199,13 @@ mean_neg_after_FA <- mean(neg_after_FA$w_rt)
 mean_pos_after_FA <- mean(pos_after_FA$w_rt)
 mean_neg_after_FH <- mean(neg_after_FH$w_rt)
 mean_pos_after_FH <- mean(pos_after_FH$w_rt)
+mean_neg_after_CI <- mean(neg_after_CI$w_rt)
+mean_pos_after_CI <- mean(pos_after_CI$w_rt)
+mean_neg_after_SH <- mean(neg_after_SH$w_rt)
+mean_pos_after_SH <- mean(pos_after_SH$w_rt)
 
-sd_neg_after_FA <- sd(neg_after_FA$w_rt)
-sd_pos_after_FA <- sd(pos_after_FA$w_rt)
-sd_neg_after_FH <- sd(neg_after_FH$w_rt)
-sd_pos_after_FH <- sd(pos_after_FH$w_rt)
-
-mean_priming_after_error <- mean_pos_after_FA - mean_neg_after_FA
-mean_priming_after_correct <- mean_neg_after_FH - mean_pos_after_FH
+mean_priming_after_FA <- mean_pos_after_FA - mean_neg_after_FA
+mean_priming_after_FH <- mean_neg_after_FH - mean_pos_after_FH
 mean_priming_overall <- (mean_pos_after_FA + mean_neg_after_FH) - (mean_neg_after_FA + mean_pos_after_FH) 
 
 
@@ -119,23 +220,38 @@ count_neg_after_FA <- length(neg_after_FA$w_rt)
 count_pos_after_FA <- length(pos_after_FA$w_rt)
 count_neg_after_FH <- length(neg_after_FH$w_rt)
 count_pos_after_FH <- length(pos_after_FH$w_rt)
+count_neg_after_CI <- length(neg_after_CI$w_rt)
+count_pos_after_CI <- length(pos_after_CI$w_rt)
+count_neg_after_SH <- length(neg_after_SH$w_rt)
+count_pos_after_SH <- length(pos_after_SH$w_rt)
 
 count_incorr_neg_after_FA <- length(which((tmp$w_type == 143 | tmp$w_type == 144) & tmp$w_resp == 53))
 count_incorr_pos_after_FA <- length(which((tmp$w_type == 243 | tmp$w_type == 244) & tmp$w_resp == 54))
 count_incorr_neg_after_FH <- length(which(tmp$w_type == 141 & tmp$w_resp == 53))
 count_incorr_pos_after_FH <- length(which(tmp$w_type == 241 & tmp$w_resp == 54))
+count_incorr_neg_after_CI <- length(which((tmp$w_type == 145 | tmp$w_type == 146) & tmp$w_resp == 53))
+count_incorr_pos_after_CI <- length(which((tmp$w_type == 245 | tmp$w_type == 246) & tmp$w_resp == 54))
+count_incorr_neg_after_SH <- length(which(tmp$w_type == 142 & tmp$w_resp == 53))
+count_incorr_pos_after_SH <- length(which(tmp$w_type == 242 & tmp$w_resp == 54))
 
 count_miss_neg_after_FA <- length(which((tmp$w_type == 143 | tmp$w_type == 144) & tmp$w_resp == 55))
 count_miss_pos_after_FA <- length(which((tmp$w_type == 243 | tmp$w_type == 244) & tmp$w_resp == 56))
 count_miss_neg_after_FH <- length(which(tmp$w_type == 141 & tmp$w_resp == 55))
 count_miss_pos_after_FH <- length(which(tmp$w_type == 241 & tmp$w_resp == 56))
+count_miss_neg_after_CI <- length(which((tmp$w_type == 145 | tmp$w_type == 146) & tmp$w_resp == 55))
+count_miss_pos_after_CI <- length(which((tmp$w_type == 245 | tmp$w_type == 246) & tmp$w_resp == 56))
+count_miss_neg_after_SH <- length(which(tmp$w_type == 142 & tmp$w_resp == 55))
+count_miss_pos_after_SH <- length(which(tmp$w_type == 242 & tmp$w_resp == 56))
 
 # misses are contained in overall number of events so that errors, correct and misses sum up to 100 %
 count_all_neg_after_FA <- count_neg_after_FA + count_incorr_neg_after_FA + count_miss_neg_after_FA
 count_all_pos_after_FA <- count_pos_after_FA + count_incorr_pos_after_FA + count_miss_pos_after_FA
 count_all_neg_after_FH <- count_neg_after_FH + count_incorr_neg_after_FH + count_miss_neg_after_FH
 count_all_pos_after_FH <- count_pos_after_FH + count_incorr_pos_after_FH + count_miss_pos_after_FH
-
+count_all_neg_after_CI <- count_neg_after_CI + count_incorr_neg_after_CI + count_miss_neg_after_CI
+count_all_pos_after_CI <- count_pos_after_CI + count_incorr_pos_after_CI + count_miss_pos_after_CI
+count_all_neg_after_SH <- count_neg_after_SH + count_incorr_neg_after_SH + count_miss_neg_after_SH
+count_all_pos_after_SH <- count_pos_after_SH + count_incorr_pos_after_SH + count_miss_pos_after_SH
 
 
 ####################    calculate    ##################################
@@ -145,16 +261,20 @@ percent_correct_neg_after_FA <- count_neg_after_FA / count_all_neg_after_FA * 10
 percent_correct_pos_after_FA <- count_pos_after_FA / count_all_pos_after_FA * 100  
 percent_correct_neg_after_FH <- count_neg_after_FH / count_all_neg_after_FH * 100  
 percent_correct_pos_after_FH <- count_pos_after_FH / count_all_pos_after_FH * 100  
+percent_correct_neg_after_CI <- count_neg_after_CI / count_all_neg_after_CI * 100 
+percent_correct_pos_after_CI <- count_pos_after_CI / count_all_pos_after_CI * 100  
+percent_correct_neg_after_SH <- count_neg_after_SH / count_all_neg_after_SH * 100  
+percent_correct_pos_after_SH <- count_pos_after_SH / count_all_pos_after_SH * 100  
 
-percent_incorrect_neg_after_FA <- count_incorr_neg_after_FA / count_all_neg_after_FA * 100 
-percent_incorrect_pos_after_FA <- count_incorr_pos_after_FA / count_all_pos_after_FA * 100  
-percent_incorrect_neg_after_FH <- count_incorr_neg_after_FH / count_all_neg_after_FH * 100  
-percent_incorrect_pos_after_FH <- count_incorr_pos_after_FH / count_all_pos_after_FH * 100  
+#percent_incorrect_neg_after_FA <- count_incorr_neg_after_FA / count_all_neg_after_FA * 100 
+#percent_incorrect_pos_after_FA <- count_incorr_pos_after_FA / count_all_pos_after_FA * 100  
+#percent_incorrect_neg_after_FH <- count_incorr_neg_after_FH / count_all_neg_after_FH * 100  
+#percent_incorrect_pos_after_FH <- count_incorr_pos_after_FH / count_all_pos_after_FH * 100  
 
-percent_miss_neg_after_FA <- count_miss_neg_after_FA / count_all_neg_after_FA * 100 
-percent_miss_pos_after_FA <- count_miss_pos_after_FA / count_all_pos_after_FA * 100  
-percent_miss_neg_after_FH <- count_miss_neg_after_FH / count_all_neg_after_FH * 100  
-percent_miss_pos_after_FH <- count_miss_pos_after_FH / count_all_pos_after_FH * 100  
+#percent_miss_neg_after_FA <- count_miss_neg_after_FA / count_all_neg_after_FA * 100 
+#percent_miss_pos_after_FA <- count_miss_pos_after_FA / count_all_pos_after_FA * 100  
+#percent_miss_neg_after_FH <- count_miss_neg_after_FH / count_all_neg_after_FH * 100  
+#percent_miss_pos_after_FH <- count_miss_pos_after_FH / count_all_pos_after_FH * 100  
 
 
 
@@ -163,8 +283,7 @@ percent_miss_pos_after_FH <- count_miss_pos_after_FH / count_all_pos_after_FH * 
 ####################   in dataframe   ##################################
 
 
-df4save <- rbind(df4save, data.frame(subject,mean_neg_after_FA,mean_pos_after_FA,mean_pos_after_FH,mean_neg_after_FH,sd_neg_after_FA,sd_pos_after_FA,sd_pos_after_FH,sd_neg_after_FH,mean_priming_overall,mean_priming_after_error,mean_priming_after_correct,median_neg_after_FA,median_pos_after_FA,median_pos_after_FH,median_neg_after_FH,median_priming_overall,median_priming_after_error,median_priming_after_correct,count_neg_after_FA,count_pos_after_FA,count_pos_after_FH,count_miss_neg_after_FH,count_outlier,count_incorr_neg_after_FA,count_incorr_pos_after_FA,count_incorr_pos_after_FH,count_incorr_neg_after_FH,percent_correct_neg_after_FA,percent_correct_pos_after_FA,percent_correct_pos_after_FH,percent_correct_neg_after_FH,percent_incorrect_neg_after_FA,percent_incorrect_pos_after_FA,percent_incorrect_pos_after_FH,percent_incorrect_neg_after_FH,percent_miss_neg_after_FA,percent_miss_pos_after_FA,percent_miss_pos_after_FH,percent_miss_neg_after_FH))
-
+df4save <- rbind(df4save, data.frame(subject,mean_neg_after_FA,mean_pos_after_FA,mean_neg_after_FH,mean_pos_after_FH,mean_neg_after_CI,mean_pos_after_CI,mean_neg_after_SH,mean_pos_after_SH,mean_priming_overall,mean_priming_after_FA,mean_priming_after_FH,median_neg_after_FA,median_pos_after_FA,median_neg_after_FH,median_pos_after_FH,median_neg_after_CI,median_pos_after_CI,median_neg_after_SH,median_pos_after_SH,median_priming_overall,median_priming_after_FA,median_priming_after_FH,count_neg_after_FA,count_pos_after_FA,count_neg_after_FH,count_pos_after_FH,count_outlier_words_FA_FH,percent_correct_neg_after_FA,percent_correct_pos_after_FA,percent_correct_neg_after_FH,percent_correct_pos_after_FH,percent_correct_neg_after_CI,percent_correct_pos_after_CI,percent_correct_neg_after_SH,percent_correct_pos_after_SH,GNG_mean_FA,GNG_mean_FH,GNG_mean_SH,GNG_sd_FA,GNG_sd_FH,GNG_sd_SH,GNG_cov_FA,GNG_cov_FH,GNG_cov_SH,GNG_percent_FA,GNG_percent_FH,GNG_percent_CI,GNG_percent_SH,GNG_percent_miss))
 }
 
 
@@ -209,9 +328,9 @@ df4plotRT <- data.frame(
   response = c("false alarm","false alarm","fast hit","fast hit"),
   valence = c("neg","pos","neg","pos"),
   conditions = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH"),
-  mean = as.numeric(c(descriptive_statistics[2,2],descriptive_statistics[2,3],descriptive_statistics[2,5],descriptive_statistics[2,4])),
+  mean = as.numeric(c(descriptive_statistics[2,2],descriptive_statistics[2,3],descriptive_statistics[2,4],descriptive_statistics[2,5])),
   se = c(70,100,90,80)
-  #for now I had only one subject, so I made se up; later use: se = as.numeric(c(descriptive_statistics[3,2],descriptive_statistics[3,3],descriptive_statistics[3,5],descriptive_statistics[3,4]))
+  #for now I had only one subject, so I made se up; later use: se = as.numeric(c(descriptive_statistics[3,2],descriptive_statistics[3,3],descriptive_statistics[3,4],descriptive_statistics[3,5]))
   )
 
 # plot_rt <- 
@@ -229,9 +348,9 @@ df4plotRT <- data.frame(
     response = c("false alarm","false alarm","fast hit","fast hit"),
     valence = c("neg","pos","neg","pos"),
     conditions = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH"),
-    mean = as.numeric(c(descriptive_statistics[2,29],descriptive_statistics[2,30],descriptive_statistics[2,32],descriptive_statistics[2,31])),
+    mean = as.numeric(c(descriptive_statistics[2,29],descriptive_statistics[2,30],descriptive_statistics[2,31],descriptive_statistics[2,32])),
     se = c(5,4,3,2)
-    #for now I had only one subject, so I made se up; later use: se = as.numeric(c(descriptive_statistics[3,29],descriptive_statistics[3,30],descriptive_statistics[3,32],descriptive_statistics[3,31]))
+    #for now I had only one subject, so I made se up; later use: se = as.numeric(c(descriptive_statistics[3,29],descriptive_statistics[3,30],descriptive_statistics[3,31],descriptive_statistics[3,32]))
   )
   
   
@@ -244,4 +363,38 @@ df4plotRT <- data.frame(
   theme(plot.title = element_text(hjust = 0.5)) +                                                              # center title
   scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
   
+  
+  #####################    ANOVA    ####################################
+  #####################    words    ####################################
+
+  df4anova <- data.frame(
+  subject = df4save$subject,
+  response_type = rep(c("false alarm","false alarm","fast hit","fast hit","correctly inhibited","correctly inhibited", "slow hit", "slow hit"),length(df4save$subject)), #repeat response types as often as number of subjects
+  word_valence = rep(c("neg","pos","neg","pos","neg","pos","neg","pos"),length(df4save$subject)), #repeat word valence as often as number of subjects
+  mean_rt = as.vector(t(df4save[,2:9])),
+  accuracy = as.vector(t(df4save[,29:36]))
+  )   
+  
+  df4anova$subject <- sort(df4anova$subject)
+  
+  subject <- factor(df4anova$subject)
+  response_type <- factor(df4anova$response_type)
+  word_valence <- factor(df4anova$word_valence)
+  
+  
+  anova_rt <- ezANOVA(data = df4anova, 
+                    dv = .(mean_rt), 
+                    wid = .(subject), 
+                    within = .(response_type, word_valence), 
+                    detailed = TRUE)
+ 
+  anova_accuracy <- ezANOVA(data = df4anova, 
+                      dv = .(accuracy), 
+                      wid = .(subject), 
+                      within = .(response_type, word_valence), 
+                      detailed = TRUE)
+  
+  
+  
+# compare results with aov
   
