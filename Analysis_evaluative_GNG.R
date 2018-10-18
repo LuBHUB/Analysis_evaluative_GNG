@@ -3,14 +3,22 @@
 ##### 15.10.2018
 
 
-# install.packages('openxlsx')
+# install.packages('openxlsx') for saving data in Excel sheet
 library(openxlsx)
 # install.packages("pastecs")
 library(pastecs)
-# install.packages("ggplot2")
+# install.packages("ggplot2") for plots
 library(ggplot2)
-# install.packages("ez")
+# install.packages("ez") for ANOVA
 library(ez)
+# install.packages("nlme") for LMM
+library(nlme)
+# install.packages("tidyr")
+library(tidyr)
+# install.packages("lmerTest")
+library(lmerTest)
+# install.packages("psycho")
+library(psycho)
 
 # clear environment
 rm(list=ls())
@@ -253,6 +261,8 @@ count_all_pos_after_CI <- count_pos_after_CI + count_incorr_pos_after_CI + count
 count_all_neg_after_SH <- count_neg_after_SH + count_incorr_neg_after_SH + count_miss_neg_after_SH
 count_all_pos_after_SH <- count_pos_after_SH + count_incorr_pos_after_SH + count_miss_pos_after_SH
 
+pos_after_SH <- count_pos_after_SH + count_incorr_pos_after_SH + count_miss_pos_after_SH
+
 
 ####################    calculate    ##################################
 ####################    accuracy     ##################################
@@ -323,17 +333,14 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
 #####################      bar     ####################################
 #####################     plots    ####################################
 
-# for RT 
-df4plotRT <- data.frame(
-  response = c("false alarm","false alarm","fast hit","fast hit"),
-  valence = c("neg","pos","neg","pos"),
-  conditions = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH"),
-  mean = as.numeric(c(descriptive_statistics[2,2],descriptive_statistics[2,3],descriptive_statistics[2,4],descriptive_statistics[2,5])),
-  se = c(70,100,90,80)
-  #for now I had only one subject, so I made se up; later use: se = as.numeric(c(descriptive_statistics[3,2],descriptive_statistics[3,3],descriptive_statistics[3,4],descriptive_statistics[3,5]))
-  )
+# plot rt 
+  df4plotRT <- data.frame(
+    response = c("false alarm","false alarm","fast hit","fast hit"),
+    valence = c("neg","pos","neg","pos"),
+    conditions = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH"),
+    mean = as.numeric(c(descriptive_statistics[2,2],descriptive_statistics[2,3],descriptive_statistics[2,4],descriptive_statistics[2,5])),
+    se = as.numeric(c(descriptive_statistics[3,2],descriptive_statistics[3,3],descriptive_statistics[3,4],descriptive_statistics[3,5])))
 
-# plot_rt <- 
   ggplot(df4plotRT,x = response,y = mean, aes(response, mean, fill = valence))+
   geom_bar(stat="identity", position=position_dodge()) +                                                       # add bars, based on stats values; dodge to avoid stacked bars
   geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
@@ -343,18 +350,14 @@ df4plotRT <- data.frame(
   scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
   
   
-# for ACCURACY
+# plot accuracy
   df4plotACC <- data.frame(
     response = c("false alarm","false alarm","fast hit","fast hit"),
     valence = c("neg","pos","neg","pos"),
     conditions = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH"),
     mean = as.numeric(c(descriptive_statistics[2,29],descriptive_statistics[2,30],descriptive_statistics[2,31],descriptive_statistics[2,32])),
-    se = c(5,4,3,2)
-    #for now I had only one subject, so I made se up; later use: se = as.numeric(c(descriptive_statistics[3,29],descriptive_statistics[3,30],descriptive_statistics[3,31],descriptive_statistics[3,32]))
-  )
-  
-  
-  # plot_accuracy <- 
+    se = as.numeric(c(descriptive_statistics[3,29],descriptive_statistics[3,30],descriptive_statistics[3,31],descriptive_statistics[3,32])))
+
   ggplot(df4plotACC,x = response,y = mean, aes(response, mean, fill = valence))+
   geom_bar(stat="identity", position=position_dodge()) +                                                       # add bars, based on stats values; dodge to avoid stacked bars
   geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
@@ -364,37 +367,136 @@ df4plotRT <- data.frame(
   scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
   
   
-  #####################    ANOVA    ####################################
-  #####################    words    ####################################
+  #####################         ANOVA         ####################################
+  #####################    words (mean rt)    #################################### 
+  
+  options(contrasts=c("contr.sum","contr.poly")) # to adhere to the sum-to-zero convention for effect weights, always do this before running ANOVAs in R. This matters sometimes (not always). If I don’t do it, the sum of squares calculations may not match what I get e.g. in SPSS
+  
+  
+  # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by creating new data frame
+  # df4anova <- data.frame(
+  #                       subject = df4save$subject,
+  #                       response_type = rep(c("false alarm","false alarm","fast hit","fast hit","correctly inhibited","correctly inhibited", "slow hit", "slow hit"),length(df4save$subject)), # repeat response types as often as number of subjects
+  #                       word_valence = rep(c("neg","pos","neg","pos","neg","pos","neg","pos"),length(df4save$subject)),                                                                        # repeat word valence as often as number of subjects
+  #                       rt = as.vector(t(df4save[,2:9])),
+  #                       accuracy = as.vector(t(df4save[,29:36]))
+  #                       )   
+  #
+  # df4anova$subject <- sort(df4anova$subject)
+  #
+  # df4anova$subject <- factor(df4anova$subject)
+  # df4anova$response_type <- factor(df4anova$response_type)
+  # df4anova$word_valence <- factor(df4anova$word_valence)
+  
+  
+  
+  
+  # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by reshaping existing data frame
+  df4anova <-   reshape(data = df4save[,c(1:9,29:36)], 
+                direction = "long",
+                varying = list(c("mean_neg_after_FA","mean_pos_after_FA","mean_neg_after_FH","mean_pos_after_FH","mean_neg_after_CI","mean_pos_after_CI" ,"mean_neg_after_SH","mean_pos_after_SH"),c("percent_correct_neg_after_FA", "percent_correct_pos_after_FA","percent_correct_neg_after_FH","percent_correct_pos_after_FH","percent_correct_neg_after_CI","percent_correct_pos_after_CI","percent_correct_neg_after_SH","percent_correct_pos_after_SH")),
+                v.names = c("rt","accuracy"),
+                idvar = "subject",
+                timevar = "condition",
+                times = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH","neg_after_CI","pos_after_CI","neg_after_SH","pos_after_SH")
+                )
+ 
+  row.names(df4anova) <- NULL
+  df4anova <- df4anova[sort.list(df4anova$subject),]                        # sort df by subject
+  
+  df4anova$response_type <- substr(df4anova$condition, 11, 12)              # create columns needed as factors           
+  df4anova$word_valence <- substr(df4anova$condition, 1, 3)
 
-  df4anova <- data.frame(
-  subject = df4save$subject,
-  response_type = rep(c("false alarm","false alarm","fast hit","fast hit","correctly inhibited","correctly inhibited", "slow hit", "slow hit"),length(df4save$subject)), #repeat response types as often as number of subjects
-  word_valence = rep(c("neg","pos","neg","pos","neg","pos","neg","pos"),length(df4save$subject)), #repeat word valence as often as number of subjects
-  mean_rt = as.vector(t(df4save[,2:9])),
-  accuracy = as.vector(t(df4save[,29:36]))
-  )   
-  
-  df4anova$subject <- sort(df4anova$subject)
-  
-  subject <- factor(df4anova$subject)
-  response_type <- factor(df4anova$response_type)
-  word_valence <- factor(df4anova$word_valence)
+  df4anova$subject <- factor(df4anova$subject)                              # create factors response_type and word_valence
+  df4anova$response_type <- factor(df4anova$response_type)
+  df4anova$word_valence <- factor(df4anova$word_valence)
   
   
+  
+  
+  
+  # calculate ANOVA with ezANOVA for rt -> gives same result as SPSS :)
   anova_rt <- ezANOVA(data = df4anova, 
-                    dv = .(mean_rt), 
+                    dv = .(rt), 
                     wid = .(subject), 
                     within = .(response_type, word_valence), 
                     detailed = TRUE)
- 
+  
+  # calculate ANOVA with ezANOVA for accuracy -> gives same result as SPSS :)
   anova_accuracy <- ezANOVA(data = df4anova, 
                       dv = .(accuracy), 
                       wid = .(subject), 
                       within = .(response_type, word_valence), 
                       detailed = TRUE)
+ 
+ 
+
+  # calculate ANOVA with aov for rt -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) is not possible) 
+  anova_rt <- aov(rt ~ (response_type * word_valence) + 
+                  Error(subject/(response_type * word_valence)), 
+                  data = df4anova)
+  summary(anova_rt)                                                                             # to get ANOVA output
+  
+  # calculate ANOVA with aov for accuracy -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) is not possible) 
+  anova_accuracy <- aov(accuracy ~ (response_type * word_valence) + 
+                    Error(subject/(response_type * word_valence)), 
+                    data = df4anova)
+  summary(anova_accuracy)                                                                       # to get ANOVA output 
   
   
+
   
-# compare results with aov
+  #####################    linear mixed models    ####################################
+  #####################      words (mean RT)      #################################### 
+  # advantage of LLMs over ANOVAs: ANOVA requires many strong assumptions, such as homoscedasticity, which is hard to verify; furthermore, LMMs are more flexible
+  # an ANOVA is pretty much a condensed linear model where the predictors are factors. Therefore, I can run an ANOVA on a linear mixed model (which includes the “error” term, or random effect). The results are, for the important bits (the sum of squares, mean square and p value), very close to those of the traditional approach.
+
   
+  # calculate LMM using lmer for rt and plot
+  model_lmer_rt <- lmer(rt ~ response_type * word_valence + (1|subject), data=df4anova)
+  anova(model_lmer_rt)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+  results_model_lmer_rt <- analyze(model_lmer_rt)                                              # print results
+  print(results_model_lmer_rt)
+  results_model_lmer_rt <- get_contrasts(model_lmer_rt, "response_type * word_valence")        # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+  print(results_model_lmer_rt$contrasts)                                                       # print contrasts
+  print(results_model_lmer_rt$means)                                                           # investigate means
+
+  ggplot(results_model_lmer_rt$means, aes(x=response_type, y=Mean, color=word_valence, group=word_valence)) +    # plot 
+    geom_line(position = position_dodge(.3)) +
+    geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+                    position = position_dodge(.3)) +
+    ylab("Response Time in ms") +
+    xlab("Response Type") +
+    theme_bw()
+  
+  
+  # calculate LMM using lmer for accuracy and plot 
+  model_lmer_accuracy <- lmer(accuracy ~ response_type * word_valence + (1|subject), data=df4anova)
+  anova(model_lmer_accuracy)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+  results_model_lmer_accuracy <- analyze(model_lmer_accuracy)                                        # print results
+  print(results_model_lmer_accuracy)
+  results_model_lmer_accuracy <- get_contrasts(model_lmer_accuracy, "response_type * word_valence")  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+  print(results_model_lmer_accuracy$contrasts)                                                       # print contrasts
+  print(results_model_lmer_accuracy$means)                                                           # investigate means
+  
+  ggplot(results_model_lmer_accuracy$means, aes(x=response_type, y=Mean, color=word_valence, group=word_valence)) +    # plot 
+    geom_line(position = position_dodge(.3)) +
+    geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+                    position = position_dodge(.3)) +
+    ylab("Accuracy in %") +
+    xlab("Response Type") +
+    theme_bw() 
+
+  
+
+  # calculate LMM using lme for rt
+  model_lme_rt <- lme(rt ~ response_type * word_valence, random =~1|subject, data=df4anova)
+  anova(model_lme_rt)
+  summary(model_lme_rt)
+  
+  
+
+  # calculate LMM using lme for accuracy
+  model_lme_accuracy <- lme(accuracy ~ response_type * word_valence, random =~1|subject, data=df4anova)
+  anova(model_lme_accuracy)
+  summary(model_lme_accuracy)
