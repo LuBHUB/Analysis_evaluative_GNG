@@ -19,6 +19,11 @@ library(tidyr)
 library(lmerTest)
 # install.packages("psycho")
 library(psycho)
+# install.packages("multcomp")
+library(multcomp)
+# install.packages("emmeans")
+library(emmeans)
+
 
 # clear environment
 rm(list=ls())
@@ -58,9 +63,9 @@ tmp$t_rt[which((tmp$t_resp != 45 & tmp$t_resp != 46 & tmp$t_resp != 47) & tmp$t_
 count_outlier_GNG <- length(which(is.na(tmp$t_rt))) 
 
 # remove the rows with rt_values = NA
-tmp <- tmp[!(is.na(tmp$t_rt)),]
+tmp_GNG <- tmp[!(is.na(tmp$t_rt)),]
 
-
+# these outliers are excluded only for GNG trial, not for word categorization in corresponding trial (as in Pourtois)
 
 
 ####################       define      #####################################
@@ -68,14 +73,12 @@ tmp <- tmp[!(is.na(tmp$t_rt)),]
 
 # FA = False Alarm; FH = Fast Hit; CI = Correctly Inhibited; SH = Slow Hit
 
-GNG_FA <- subset(tmp, t_resp == 43 | t_resp == 44)
-GNG_FH <- subset(tmp, t_resp == 41)
-GNG_CI <- subset(tmp, t_resp == 45 | t_resp == 46)
-GNG_SH <- subset(tmp, t_resp == 42)
-GNG_miss <- subset(tmp, t_resp == 47)
-GNG_wrong_key <- subset(tmp,  t_resp == 48 | t_resp == 49)
-
-
+GNG_FA <- subset(tmp_GNG, t_resp == 43 | t_resp == 44)
+GNG_FH <- subset(tmp_GNG, t_resp == 41)
+GNG_CI <- subset(tmp_GNG, t_resp == 45 | t_resp == 46)
+GNG_SH <- subset(tmp_GNG, t_resp == 42)
+GNG_miss <- subset(tmp_GNG, t_resp == 47)
+GNG_wrong_key <- subset(tmp_GNG,  t_resp == 48 | t_resp == 49)
 
 
 ####################   calculate  #####################################
@@ -131,13 +134,6 @@ pos_after_CI <- subset(tmp, (w_type == 245 | w_type == 246) & w_resp == 52)
 neg_after_SH <- subset(tmp, w_type == 142 & w_resp == 51)
 pos_after_SH <- subset(tmp, w_type == 242 & w_resp == 52)
 
-# <- subset(tmp, (w_type == 141 | w_type == 142 | w_type == 143 | w_type == 144 | w_type == 145 | w_type == 146) & w_resp == 51) # not included: word after miss go
-#pos_word <- subset(tmp, (w_type == 241 | w_type == 242 | w_type == 243 | w_type == 244 | w_type == 245 | w_type == 246) & w_resp == 52) # not included: word after miss go
-
-#word_after_FA  <- subset(tmp,
-#word_after_FH  <- subset(tmp,
-#word_after_CI  <- subset(tmp,
-#word_after_SH  <- subset(tmp,
 
 
 ##################   calculate priming   ##################################
@@ -407,14 +403,12 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
   df4anova$response_type <- substr(df4anova$condition, 11, 12)              # create columns needed as factors           
   df4anova$word_valence <- substr(df4anova$condition, 1, 3)
 
-  df4anova$subject <- factor(df4anova$subject)                              # create factors response_type and word_valence
-  df4anova$response_type <- factor(df4anova$response_type)
-  df4anova$word_valence <- factor(df4anova$word_valence)
+  df4anova$subject <- factor(df4anova$subject)                              # create factors response_type and word_valence and reorder factor levels! (this is important, because first level is used as reference factor in LMM)
+  df4anova$response_type <- factor(df4anova$response_type, levels=c("FA","FH","CI","SH"))
+  df4anova$word_valence <- factor(df4anova$word_valence)                    # automatic factor order is alphabetical (1 = neg, 2 = pos)
   
   
-  
-  
-  
+
   # calculate ANOVA with ezANOVA for rt -> gives same result as SPSS :)
   anova_rt <- ezANOVA(data = df4anova, 
                     dv = .(rt), 
@@ -429,20 +423,34 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
                       within = .(response_type, word_valence), 
                       detailed = TRUE)
  
- 
 
-  # calculate ANOVA with aov for rt -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) is not possible) 
+
+  # calculate ANOVA with aov for rt -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) AND post hoc tests are NOT possible) 
   anova_rt <- aov(rt ~ (response_type * word_valence) + 
                   Error(subject/(response_type * word_valence)), 
                   data = df4anova)
   summary(anova_rt)                                                                             # to get ANOVA output
   
-  # calculate ANOVA with aov for accuracy -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) is not possible) 
+  
+
+  
+  # calculate ANOVA with aov for accuracy -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) AND post hoc tests are NOT possible)
   anova_accuracy <- aov(accuracy ~ (response_type * word_valence) + 
                     Error(subject/(response_type * word_valence)), 
                     data = df4anova)
   summary(anova_accuracy)                                                                       # to get ANOVA output 
   
+  
+  
+  
+  # post hoc comparison: when calculating within-subject ANOVAs, no direct post hoc test is possible; I can only run paitwise t-tests with corresponding adjustment (e.g. Holm, which is better than Bonferroni)
+  anova_rt_posthoc_response_type <- pairwise.t.test(df4anova$rt,df4anova$response_type,p.adjust.method="holm")
+  anova_rt_posthoc_word_valence <- pairwise.t.test(df4anova$rt,df4anova$word_valence,p.adjust.method="holm") 
+  anova_rt_posthoc_priming <- pairwise.t.test(df4anova$rt,df4anova$condition,p.adjust.method="holm") 
+  
+  anova_accuracy_posthoc_response_type <- pairwise.t.test(df4anova$accuracy,df4anova$response_type,p.adjust.method="holm")
+  anova_accuracy_posthoc_word_valence <- pairwise.t.test(df4anova$accuracy,df4anova$word_valence,p.adjust.method="holm") 
+  anova_accuracy_posthoc_priming <- pairwise.t.test(df4anova$accuracy,df4anova$condition,p.adjust.method="holm") 
   
 
   
@@ -453,7 +461,7 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
 
   
   # calculate LMM using lmer for rt and plot
-  model_lmer_rt <- lmer(rt ~ response_type * word_valence + (1|subject), data=df4anova)
+  model_lmer_rt <- lmer(rt ~ response_type * word_valence + (1|subject), data=df4anova)        # possibly add REML = FALSE?
   anova(model_lmer_rt)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
   results_model_lmer_rt <- analyze(model_lmer_rt)                                              # print results
   print(results_model_lmer_rt)
@@ -470,12 +478,13 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
     theme_bw()
   
   
+  
   # calculate LMM using lmer for accuracy and plot 
-  model_lmer_accuracy <- lmer(accuracy ~ response_type * word_valence + (1|subject), data=df4anova)
+  model_lmer_accuracy <- lmer(accuracy ~ response_type * word_valence + (1|subject), data=df4anova)  # possibly add REML = FALSE?
   anova(model_lmer_accuracy)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
   results_model_lmer_accuracy <- analyze(model_lmer_accuracy)                                        # print results
   print(results_model_lmer_accuracy)
-  results_model_lmer_accuracy <- get_contrasts(model_lmer_accuracy, "response_type * word_valence")  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+  results_model_lmer_accuracy <- get_contrasts(model_lmer_accuracy, "response_type * word_valence", adjust="holm")  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
   print(results_model_lmer_accuracy$contrasts)                                                       # print contrasts
   print(results_model_lmer_accuracy$means)                                                           # investigate means
   
@@ -488,7 +497,7 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
     theme_bw() 
 
   
-
+  
   # calculate LMM using lme for rt
   model_lme_rt <- lme(rt ~ response_type * word_valence, random =~1|subject, data=df4anova)
   anova(model_lme_rt)
@@ -500,3 +509,151 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
   model_lme_accuracy <- lme(accuracy ~ response_type * word_valence, random =~1|subject, data=df4anova)
   anova(model_lme_accuracy)
   summary(model_lme_accuracy)
+  
+  
+  
+  # post hoc tests for resolving main effects 
+  summary(glht(model_lmer_rt, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
+  summary(glht(model_lmer_rt, linfct=mcp(word_valence = "Tukey")), test = adjusted("holm"))   # same result can be obtained by lmer_rt_posthoc_response_type <- emmeans(model_lmer_rt, ~ word_valence);;pairs(lmer_rt_posthoc_response_type)
+ 
+  summary(glht(model_lmer_accuracy, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
+  summary(glht(model_lmer_accuracy, linfct=mcp(word_valence = "Tukey")), test = adjusted("holm"))
+  
+  # post hoc tests for resolving interaction effects 
+  lmer_rt_posthoc_priming <- emmeans(model_lmer_rt, ~ word_valence|response_type, adjust="tukey")    # compare word valence within each level of response_type
+  pairs(lmer_rt_posthoc_priming) 
+   
+  lmer_accuracy_posthoc_priming <- emmeans(model_lmer_accuracy, ~ word_valence|response_type, adjust="tukey")
+  pairs(lmer_accuracy_posthoc_priming) 
+  
+   
+  
+  
+  
+  #####################         ANOVA         ####################################
+  #####################     GNG (for rt)      #################################### 
+  
+  
+  # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by reshaping existing data frame
+  df4anova_GNG_rt <-   reshape(data = df4save[,c(1,37:39)], 
+                        direction = "long",
+                        varying = list(c("GNG_mean_FA","GNG_mean_FH","GNG_mean_SH")),
+                        v.names = c("rt"),
+                        idvar = "subject",
+                        timevar = "condition",
+                        times = c("FA","FH","SH"))
+  
+  row.names(df4anova_GNG_rt) <- NULL
+  df4anova_GNG_rt <- df4anova_GNG_rt[sort.list(df4anova_GNG_rt$subject),]                        # sort df by subject
+  
+  df4anova_GNG_rt$subject <- factor(df4anova_GNG_rt$subject)                                     # create factors
+  df4anova_GNG_rt$condition <- factor(df4anova_GNG_rt$condition)
+
+  
+  # calculate ANOVA with ezANOVA for rt -> gives same result as SPSS :)
+  anova_GNG_rt <- ezANOVA(data = df4anova_GNG_rt, 
+                      dv = .(rt), 
+                      wid = .(subject), 
+                      within = .(condition), 
+                      detailed = TRUE)
+  
+  
+  # post hoc comparison: when calculating within-subject ANOVAs, no direct post hoc test is possible; I can only run paitwise t-tests with corresponding adjustment (e.g. Holm, which is better than Bonferroni)
+  anova_GNG_rt_posthoc_response_type <- pairwise.t.test(df4anova_GNG_rt$rt,df4anova_GNG_rt$condition,p.adjust.method="holm")
+  
+  
+  
+  #####################            ANOVA                    ####################################
+  #####################     GNG (for percent responses)     #################################### 
+  
+  
+  # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by reshaping existing data frame
+  df4anova_GNG_percent <-   reshape(data = df4save[,c(1,46:49)], 
+                               direction = "long",
+                               varying = list(c("GNG_percent_FA","GNG_percent_FH","GNG_percent_CI","GNG_percent_SH")),
+                               v.names = c("percent"),
+                               idvar = "subject",
+                               timevar = "condition",
+                               times = c("FA","FH","CI","SH")
+  )
+  
+  row.names(df4anova_GNG_percent) <- NULL
+  df4anova_GNG_percent <- df4anova_GNG_percent[sort.list(df4anova_GNG_percent$subject),]                        # sort df by subject
+  
+  df4anova_GNG_percent$subject <- factor(df4anova_GNG_percent$subject)                                          # create factors
+  df4anova_GNG_percent$condition <- factor(df4anova_GNG_percent$condition)
+  
+  
+  
+
+  # calculate ANOVA with ezANOVA for percent responses
+  anova_GNG_percent <- ezANOVA(data = df4anova_GNG_percent, 
+                            dv = .(percent), 
+                            wid = .(subject), 
+                            within = .(condition), 
+                            detailed = TRUE)
+  
+  
+  
+  # post hoc comparison: when calculating within-subject ANOVAs, no direct post hoc test is possible; I can only run paitwise t-tests with corresponding adjustment (e.g. Holm, which is better than Bonferroni)
+  anova_GNG_percent_posthoc_response_type <- pairwise.t.test(df4anova_GNG_percent$percent,df4anova_GNG_percent$condition,p.adjust.method="holm")
+  
+
+  
+  #####################    linear mixed models    ####################################
+  #####################          GNG (RT)         #################################### 
+  
+  # calculate LMM using lmer for rt and plot
+  model_lmer_GNG_rt <- lmer(rt ~ condition + (1|subject), data=df4anova_GNG_rt)                    # possibly add REML = FALSE? 
+  anova(model_lmer_GNG_rt)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+  results_model_lmer_GNG_rt <- analyze(model_lmer_GNG_rt)                                          # print results
+  print(results_model_lmer_GNG_rt)
+  results_model_lmer_GNG_rt <- get_contrasts(model_lmer_GNG_rt, "condition")                       # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
+  print(results_model_lmer_GNG_rt$contrasts)                                                       # print contrasts
+  print(results_model_lmer_GNG_rt$means)                                                           # investigate means
+  
+  ggplot(results_model_lmer_GNG_rt$means, aes(x=condition, y=Mean, color=condition)) +             # plot 
+    geom_line(position = position_dodge(.3)) +
+    geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+                    position = position_dodge(.3)) +
+    ylab("Response Time in ms") +
+    xlab("Response Type") +
+    theme_bw()
+  
+  
+  
+  # calculate LMM using lmer for percent and plot 
+  model_lmer_GNG_percent <- lmer(percent ~ condition + (1|subject), data=df4anova_GNG_percent)          # possibly add REML = FALSE?
+  anova(model_lmer_GNG_percent)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+  results_model_lmer_GNG_percent <- analyze(model_lmer_GNG_percent)                                     # print results
+  print(results_model_lmer_GNG_percent)
+  results_model_lmer_GNG_percent <- get_contrasts(model_lmer_GNG_percent, "condition")                  # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
+  print(results_model_lmer_GNG_percent$contrasts)                                                       # print contrasts
+  print(results_model_lmer_GNG_percent$means)                                                           # investigate means
+  
+  ggplot(results_model_lmer_GNG_percent$means, aes(x=condition, y=Mean, color=condition)) +             # plot 
+    geom_line(position = position_dodge(.3)) +
+    geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+                    position = position_dodge(.3)) +
+    ylab("Frequency in %") +
+    xlab("Response Type") +
+    theme_bw() 
+  
+  
+  
+  # calculate LMM using lme for rt
+  model_lme_GNG_rt <- lme(rt ~ condition, random =~1|subject, data=df4anova_GNG_rt)
+  anova(model_lme_GNG_rt)
+  summary(model_lme_GNG_rt)
+  
+  
+  
+  # calculate LMM using lme for accuracy
+  model_lme_GNG_percent <- lme(percent ~ condition, random =~1|subject, data=df4anova_GNG_percent)
+  anova(model_lme_GNG_percent)
+  summary(model_lme_GNG_percent)
+  
+  
+  # post hoc tests for resolving main effects 
+  summary(glht(model_lmer_GNG_rt, linfct=mcp(condition = "Tukey")), test = adjusted("holm"))  
+  summary(glht(model_lmer_GNG_percent, linfct=mcp(condition = "Tukey")), test = adjusted("holm"))  
