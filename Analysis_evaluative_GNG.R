@@ -23,6 +23,8 @@ library(psycho)
 library(multcomp)
 # install.packages("emmeans")
 library(emmeans)
+# install.packages("car")
+library(car)
 
 
 # clear environment
@@ -300,11 +302,11 @@ df4save <- rbind(df4save, data.frame(subject,mean_neg_after_FA,mean_pos_after_FA
 
 setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/Analysis")                                      # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
 
-date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
+#date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
 
-filename <- paste("SummaryStatisticsEvaluativeGNG_For",length(logfiles),"_subjects_",date_time, ".xlsx", sep = "")
+#filename <- paste("SummaryStatisticsEvaluativeGNG_For",length(logfiles),"_subjects_",date_time, ".xlsx", sep = "")
 
-write.xlsx(df4save, file = filename)
+#write.xlsx(df4save, file = filename)
 #save(df4save, file = filename)
 
 #current_file <- read.xlsx(filename)                                                                         # read in that file
@@ -414,7 +416,8 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
                     dv = .(rt), 
                     wid = .(subject), 
                     within = .(response_type, word_valence), 
-                    detailed = TRUE)
+                    detailed = TRUE
+                    )
   
   # calculate ANOVA with ezANOVA for accuracy -> gives same result as SPSS :)
   anova_accuracy <- ezANOVA(data = df4anova, 
@@ -452,7 +455,14 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
   anova_accuracy_posthoc_word_valence <- pairwise.t.test(df4anova$accuracy,df4anova$word_valence,p.adjust.method="holm") 
   anova_accuracy_posthoc_priming <- pairwise.t.test(df4anova$accuracy,df4anova$condition,p.adjust.method="holm") 
   
-
+  
+  # test assumptions for repeated measures ANOVA
+  # if more than 2 factor levels: use Mauchly test (see ezANOVA-Output) to check for sphericity
+  # test normality of residuals (using Shapiro Wilk test); extracting residuals from ezANOVA seems to be problematic;;;;;if residuals very skewed -> ANOVA not reliable -> use non-parametric Friedman test
+  shapiro.test(sort(proj(anova_rt)[["subject"]][, "Residuals"]))  #only works for aov_ANOVA!; not sure whether subject residuals are the right ones to test; using names(anova_rt) gives options for which I can extract residuals; no matter which residuals I extract, the differ from redisuals extracted from LMM
+  shapiro.test(sort(proj(anova_accuracy)[["subject"]][, "Residuals"]))  #only works for aov_ANOVA!; not sure whether subject residuals are the right ones to test; using names(anova_accuracy) gives options for which I can extract residuals; no matter which residuals I extract, the differ from redisuals extracted from LMM
+  
+  
   
   #####################    linear mixed models    ####################################
   #####################      words (mean RT)      #################################### 
@@ -477,6 +487,10 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
     xlab("Response Type") +
     theme_bw()
   
+  # check normality of residuals
+  qqnorm(resid(model_lmer_rt))
+  qqline(resid(model_lmer_rt))
+  shapiro.test(resid(model_lmer_rt))
   
   
   # calculate LMM using lmer for accuracy and plot 
@@ -484,7 +498,7 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
   anova(model_lmer_accuracy)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
   results_model_lmer_accuracy <- analyze(model_lmer_accuracy)                                        # print results
   print(results_model_lmer_accuracy)
-  results_model_lmer_accuracy <- get_contrasts(model_lmer_accuracy, "response_type * word_valence", adjust="holm")  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+  results_model_lmer_accuracy <- get_contrasts(model_lmer_accuracy, "response_type * word_valence")  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
   print(results_model_lmer_accuracy$contrasts)                                                       # print contrasts
   print(results_model_lmer_accuracy$means)                                                           # investigate means
   
@@ -496,6 +510,11 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
     xlab("Response Type") +
     theme_bw() 
 
+  
+  # check normality of residuals
+  qqnorm(resid(model_lmer_accuracy))
+  qqline(resid(model_lmer_accuracy))
+  shapiro.test(resid(model_lmer_accuracy))
   
   
   # calculate LMM using lme for rt
