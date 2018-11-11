@@ -259,8 +259,6 @@ count_all_pos_after_CI <- count_pos_after_CI + count_incorr_pos_after_CI + count
 count_all_neg_after_SH <- count_neg_after_SH + count_incorr_neg_after_SH + count_miss_neg_after_SH
 count_all_pos_after_SH <- count_pos_after_SH + count_incorr_pos_after_SH + count_miss_pos_after_SH
 
-pos_after_SH <- count_pos_after_SH + count_incorr_pos_after_SH + count_miss_pos_after_SH
-
 
 ####################    calculate    ##################################
 ####################    accuracy     ##################################
