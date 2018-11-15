@@ -11,7 +11,7 @@ rm(list=ls())
 ####################     load     #######################################
 ####################   scr data   #######################################
 
-# Load SCR files (Ledalab output exorted as .csv) 
+# Load SCR files (Ledalab output exported as .csv) 
 scrfiles <- list.files("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_export")             # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY scr-files 
 setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_export")                              
 
@@ -26,9 +26,9 @@ for (subject in scrfiles){                                                      
   ####################   SCR data    #######################################
   
   # create new column that represents correct order of triggers within one trial
-  subset_scr$order[subset_scr$Event.NID <=23]                     <-1
+  subset_scr$order[subset_scr$Event.NID <=23]                            <-1
   subset_scr$order[subset_scr$Event.NID >=40 & subset_scr$Event.NID <=49]<-2
-  subset_scr$order[subset_scr$Event.NID >=140 ]                     <-3
+  subset_scr$order[subset_scr$Event.NID >=140 ]                           <-3
   subset_scr$order[subset_scr$Event.NID >=50 & subset_scr$Event.NID <=59]<-4
   
   number_chunks <- nrow(subset_scr)/4                                                              # one chunk is one trial; one trial contains 4 triggers in scr
@@ -51,18 +51,18 @@ for (subject in scrfiles){                                                      
                             "Event.Nr.Word","Event.ID.Word","Event.Name.Word","DDA.nSCR.Word","DDA.Latency.Word","DDA.AmpSum.Word","DDA.AreaSum.Word","DDA.Tonic.Word","TTP.nSCR.Word","TTP.Latency.Word","TTP.AmpSum.Word","Global.Mean.Word","Global.MaxDeflection.Word","order.Word",                                         
                             "Event.Nr.WordResp","Event.ID.WordResp","Event.Name.WordResp","DDA.nSCR.WordResp","DDA.Latency.WordResp","DDA.AmpSum.WordResp","DDA.AreaSum.WordResp","DDA.Tonic.WordResp","TTP.nSCR.WordResp","TTP.Latency.WordResp","TTP.AmpSum.WordResp","Global.Mean.WordResp","Global.MaxDeflection.WordResp","order.WordResp")                       
   
+
+  
   
   # add participant ID and trial ID
   scr_with_ID <- data.frame(Participant.ID=substr(subject,14,15),Trial.ID =1:nrow(scr_ordered),scr_ordered)   # create new df to add ID for each subject in first column; ID derived from letter 14 and 15 of file name
   
   
-  # keep only columns of interest
-  scr_final <- scr_with_ID[ , c("Participant.ID","Trial.ID",
-                                "Event.ID.Tar","DDA.nSCR.Tar","DDA.Latency.Tar","DDA.AmpSum.Tar","DDA.AreaSum.Tar","DDA.Tonic.Tar","TTP.nSCR.Tar","TTP.Latency.Tar","TTP.AmpSum.Tar","Global.Mean.Tar","Global.MaxDeflection.Tar",                                     
-                                "Event.ID.TarResp","DDA.nSCR.TarResp","DDA.Latency.TarResp","DDA.AmpSum.TarResp","DDA.AreaSum.TarResp","DDA.Tonic.TarResp","TTP.nSCR.TarResp","TTP.Latency.TarResp","TTP.AmpSum.TarResp","Global.Mean.TarResp","Global.MaxDeflection.TarResp",                                    
-                                "Event.ID.Word","DDA.nSCR.Word","DDA.Latency.Word","DDA.AmpSum.Word","DDA.AreaSum.Word","DDA.Tonic.Word","TTP.nSCR.Word","TTP.Latency.Word","TTP.AmpSum.Word","Global.Mean.Word","Global.MaxDeflection.Word",                                        
-                                "Event.ID.WordResp","DDA.nSCR.WordResp","DDA.Latency.WordResp","DDA.AmpSum.WordResp","DDA.AreaSum.WordResp","DDA.Tonic.WordResp","TTP.nSCR.WordResp","TTP.Latency.WordResp","TTP.AmpSum.WordResp","Global.Mean.WordResp","Global.MaxDeflection.WordResp")]                      
   
+  # keep only columns of interest
+  scr_final <- scr_with_ID[ , c("Participant.ID","Trial.ID","Event.ID.Tar","Event.ID.TarResp","DDA.AmpSum.TarResp","DDA.AreaSum.TarResp", "Event.ID.Word","Event.ID.WordResp" )]
+                                                                    
+
   
   # display progress and abort if number of trials is not 516
   message("Preprocessing done for file: ",subject,appendLF=TRUE)
