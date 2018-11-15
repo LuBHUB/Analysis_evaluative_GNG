@@ -41,9 +41,9 @@ options(scipen = 999)
 
 # load logfiles, create dataframe 
 
-setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/raw_data")                           #path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
+setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_behav")                           #path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
 
-logfiles <- list.files("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/raw_data")          #lists files in folder
+logfiles <- list.files("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_behav")          #lists files in folder
 
 for (subject in logfiles)                                                                          # loop reading txt-file by txt-file as table, ommit first 58 lines and added lines after trials; use first line as header
 { tmp <- (read.table(subject, skip = 58, fill = TRUE, header = TRUE, nrows = 516))
