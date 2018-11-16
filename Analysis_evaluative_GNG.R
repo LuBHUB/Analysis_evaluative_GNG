@@ -298,13 +298,13 @@ df4save <- rbind(df4save, data.frame(subject,mean_neg_after_FA,mean_pos_after_FA
 ####################    as excel file    ##################################
 
 
-setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/Analysis")                                      # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
+setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")                                      # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
 
-#date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
+date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
 
-#filename <- paste("SummaryStatisticsEvaluativeGNG_For",length(logfiles),"_subjects_",date_time, ".xlsx", sep = "")
+filename <- paste("SummaryStatisticsEvaluativeGNG_For_",length(logfiles),"_subjects_",date_time, ".xlsx", sep = "")
 
-#write.xlsx(df4save, file = filename)
+#write.xlsx(df4save, filename)
 #save(df4save, file = filename)
 
 #current_file <- read.xlsx(filename)                                                                         # read in that file
@@ -367,24 +367,6 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
   #####################    words (mean rt)    #################################### 
   
   options(contrasts=c("contr.sum","contr.poly")) # to adhere to the sum-to-zero convention for effect weights, always do this before running ANOVAs in R. This matters sometimes (not always). If I don’t do it, the sum of squares calculations may not match what I get e.g. in SPSS
-  
-  
-  # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by creating new data frame
-  # df4anova <- data.frame(
-  #                       subject = df4save$subject,
-  #                       response_type = rep(c("false alarm","false alarm","fast hit","fast hit","correctly inhibited","correctly inhibited", "slow hit", "slow hit"),length(df4save$subject)), # repeat response types as often as number of subjects
-  #                       word_valence = rep(c("neg","pos","neg","pos","neg","pos","neg","pos"),length(df4save$subject)),                                                                        # repeat word valence as often as number of subjects
-  #                       rt = as.vector(t(df4save[,2:9])),
-  #                       accuracy = as.vector(t(df4save[,29:36]))
-  #                       )   
-  #
-  # df4anova$subject <- sort(df4anova$subject)
-  #
-  # df4anova$subject <- factor(df4anova$subject)
-  # df4anova$response_type <- factor(df4anova$response_type)
-  # df4anova$word_valence <- factor(df4anova$word_valence)
-  
-  
   
   
   # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by reshaping existing data frame
