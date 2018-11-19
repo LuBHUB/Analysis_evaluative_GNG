@@ -451,6 +451,7 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
 
   
   # calculate LMM using lmer for rt and plot
+  #### Add setting contrasts!!!!
   model_lmer_rt <- lmer(rt ~ response_type * word_valence + (1|subject), data=df4anova)        # possibly add REML = FALSE?
   anova(model_lmer_rt)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
   results_model_lmer_rt <- analyze(model_lmer_rt)                                              # print results
