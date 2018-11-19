@@ -35,8 +35,8 @@ for (subject in logfiles){                                                      
 raw_log <- (read.table(subject, skip = 58, fill = TRUE, header = TRUE, nrows = 516))
 
 if (subject=="ModERN_behav_01.txt")
-{log <- raw_log}                                                                                        # at the first iteration, create a1
-else {log <- rbind(log,raw_log)}                                                                        # rbind glues currently loaded file (tmp) to the end of dataframe a1
+{log <- raw_log}                                                                                        # at the first iteration, create log
+else {log <- rbind(log,raw_log)}                                                                        # rbind glues currently loaded file (raw_log) to the end of dataframe log
 }
 
 
@@ -51,8 +51,8 @@ for (subject in scrfiles){                                                      
 raw_scr <- read.csv(subject)
 
 if (subject=="ModERN_behav_01_SCR_Export_era_z.csv")
-{scr <- raw_scr}                                                                                        # at the first iteration, create a1
-else {scr <- rbind(scr,raw_scr)}                                                                        # rbind glues currently loaded file (tmp) to the end of dataframe a1
+{scr <- raw_scr}                                                                                        # at the first iteration, create scr
+else {scr <- rbind(scr,raw_scr)}                                                                        # rbind glues currently loaded file (raw_scr) to the end of dataframe scr
 }
 
 
@@ -96,11 +96,12 @@ master_scr <- data.frame()
 
 for (number in unique(master$number)){
   
- singleID <- master[which(master$number==number), ]       # extract all rows for current subject from master data frame that contains all subjects
+ singleID <- master[which(master$number==number), ]       # extract all rows for current subject from master data frame
 
 
  ####################       define      #####################################
  ####################      conditions   #####################################
+ 
  singleID <- mutate(singleID, 
                     valence = ifelse(w_type > 200, "pos", "neg"),                                                      
                     response_type = ifelse((t_resp == 43 | t_resp == 44), "FA", 
@@ -131,44 +132,34 @@ for (number in unique(master$number)){
   singleID_GNG <- singleID[(singleID$outlier_GNG == FALSE),]
   
   
-  ####################       define      #####################################
-  ####################  GNG conditions  #####################################
-  
-  # FA = False Alarm; FH = Fast Hit; CI = Correctly Inhibited; SH = Slow Hit
-  
-  GNG_FA <- subset(singleID_GNG, t_resp == 43 | t_resp == 44)
-  GNG_FH <- subset(singleID_GNG, t_resp == 41)
-  GNG_CI <- subset(singleID_GNG, t_resp == 45 | t_resp == 46)
-  GNG_SH <- subset(singleID_GNG, t_resp == 42)
-  GNG_miss <- subset(singleID_GNG, t_resp == 47)
-  GNG_wrong_key <- subset(singleID_GNG,  t_resp == 48 | t_resp == 49)
-  
-  
+
   ####################   calculate  #####################################
   ####################    GNG RT    ##################################### 
   
-  # not calculated for CI, because there is no rt
-  GNG_mean_FA <- mean(GNG_FA$t_rt)
-  GNG_mean_FH <- mean(GNG_FH$t_rt)
-  GNG_mean_SH <- mean(GNG_SH$t_rt)
+  # FA = False Alarm; FH = Fast Hit; CI = Correctly Inhibited; SH = Slow Hit
+  # RT not calculated for CI, because there is no rt
+  GNG_mean_FA <- mean(singleID_GNG[singleID_GNG$response_type == "FA",]$t_rt)
+  GNG_mean_FH <- mean(singleID_GNG[singleID_GNG$response_type == "FH",]$t_rt)
+  GNG_mean_SH <- mean(singleID_GNG[singleID_GNG$response_type == "SH",]$t_rt)
   
-  GNG_sd_FA <- sd(GNG_FA$t_rt)
-  GNG_sd_FH <- sd(GNG_FH$t_rt)
-  GNG_sd_SH <- sd(GNG_SH$t_rt)
+  GNG_sd_FA <- sd(singleID_GNG[singleID_GNG$response_type == "FA",]$t_rt)
+  GNG_sd_FH <- sd(singleID_GNG[singleID_GNG$response_type == "FH",]$t_rt)
+  GNG_sd_SH <- sd(singleID_GNG[singleID_GNG$response_type == "SH",]$t_rt)
   
-  GNG_cov_FA <- sd(GNG_FA$t_rt)/mean(GNG_FA$t_rt) * 100
-  GNG_cov_FH <- sd(GNG_FH$t_rt)/mean(GNG_FH$t_rt) * 100
-  GNG_cov_SH <- sd(GNG_SH$t_rt)/mean(GNG_SH$t_rt) * 100
+  GNG_cov_FA <- GNG_sd_FA/GNG_mean_FA * 100
+  GNG_cov_FH <- GNG_sd_FH/GNG_mean_FH * 100
+  GNG_cov_SH <- GNG_sd_SH/GNG_mean_SH * 100
   
-  
+
+
   ####################   calculate GNG     #####################################
   ####################  % response types   ##################################### 
   
-  GNG_count_FA <- length(GNG_FA$t_rt)
-  GNG_count_FH <- length(GNG_FH$t_rt)
-  GNG_count_CI <- length(GNG_CI$t_rt)
-  GNG_count_SH <- length(GNG_SH$t_rt)
-  GNG_count_miss <- length(GNG_miss$t_rt)
+  GNG_count_FA <- length(singleID_GNG[singleID_GNG$response_type == "FA",]$t_rt)
+  GNG_count_FH <- length(singleID_GNG[singleID_GNG$response_type == "FH",]$t_rt)
+  GNG_count_CI <- length(singleID_GNG[singleID_GNG$response_type == "CI",]$t_rt)
+  GNG_count_SH <- length(singleID_GNG[singleID_GNG$response_type == "SH",]$t_rt)
+  GNG_count_miss <- length(singleID_GNG[singleID_GNG$t_resp == 47,]$t_rt)
   
   GNG_all_resp_without_outliers_wrong_keys <- GNG_count_FA + GNG_count_FH + GNG_count_CI + GNG_count_SH + GNG_count_miss 
   
@@ -178,8 +169,6 @@ for (number in unique(master$number)){
   GNG_percent_SH <- (GNG_count_SH/GNG_all_resp_without_outliers_wrong_keys)*100
   GNG_percent_miss <- (GNG_count_miss/GNG_all_resp_without_outliers_wrong_keys)*100
   
-  
-
   
 
   
@@ -219,7 +208,6 @@ for (number in unique(master$number)){
   median_priming_after_FA <- median_pos_after_FA - median_neg_after_FA
   median_priming_after_FH <- median_neg_after_FH - median_pos_after_FH
   median_priming_overall <- (median_pos_after_FA + median_neg_after_FH) - (median_neg_after_FA + median_pos_after_FH) 
-  
   
   
   
@@ -346,34 +334,41 @@ for (number in unique(master$number)){
   ####################   calculate  #####################################
   ####################    SCR       #####################################   
   
- # for Correlations with Traits, Priming, use GMG data frame for SCR analyses (excluding outlier only in GNG)
- singleID_GNG$DDA.AMP.log <- log(singleID_GNG$DDA.AmpSum.TarResp+1) #log transform SCR 
- singleID_GNG$DDA.AMP.z_scorelog <- scale(singleID_GNG$DDA.AMP.log, center = TRUE, scale = TRUE) #z-transform SCR
-
- 
- mean_SCR_after_FA <- mean(singleID_GNG[(singleID_GNG$t_resp == 43 | singleID_GNG$w_resp == 44) & (singleID_GNG$t_resp == 51 | singleID_GNG$w_resp == 52),]$DDA.AMP.z_scorelog)
- mean_SCR_after_FH <- mean(singleID_GNG[(singleID_GNG$t_resp == 41) & (singleID_GNG$t_resp == 51 | singleID_GNG$w_resp == 52),]$DDA.AMP.z_scorelog)
- mean_SCR_after_CI <- mean(singleID_GNG[(singleID_GNG$t_resp == 45 | singleID_GNG$w_resp == 46) & (singleID_GNG$t_resp == 51 | singleID_GNG$w_resp == 52),]$DDA.AMP.z_scorelog)
- mean_SCR_after_SH <- mean(singleID_GNG[(singleID_GNG$t_resp == 42) & (singleID_GNG$t_resp == 51 | singleID_GNG$w_resp == 52),]$DDA.AMP.z_scorelog)
-  
- 
- 
-  
- df4save <- rbind(df4save, data.frame(number,mean_neg_after_FA,mean_pos_after_FA,mean_neg_after_FH,mean_pos_after_FH,mean_neg_after_CI,mean_pos_after_CI,mean_neg_after_SH,mean_pos_after_SH,mean_priming_overall,mean_priming_after_FA,mean_priming_after_FH,median_neg_after_FA,median_pos_after_FA,median_neg_after_FH,median_pos_after_FH,median_neg_after_CI,median_pos_after_CI,median_neg_after_SH,median_pos_after_SH,median_priming_overall,median_priming_after_FA,median_priming_after_FH,count_neg_after_FA,count_pos_after_FA,count_neg_after_FH,count_pos_after_FH,count_outlier_words_FA_FH,percent_correct_neg_after_FA,percent_correct_pos_after_FA,percent_correct_neg_after_FH,percent_correct_pos_after_FH,percent_correct_neg_after_CI,percent_correct_pos_after_CI,percent_correct_neg_after_SH,percent_correct_pos_after_SH,GNG_mean_FA,GNG_mean_FH,GNG_mean_SH,GNG_sd_FA,GNG_sd_FH,GNG_sd_SH,GNG_cov_FA,GNG_cov_FH,GNG_cov_SH,GNG_percent_FA,GNG_percent_FH,GNG_percent_CI,GNG_percent_SH,GNG_percent_miss, mean_SCR_after_FA,mean_SCR_after_FH,mean_SCR_after_CI,mean_SCR_after_SH))
-
-
-
- # for Single-Trial Analysis SCR - Priming, create master data frame for SCR analyses (excluding outlier in GNG AND words, log-transform and standardize (z-score) SCR data)
- singleID_SCR <- singleID[(singleID$outlier_GNG == FALSE & singleID$outlier_words == FALSE),]
- singleID_SCR$DDA.AMP.log <- log(singleID_SCR$DDA.AmpSum.TarResp+1) #log transform SCR 
+ # Create master data frame for SCR analyses (for mean calculation excluding outlier in GNG only, exclude word outlier in single trial part, log-transform and standardize (z-score) SCR data)
+ singleID_SCR <- singleID[(singleID$outlier_GNG == FALSE),]
+ singleID_SCR$DDA.AMP.log <- log(singleID_SCR$DDA.AmpSum.TarResp+1)                              #log transform SCR 
  singleID_SCR$DDA.AMP.z_scorelog <- scale(singleID_SCR$DDA.AMP.log, center = TRUE, scale = TRUE) #log-transform SCR
- singleID_SCR$w_rt.z_score <- scale(singleID_SCR$w_rt, center = TRUE, scale = TRUE) #z-transform word rt 
+ singleID_SCR$w_rt.z_score <- scale(singleID_SCR$w_rt, center = TRUE, scale = TRUE)              #z-transform word rt 
 
  
+ # exclude trials followed by false alarm or wrong key in GNG or by incorrect word categorization or wrong key in word categorization
+ singleID_SCR$exclude <- FALSE
+ 
+ for (i in 1:(nrow(singleID_SCR)-1)) {
+   current_row <- singleID_SCR[i,]
+   next_row <- singleID_SCR[(i+1),]
+   if ((next_row$t_resp %in% c(43,44,48,49) | next_row$w_resp %in% c(53,54,57,58))) {            
+     singleID_SCR[i,]$exclude <- TRUE
+   }     
+ }
+ singleID_SCR <- singleID_SCR[(singleID_SCR$exclude == FALSE),]
+ 
+ 
+ # calculate mean SCR in conditions
+ mean_SCR_after_FA <- mean(singleID_SCR[(singleID_SCR$t_resp == 43 | singleID_SCR$w_resp == 44) & (singleID_SCR$t_resp == 51 | singleID_SCR$w_resp == 52),]$DDA.AMP.z_scorelog)
+ mean_SCR_after_FH <- mean(singleID_SCR[(singleID_SCR$t_resp == 41) & (singleID_SCR$t_resp == 51 | singleID_SCR$w_resp == 52),]$DDA.AMP.z_scorelog)
+ mean_SCR_after_CI <- mean(singleID_SCR[(singleID_SCR$t_resp == 45 | singleID_SCR$w_resp == 46) & (singleID_SCR$t_resp == 51 | singleID_SCR$w_resp == 52),]$DDA.AMP.z_scorelog)
+ mean_SCR_after_SH <- mean(singleID_SCR[(singleID_SCR$t_resp == 42) & (singleID_SCR$t_resp == 51 | singleID_SCR$w_resp == 52),]$DDA.AMP.z_scorelog)
+ 
+ 
+ 
+ ####################     Add df in     #####################################
+ ####################   in master df    #####################################
+ 
+ df4save <- rbind(df4save, data.frame(number,mean_neg_after_FA,mean_pos_after_FA,mean_neg_after_FH,mean_pos_after_FH,mean_neg_after_CI,mean_pos_after_CI,mean_neg_after_SH,mean_pos_after_SH,mean_priming_overall,mean_priming_after_FA,mean_priming_after_FH,median_neg_after_FA,median_pos_after_FA,median_neg_after_FH,median_pos_after_FH,median_neg_after_CI,median_pos_after_CI,median_neg_after_SH,median_pos_after_SH,median_priming_overall,median_priming_after_FA,median_priming_after_FH,count_neg_after_FA,count_pos_after_FA,count_neg_after_FH,count_pos_after_FH,count_outlier_words_FA_FH,percent_correct_neg_after_FA,percent_correct_pos_after_FA,percent_correct_neg_after_FH,percent_correct_pos_after_FH,percent_correct_neg_after_CI,percent_correct_pos_after_CI,percent_correct_neg_after_SH,percent_correct_pos_after_SH,GNG_mean_FA,GNG_mean_FH,GNG_mean_SH,GNG_sd_FA,GNG_sd_FH,GNG_sd_SH,GNG_cov_FA,GNG_cov_FH,GNG_cov_SH,GNG_percent_FA,GNG_percent_FH,GNG_percent_CI,GNG_percent_SH,GNG_percent_miss, mean_SCR_after_FA,mean_SCR_after_FH,mean_SCR_after_CI,mean_SCR_after_SH))
  master_GNG <- rbind(master_GNG,singleID_GNG)         # excludes only GNG outlier
  master_words <- rbind(master_words,singleID_words)   # excludes only word outlier
- master_scr <- rbind(master_scr,singleID_SCR) # exclude outlier GNG AND words
-
+ master_scr <- rbind(master_scr,singleID_SCR)         # exclude outlier GNG and trials with error in word or followed by error in GNG; exclude word outlier later, to keep these trials here for Analyses only on SCR, without Priming
 }
 
 
@@ -391,7 +386,7 @@ for (number in unique(master$number)){
  
  filename <- paste("SummaryStatisticsSingleTrial_For_",length(logfiles),"_subjects_",date_time, ".xlsx", sep = "")
  
- #write.xlsx(df4save, filename)
+ write.xlsx(df4save, filename)
  #save(df4save, file = filename)
  
  
@@ -428,8 +423,8 @@ for (number in unique(master$number)){
  ggplot(df4plotRT,x = response,y = mean, aes(response, mean, fill = valence))+
    geom_bar(stat="identity", position=position_dodge()) +                                                       # add bars, based on stats values; dodge to avoid stacked bars
    geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
-   ggtitle("Mean Response Time") +                                                                              # add title
-   xlab("response") + ylab("Reaction Time in ms") +                                                             # label axes
+   ggtitle("Mean Response Time Word Categorization") +                                                          # add title
+   xlab("Previous Response") + ylab("Reaction Time in ms") +                                                    # label axes
    theme(plot.title = element_text(hjust = 0.5)) +                                                              # center title
    scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
  
@@ -446,8 +441,8 @@ for (number in unique(master$number)){
  ggplot(df4plotACC,x = response,y = mean, aes(response, mean, fill = valence))+
    geom_bar(stat="identity", position=position_dodge()) +                                                       # add bars, based on stats values; dodge to avoid stacked bars
    geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
-   ggtitle("Mean Accuracy") +                                                                                   # add title
-   xlab("response") + ylab("Accuracy in %") +                                                                   # label axes
+   ggtitle("Mean Accuracy Word Categorization") +                                                               # add title
+   xlab("Previous Response") + ylab("Accuracy in %") +                                                          # label axes
    theme(plot.title = element_text(hjust = 0.5)) +                                                              # center title
    scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
  
@@ -455,196 +450,220 @@ for (number in unique(master$number)){
  
  
  
+ #### till here, results of both scripts (this and "Analysis_evaluative_GNG.R" are identical!!!!
  
  
- #####################    linear mixed models    ####################################
- #####################      words (mean RT)      #################################### 
+ # plot rt all conditions
+ df4plotRT <- data.frame(
+   response = c("false alarm","false alarm","fast hit","fast hit","correctly inhibited","correctly inhibited","slow hit", "slow hit"),
+   valence = c("neg","pos","neg","pos","neg","pos","neg","pos"),
+   conditions = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH","neg_after_CI","pos_after_CI","neg_after_SH","pos_after_SH"),
+   mean = as.numeric(c(descriptive_statistics[2,2],descriptive_statistics[2,3],descriptive_statistics[2,4],descriptive_statistics[2,5],descriptive_statistics[2,6],descriptive_statistics[2,7],descriptive_statistics[2,8],descriptive_statistics[2,9])),
+   se = as.numeric(c(descriptive_statistics[3,2],descriptive_statistics[3,3],descriptive_statistics[3,4],descriptive_statistics[3,5],descriptive_statistics[3,6],descriptive_statistics[3,7],descriptive_statistics[3,8],descriptive_statistics[3,9])))
  
- # prepare master_words for single trial analysis: ecxlude incorrect responses, misses, wrong keys; create column condition; turn relevant variables in factors
- master_words <- subset(master_words,w_resp <= 52 & t_resp <= 46)
- master_words$condition <- paste(master_words$valence,"_after_",master_words$response_type)
- master_words$response_type <- factor(master_words$response_type, levels=c("FA","FH","CI","SH"))   # reorder factor levels! (this is important, because first level is used as reference factor in LMM)
- master_words$valence <- factor(master_words$valence)                                              # automatic factor order is alphabetical (1 = neg, 2 = pos)
- master_words$number <- factor(master_words$number)  
+ df4plotRT$response <- factor(df4plotRT$response, levels = c("false alarm","fast hit","correctly inhibited","slow hit"))
  
- 
- 
- 
- # calculate LMM for rt and plot
- emm_options(pbkrtest.limit = 8026)
- emm_options(lmerTest.limit = 8026) # due to warning D.f. calculations have been disabled because the number of observations exceeds 3000.To enable adjustments, set emm_options(pbkrtest.limit = 5866)
- 
- LMM_rt <- lmer(w_rt ~ master_words$response_type * valence + (1|number), data=master_words)       # possibly add REML = FALSE?
- anova(LMM_rt)                                                                                     # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
- results_LMM_rt <- analyze(LMM_rt)                                                                 # print results
- print(results_LMM_rt)
- results_LMM_rt <- get_contrasts(LMM_rt, "response_type * valence")                                # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
- print(results_LMM_rt$contrasts)                                                                   # print contrasts
- print(results_LMM_rt$means)                                                                       # investigate means
- 
- ggplot(results_LMM_rt$means, aes(x=response_type, y=Mean, color=valence, group=valence)) +        # plot
-   geom_line(position = position_dodge(.3)) +
-   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher),
-                   position = position_dodge(.3)) +
-   ylab("Response Time in ms") +
-   xlab("Response Type") +
-   theme_bw()
+ ggplot(df4plotRT,x = response,y = mean, aes(response, mean, fill = valence))+
+   geom_bar(stat="identity", position=position_dodge()) +                                                       # add bars, based on stats values; dodge to avoid stacked bars
+   geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
+   ggtitle("Mean Response Time Word Categorization") +                                                          # add title
+   xlab("Previous Response") + ylab("Reaction Time in ms") +                                                    # label axes
+   theme(plot.title = element_text(hjust = 0.5)) +                                                              # center title
+   scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
  
  
- # check normality of residuals
- qqnorm(resid(LMM_rt))
- qqline(resid(LMM_rt))
- shapiro.test(resid(LMM_rt))
+ # plot accuracy all conditions
+ df4plotACC <- data.frame(
+   response = c("false alarm","false alarm","fast hit","fast hit","correctly inhibited","correctly inhibited","slow hit", "slow hit"),
+   valence = c("neg","pos","neg","pos","neg","pos","neg","pos"),
+   conditions = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH","neg_after_CI","pos_after_CI","neg_after_SH","pos_after_SH"),
+   mean = as.numeric(c(descriptive_statistics[2,29],descriptive_statistics[2,30],descriptive_statistics[2,31],descriptive_statistics[2,32],descriptive_statistics[2,33],descriptive_statistics[2,34],descriptive_statistics[2,35],descriptive_statistics[2,36])),
+   se = as.numeric(c(descriptive_statistics[3,29],descriptive_statistics[3,30],descriptive_statistics[3,31],descriptive_statistics[3,32],descriptive_statistics[3,33],descriptive_statistics[3,34],descriptive_statistics[3,35],descriptive_statistics[3,36])))
+ 
+ df4plotACC$response <- factor(df4plotACC$response, levels = c("false alarm","fast hit","correctly inhibited","slow hit"))
+ 
+ ggplot(df4plotACC,x = response,y = mean, aes(response, mean, fill = valence))+
+   geom_bar(stat="identity", position=position_dodge()) +                                                       # add bars, based on stats values; dodge to avoid stacked bars
+   geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
+   ggtitle("Mean Accuracy Word Categorization") +                                                               # add title
+   xlab("Previous Response") + ylab("Accuracy in %") +                                                          # label axes
+   theme(plot.title = element_text(hjust = 0.5)) +                                                              # center title
+   scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
+ 
+ 
+ # plot SCR all conditions
+ df4plotSCR <- data.frame(
+   response = c("false alarm","fast hit","correctly inhibited","slow hit"),
+   valence = c("neg","pos","neg","pos"),
+   conditions = c("mean_SCR_after_FA","mean_SCR_after_FH","mean_SCR_after_CI","mean_SCR_after_SH"),
+   mean = as.numeric(c(descriptive_statistics[2,51],descriptive_statistics[2,52],descriptive_statistics[2,53],descriptive_statistics[2,54])),
+   se = as.numeric(c(descriptive_statistics[3,51],descriptive_statistics[3,52],descriptive_statistics[3,53],descriptive_statistics[3,54])))
+ 
+ df4plotSCR$response <- factor(df4plotSCR$response, levels = c("false alarm","fast hit","correctly inhibited","slow hit"))
+ 
+ ggplot(df4plotSCR,x = response,y = mean, aes(response, mean))+
+   geom_bar(stat="identity", position=position_dodge(), fill = "mediumblue") +                                  # add bars, based on stats values; dodge to avoid stacked bars; change bar color
+   geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
+   ggtitle("Mean SCR") +                                                                                        # add title
+   xlab("Response type") + ylab("log SCR (z-score) in microsiemens") +                                          # label axes
+   theme(plot.title = element_text(hjust = 0.5))                                                                # center title
  
  
  
- # post hoc tests for resolving main effects and interaction effects 
- summary(glht(LMM_rt, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
- summary(glht(LMM_rt, linfct=mcp(valence = "Tukey")), test = adjusted("holm"))                   # same result can be obtained by lmer_rt_posthoc_response_type <- emmeans(model_lmer_rt, ~ word_valence);;pairs(lmer_rt_posthoc_response_type)
- LMM_rt_posthoc_priming <- emmeans(LMM_rt, ~ valence|response_type, adjust="tukey")              # compare word valence within each level of response_type
- pairs(LMM_rt_posthoc_priming) 
  
  
  
  
+ #######################################################################################
+ #####################  Aggregate Data and calculate ANOVAs   ##########################
+ #######################################################################################
  
- #####################    linear mixed models    ####################################
- #####################     words (Accuracy)      #################################### 
  
- # accumulate data for LMM accuracy
- df4accuracy <-   reshape(data = df4save[,c(1:9,29:36)], 
+ options(contrasts=c("contr.sum","contr.poly")) # to adhere to the sum-to-zero convention for effect weights, always do this before running ANOVAs in R. This matters sometimes (not always). If I don’t do it, the sum of squares calculations may not match what I get e.g. in SPSS
+ 
+ 
+ 
+ #####################       ANOVA      ####################################
+ #####################       Words      #################################### 
+ 
+ # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by reshaping existing data frame
+ df4anova <-   reshape(data = df4save[,c(1:9,29:36)], 
                        direction = "long",
                        varying = list(c("mean_neg_after_FA","mean_pos_after_FA","mean_neg_after_FH","mean_pos_after_FH","mean_neg_after_CI","mean_pos_after_CI" ,"mean_neg_after_SH","mean_pos_after_SH"),c("percent_correct_neg_after_FA", "percent_correct_pos_after_FA","percent_correct_neg_after_FH","percent_correct_pos_after_FH","percent_correct_neg_after_CI","percent_correct_pos_after_CI","percent_correct_neg_after_SH","percent_correct_pos_after_SH")),
                        v.names = c("rt","accuracy"),
-                       idvar = "number",
+                       idvar = "subject",
                        timevar = "condition",
                        times = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH","neg_after_CI","pos_after_CI","neg_after_SH","pos_after_SH")
  )
  
- row.names(df4accuracy) <- NULL
- df4accuracy <- df4accuracy[sort.list(df4accuracy$number),]                                      # sort df by subject
+ row.names(df4anova) <- NULL
+ df4anova <- df4anova[sort.list(df4anova$subject),]                        # sort df by subject
  
- df4accuracy$response_type <- substr(df4accuracy$condition, 11, 12)                              # create columns needed as factors           
- df4accuracy$valence <- substr(df4accuracy$condition, 1, 3)
+ df4anova$response_type <- substr(df4anova$condition, 11, 12)              # create columns needed as factors           
+ df4anova$word_valence <- substr(df4anova$condition, 1, 3)
  
- df4accuracy$number <- factor(df4accuracy$number)                                 
- df4accuracy$response_type <- factor(df4accuracy$response_type, levels=c("FA","FH","CI","SH"))   # create factors response_type and reorder factor levels! (this is important, because first level is used as reference factor in LMM)
- df4accuracy$valence <- factor(df4accuracy$valence)                                              # automatic factor order is alphabetical (1 = neg, 2 = pos)
- 
- 
- # calculate LMM for accuracy and plot  
- LMM_accuracy <- lmer(accuracy ~ response_type * valence + (1|number), data=df4accuracy)         # possibly add REML = FALSE?
- anova(LMM_accuracy)                                                                             # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
- results_LMM_accuracy <- analyze(LMM_accuracy)                                                   # print results
- print(results_LMM_accuracy)
- results_LMM_accuracy <- get_contrasts(LMM_accuracy, "response_type * valence")                  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
- print(results_LMM_accuracy$contrasts)                                                           # print contrasts
- print(results_LMM_accuracy$means)                                                               # investigate means
- 
- ggplot(results_LMM_accuracy$means, aes(x=response_type, y=Mean, color=valence, group=valence)) +# plot 
-   geom_line(position = position_dodge(.3)) +
-   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
-                   position = position_dodge(.3)) +
-   ylab("Accuracy in %") +
-   xlab("Response Type") +
-   theme_bw() 
+ df4anova$subject <- factor(df4anova$subject)                              # create factors response_type and word_valence and reorder factor levels! (this is important, because first level is used as reference factor in LMM)
+ df4anova$response_type <- factor(df4anova$response_type, levels=c("FA","FH","CI","SH"))
+ df4anova$word_valence <- factor(df4anova$word_valence)                    # automatic factor order is alphabetical (1 = neg, 2 = pos)
  
  
- 
- # check normality of residuals
- qqnorm(resid(LMM_accuracy))
- qqline(resid(LMM_accuracy))
- shapiro.test(resid(LMM_accuracy))
- 
- 
- 
- # post hoc tests for resolving main effects and interaction effects 
- summary(glht(LMM_accuracy, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
- summary(glht(LMMr_accuracy, linfct=mcp(valence = "Tukey")), test = adjusted("holm"))
- LMM_accuracy_posthoc_priming <- emmeans(LMM_accuracy, ~ valence|response_type, adjust="tukey")
- pairs(LMM_accuracy_posthoc_priming) 
- 
- 
- 
- 
- 
- 
- #####################    linear mixed models    ####################################
- #####################          GNG (RT)         #################################### 
- 
- # prepare master_GNG for single trial analysis: ecxlude incorrect responses, misses, wrong keys; turn relevant variables in factors; for LMM_GNG_rt also remove CI
- master_GNG$response_type <- factor(master_GNG$response_type, levels=c("FA","FH","CI","SH")) # reorder factor levels! (this is important, because first level is used as reference factor in LMM)
- master_GNG$number <- factor(master_GNG$number)  
- master_GNG_rt <- subset(master_GNG,t_resp <= 44)
- 
- 
- 
- # calculate LMM for rt and plot
- LMM_GNG_rt <- lmer(t_rt ~ response_type + (1|number), data=master_GNG_rt)                    # possibly add REML = FALSE? 
- anova(LMM_GNG_rt)                                                                            # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
- results_LMM_GNG_rt <- analyze(LMM_GNG_rt)                                                    # print results
- print(results_LMM_GNG_rt)
- results_LMM_GNG_rt <- get_contrasts(LMM_GNG_rt, "response_type")                             # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
- print(results_LMM_GNG_rt$contrasts)                                                          # print contrasts
- print(results_LMM_GNG_rt$means)                                                              # investigate means
- 
- ggplot(results_LMM_GNG_rt$means, aes(x=response_type, y=Mean, color=response_type)) +        # plot 
-   geom_line(position = position_dodge(.3)) +
-   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
-                   position = position_dodge(.3)) +
-   ylab("Response Time in ms") +
-   xlab("Response Type") +
-   theme_bw()
- 
- 
- # post hoc tests for resolving main effect 
- summary(glht(LMM_GNG_rt, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
- 
- 
- 
- 
-
- # accumulate data for LMM accuracy
- df4GNG_percent <-   reshape(data = df4save[,c(1,46:49)], 
-                                   direction = "long",
-                                   varying = list(c("GNG_percent_FA","GNG_percent_FH","GNG_percent_CI","GNG_percent_SH")),
-                                   v.names = c("percent"),
-                                   idvar = "number",
-                                   timevar = "condition",
-                                   times = c("FA","FH","CI","SH")
+ # calculate ANOVA with ezANOVA for rt -> gives same result as SPSS :)
+ anova_rt <- ezANOVA(data = df4anova, 
+                     dv = .(rt), 
+                     wid = .(subject), 
+                     within = .(response_type, word_valence), 
+                     detailed = TRUE
  )
  
- row.names(df4GNG_percent) <- NULL
- df4GNG_percent <- df4GNG_percent[sort.list(df4GNG_percent$number),]                            # sort df by subject
+ # calculate ANOVA with ezANOVA for accuracy -> gives same result as SPSS :)
+ anova_accuracy <- ezANOVA(data = df4anova, 
+                           dv = .(accuracy), 
+                           wid = .(subject), 
+                           within = .(response_type, word_valence), 
+                           detailed = TRUE)
  
- df4GNG_percent$number <- factor(df4GNG_percent$number)                                         # create factors
- df4GNG_percent$condition <- factor(df4GNG_percent$condition)
+ 
+ # post hoc comparison: when calculating within-subject ANOVAs, no direct post hoc test is possible; I can only run paitwise t-tests with corresponding adjustment (e.g. Holm, which is better than Bonferroni)
+ anova_rt_posthoc_response_type <- pairwise.t.test(df4anova$rt,df4anova$response_type,p.adjust.method="holm")
+ anova_rt_posthoc_word_valence <- pairwise.t.test(df4anova$rt,df4anova$word_valence,p.adjust.method="holm") 
+ anova_rt_posthoc_priming <- pairwise.t.test(df4anova$rt,df4anova$condition,p.adjust.method="holm") 
+ 
+ anova_accuracy_posthoc_response_type <- pairwise.t.test(df4anova$accuracy,df4anova$response_type,p.adjust.method="holm")
+ anova_accuracy_posthoc_word_valence <- pairwise.t.test(df4anova$accuracy,df4anova$word_valence,p.adjust.method="holm") 
+ anova_accuracy_posthoc_priming <- pairwise.t.test(df4anova$accuracy,df4anova$condition,p.adjust.method="holm") 
  
  
  
- # calculate LMM for percent and plot
- LMM_GNG_percent <- lmer(percent ~ condition + (1|number), data=df4GNG_percent)                 # possibly add REML = FALSE?
- anova(LMM_GNG_percent)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
- results_LMM_GNG_percent <- analyze(LMM_GNG_percent)                                            # print results
- print(results_LMM_GNG_percent)
- results_LMM_GNG_percent <- get_contrasts(LMM_GNG_percent, "condition")                         # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
- print(results_LMM_GNG_percent$contrasts)                                                       # print contrasts
- print(results_LMM_GNG_percent$means)                                                           # investigate means
+ 
+ 
+ #####################         ANOVA         ####################################
+ #####################     GNG (for rt)      #################################### 
+ 
+ 
+ # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by reshaping existing data frame
+ df4anova_GNG_rt <-   reshape(data = df4save[,c(1,37:39)], 
+                              direction = "long",
+                              varying = list(c("GNG_mean_FA","GNG_mean_FH","GNG_mean_SH")),
+                              v.names = c("rt"),
+                              idvar = "subject",
+                              timevar = "condition",
+                              times = c("FA","FH","SH"))
+ 
+ row.names(df4anova_GNG_rt) <- NULL
+ df4anova_GNG_rt <- df4anova_GNG_rt[sort.list(df4anova_GNG_rt$subject),]                        # sort df by subject
+ 
+ df4anova_GNG_rt$subject <- factor(df4anova_GNG_rt$subject)                                     # create factors
+ df4anova_GNG_rt$condition <- factor(df4anova_GNG_rt$condition)
+ 
+ 
+ # calculate ANOVA with ezANOVA for rt -> gives same result as SPSS :)
+ anova_GNG_rt <- ezANOVA(data = df4anova_GNG_rt, 
+                         dv = .(rt), 
+                         wid = .(subject), 
+                         within = .(condition), 
+                         detailed = TRUE)
+ 
+ 
+ # post hoc comparison: when calculating within-subject ANOVAs, no direct post hoc test is possible; I can only run paitwise t-tests with corresponding adjustment (e.g. Holm, which is better than Bonferroni)
+ anova_GNG_rt_posthoc_response_type <- pairwise.t.test(df4anova_GNG_rt$rt,df4anova_GNG_rt$condition,p.adjust.method="holm")
+ 
+ 
+ 
+ #####################    ANOVA SCR and   ####################################
+ #####################     GNG percent    #################################### 
+ 
+ 
+ # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by reshaping existing data frame
+ df4anova_GNG_scr <-   reshape(data = df4save[,c(1,46:49,51:54)], 
+                               direction = "long",
+                               varying = list(c("GNG_percent_FA","GNG_percent_FH","GNG_percent_CI","GNG_percent_SH"),c("mean_SCR_after_FA","mean_SCR_after_FH","mean_SCR_after_CI","mean_SCR_after_SH")),
+                               v.names = c("percent", "SCR"),
+                               idvar = "subject",
+                               timevar = "condition",
+                               times = c("FA","FH","CI","SH")
+ )
+ 
+ row.names(df4anova_GNG_scr) <- NULL
+ df4anova_GNG_scr <- df4anova_GNG_scr[sort.list(df4anova_GNG_scr$subject),]                        # sort df by subject
+ 
+ df4anova_GNG_scr$subject <- factor(df4anova_GNG_scr$subject)                                          # create factors
+ df4anova_GNG_scr$condition <- factor(df4anova_GNG_scr$condition)
+ 
+ 
+ 
+ 
+ # calculate ANOVA with ezANOVA for percent responses GNG
+ anova_GNG_percent <- ezANOVA(data = df4anova_GNG_scr, 
+                              dv = .(percent), 
+                              wid = .(subject), 
+                              within = .(condition), 
+                              detailed = TRUE)
+ 
+ 
+ # post hoc comparison: when calculating within-subject ANOVAs, no direct post hoc test is possible; I can only run paitwise t-tests with corresponding adjustment (e.g. Holm, which is better than Bonferroni)
+ anova_GNG_percent_posthoc_response_type <- pairwise.t.test(df4anova_GNG_scr$percent,df4anova_GNG_scr$condition,p.adjust.method="holm")
+ 
+ 
+ 
+ 
+ #only execute this because SCR of last subjects not exported yet
+ df4anova_GNG_scr <- df4anova_GNG_scr[df4anova_GNG_scr$number < 20,]
+ df4anova_GNG_scr$subject <- factor(df4anova_GNG_scr$subject)
+ 
+ 
+ # calculate ANOVA with ezANOVA for SCR
+ anova_GNG_SCR <- ezANOVA(data = df4anova_GNG_scr, 
+                          dv = .(SCR), 
+                          wid = .(subject), 
+                          within = .(condition), 
+                          detailed = TRUE)
+ 
+ 
+ 
+ # post hoc comparison: when calculating within-subject ANOVAs, no direct post hoc test is possible; I can only run paitwise t-tests with corresponding adjustment (e.g. Holm, which is better than Bonferroni)
+ anova_GNG_SCR_posthoc_response_type <- pairwise.t.test(df4anova_GNG_scr$SCR,df4anova_GNG_scr$condition,p.adjust.method="holm")
+ 
 
- ggplot(results_LMM_GNG_percent$means, aes(x=condition, y=Mean, color=condition)) +             # plot
-   geom_line(position = position_dodge(.3)) +
-   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher),
-                   position = position_dodge(.3)) +
-   ylab("Frequency in %") +
-   xlab("Response Type") +
-   theme_bw()
-
- 
-
- # post hoc tests for resolving main effects 
- summary(glht(LMM_GNG_percent, linfct=mcp(condition = "Tukey")), test = adjusted("holm")) 
- 
- 
  
  
  ########################################################################################
@@ -662,7 +681,7 @@ for (number in unique(master$number)){
  questionnaires$CODE <- as.numeric(substr(questionnaires$CODE,14,15))                                   # convert code to number for joining
  colnames(questionnaires) <-c("CODE", "BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")   # rename columns 
  
-
+ 
  df4correlation <- left_join(df4save,questionnaires, by = c("number" = "CODE"))
  df4correlation <- df4correlation[,c("number","mean_priming_overall", "mean_priming_after_FA", "mean_priming_after_FH","mean_SCR_after_FA", "BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability")]   # only keep relevant columns 
  
@@ -678,135 +697,324 @@ for (number in unique(master$number)){
  
  
  
- # Template for plotting significant interactions
- ggplot(df4correlation, aes (x= XXXX, y = YYYY)) +
+ # Template for plotting significant correlations
+ ggplot(df4correlation, aes (x= mean_priming_after_FA, y = TCI_Total)) +
    geom_point(color="mediumblue", size=3) +
    geom_smooth(method=lm, se=FALSE, color="limegreen", size = 1) +
    ggtitle("Zusammenhang XXXX und PYYYY") +
-   labs(x="XXXX", y = "YYYY") +
-   theme(axis.title = element_text(size = 15, hjust = 0.5)) + 
+   labs(x="Prim", y = "YYYY") +
+   theme(axis.title = element_text(size = 15, hjust = 0.5)) +
    theme(axis.text=element_text(size=12)) +
    theme(legend.title=element_text(size=15)) +
    theme(legend.text=element_text(size=12)) +
-   theme(plot.title = element_text(size = 17, hjust = 0.5)) 
+   theme(plot.title = element_text(size = 17, hjust = 0.5))
  
  
  
  
  
- 
- 
- 
- ########################################################################
- ################## CONTINUE HERE!!!!!!!!!!!!!!!!!!!!!!!!!
- ########################################################################
- 
- 
- 
- ########################################################################
- ##############################SCR#######################################
- ########################################################################
- ########################################################################
- 
- 
- #############model so far not correct! use correct predictors!
- 
- 
- # exclude trials with error in word or followed by trial with error in GNG or word
- master_scr$exclude <- FALSE
- 
- for (i in 1:(nrow(master_scr)-1)) {
-   current_row <- master_scr[i,]
-   next_row <- master_scr[(i+1),]
-   if ((next_row$t_resp %in% c(43,44,48,49) | next_row$w_resp %in% c(53,54,57,58))) {      # exclude trials followed by false alarm or wrong key or by incorrect word categorization or wrong key
-     print(paste(i, ": sdfsafsdf"))
-     master_scr[i,]$exclude <- TRUE
-   }     
- }
- master_scr <- master_scr[(master_scr$exclude == FALSE),]
- 
- 
- # exclude trials with error in word or miss/wrong key in GNG 
- master_scr <- subset(master_scr,w_resp <= 52 & t_resp <= 46)
- 
- 
- # log transform SCR
- master_scr$DDA.AmpSum.TarResp <- log(master_scr$DDA.AmpSum.TarResp+1)
- 
- 
- # calculate LMM for SCR and plot
- model_lmer_SCR <- lmer(DDA.AmpSum.TarResp ~ response_type + response_type * valence * w_rt + (1|number), data=master_scr)       # possibly add REML = FALSE?
- anova(model_lmer_SCR)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
- results_model_lmer_SCR <- analyze(model_lmer_SCR)                                              # print results
- print(results_model_lmer_SCR)
- results_model_lmer_SCR <- get_contrasts(model_lmer_SCR, "response_type * valence")             # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
- print(results_model_lmer_SCR$contrasts)                                                       # print contrasts
- print(results_model_lmer_SCR$means)                                                           # investigate means
- 
- 
- 
- ggplot(results_model_lmer_SCR$means, aes(x=response_type, y=Mean, color=valence, group=valence)) +    # plot
-   geom_line(position = position_dodge(.3)) +
-   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher),
-                   position = position_dodge(.3)) +
-   ylab("SCR in log(Microsiemens)") +
-   xlab("Response Type") +
-   theme_bw()
- 
- # resolve main effects
- summary(glht(model_lmer_SCR, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
- # post hoc tests for resolving interaction effects 
- lmer_scr_posthoc <- emmeans(model_lmer_SCR, ~ valence|response_type, adjust="tukey")    # compare word valence within each level of response_type
- pairs(lmer_SCR_posthoc) 
- 
- 
- 
- # try if SCR to errors is predicted by w_rt
- 
- master_scr_try <- subset(master_scr, t_resp == 43 | t_resp == 44 )
- master_scr_try$DDA.AMP.z_score <- log(master_scr_try$DDA.AMP.z_score+1)
- 
- 
- model_lmer_SCR_try <- lmer(DDA.AmpSum.TarResp ~ valence + valence * w_rt + (1|number), data=master_scr_try)       # possibly add REML = FALSE?
- anova(model_lmer_SCR_try)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
- results_model_lmer_SCR_try <- analyze(model_lmer_SCR_try)                                              # print results
- print(results_model_lmer_SCR_try)
- results_model_lmer_SCR_try <- get_contrasts(model_lmer_SCR_try, "response_type * valence")             # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
- print(results_model_lmer_SCR_try$contrasts)                                                       # print contrasts
- print(results_model_lmer_SCR_try$means)   
- 
- 
- master_scr_try2 <- subset(master_scr, (t_resp == 43 | t_resp == 44) & w_resp == 51)
- cor.test(master_scr_try2$DDA.AmpSum.TarResp,master_scr_try2$w_rt)
- 
- 
- 
- master_scr_try$valence <- factor(master_scr_try$valence)
- ggplot(master_scr_try, aes (x= DDA.AMP.z_score, y = w_rt.z_score, color = valence)) +
-   geom_point() +
-   geom_smooth(aes(group=master_scr_try$valence, color = valence), method=lm, se=FALSE,  size = 1)
+ # #####################    linear mixed models    ####################################
+ # #####################      words (mean RT)      #################################### 
+ # 
+ # # prepare master_words for single trial analysis: exclude incorrect word responses, misses, wrong keys; create column condition; turn relevant variables in factors
+ # master_words <- subset(master_words,w_resp <= 52 & t_resp <= 46)
+ # master_words$condition <- paste(master_words$valence,"_after_",master_words$response_type)
+ # master_words$response_type <- factor(master_words$response_type, levels=c("FA","FH","CI","SH"))   # reorder factor levels! (this is important, because first level is used as reference factor in LMM)
+ # master_words$valence <- factor(master_words$valence)                                              # automatic factor order is alphabetical (1 = neg, 2 = pos)
+ # master_words$number <- factor(master_words$number)  
+ # 
+ # # set contrasts
+ # contrasts(master_words$response_type) <- contr.sdif(4) 
+ # contrasts(master_words$valence) <- contr.sdif(2) 
+ # 
+ # 
+ # 
+ # # calculate LMM for rt and plot
+ # emm_options(pbkrtest.limit = 9400)
+ # emm_options(lmerTest.limit = 9400) # due to warning D.f. calculations have been disabled because the number of observations exceeds 3000.To enable adjustments, set emm_options(pbkrtest.limit = 5866)
+ # 
+ # LMM_rt <- lmer(w_rt ~ master_words$response_type * valence + (1|number), data=master_words, REML = FALSE)       
+ # anova(LMM_rt)                                                                                     # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+ # results_LMM_rt <- analyze(LMM_rt)                                                                 # print results
+ # print(results_LMM_rt)
+ # results_LMM_rt <- get_contrasts(LMM_rt, "response_type * valence")                                # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+ # print(results_LMM_rt$contrasts)                                                                   # print contrasts
+ # print(results_LMM_rt$means)                                                                       # investigate means
+ # 
+ # ggplot(results_LMM_rt$means, aes(x=response_type, y=Mean, color=valence, group=valence)) +        # plot
+ #   geom_line(position = position_dodge(.3)) +
+ #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher),
+ #                   position = position_dodge(.3)) +
+ #   ylab("Response Time in ms") +
+ #   xlab("Response Type") +
+ #   theme_bw()
+ # 
+ # 
+ # # check normality of residuals
+ # qqnorm(resid(LMM_rt))
+ # qqline(resid(LMM_rt))
+ # shapiro.test(resid(LMM_rt))
+ # 
+ # 
+ # 
+ # # post hoc tests for resolving main effects and interaction effects 
+ # summary(glht(LMM_rt, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
+ # summary(glht(LMM_rt, linfct=mcp(valence = "Tukey")), test = adjusted("holm"))                   # same result can be obtained by lmer_rt_posthoc_response_type <- emmeans(model_lmer_rt, ~ word_valence);;pairs(lmer_rt_posthoc_response_type)
+ # LMM_rt_posthoc_priming <- emmeans(LMM_rt, ~ valence|response_type, adjust="tukey")              # compare word valence within each level of response_type
+ # pairs(LMM_rt_posthoc_priming) 
+ # 
+ # 
+ # 
+ # 
+ # 
+ # #####################    linear mixed models    ####################################
+ # #####################     words (Accuracy)      #################################### 
+ # 
+ # # accumulate data for LMM accuracy
+ # df4accuracy <-   reshape(data = df4save[,c(1:9,29:36)], 
+ #                       direction = "long",
+ #                       varying = list(c("mean_neg_after_FA","mean_pos_after_FA","mean_neg_after_FH","mean_pos_after_FH","mean_neg_after_CI","mean_pos_after_CI" ,"mean_neg_after_SH","mean_pos_after_SH"),c("percent_correct_neg_after_FA", "percent_correct_pos_after_FA","percent_correct_neg_after_FH","percent_correct_pos_after_FH","percent_correct_neg_after_CI","percent_correct_pos_after_CI","percent_correct_neg_after_SH","percent_correct_pos_after_SH")),
+ #                       v.names = c("rt","accuracy"),
+ #                       idvar = "number",
+ #                       timevar = "condition",
+ #                       times = c("neg_after_FA","pos_after_FA","neg_after_FH","pos_after_FH","neg_after_CI","pos_after_CI","neg_after_SH","pos_after_SH")
+ # )
+ # 
+ # row.names(df4accuracy) <- NULL
+ # df4accuracy <- df4accuracy[sort.list(df4accuracy$number),]                                      # sort df by subject
+ # 
+ # df4accuracy$response_type <- substr(df4accuracy$condition, 11, 12)                              # create columns needed as factors           
+ # df4accuracy$valence <- substr(df4accuracy$condition, 1, 3)
+ # 
+ # df4accuracy$number <- factor(df4accuracy$number)                                 
+ # df4accuracy$response_type <- factor(df4accuracy$response_type, levels=c("FA","FH","CI","SH"))   # create factors response_type and reorder factor levels! (this is important, because first level is used as reference factor in LMM)
+ # df4accuracy$valence <- factor(df4accuracy$valence)                                              # automatic factor order is alphabetical (1 = neg, 2 = pos)
+ # 
+ # 
+ # # set contrasts
+ # contrasts(df4accuracy$response_type) <- contr.sdif(4) 
+ # contrasts(df4accuracy$valence) <- contr.sdif(2) 
+ # 
+ # 
+ # # calculate LMM for accuracy and plot  
+ # LMM_accuracy <- lmer(accuracy ~ response_type * valence + (1|number), data=df4accuracy, REML = FALSE)         
+ # anova(LMM_accuracy)                                                                             # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+ # results_LMM_accuracy <- analyze(LMM_accuracy)                                                   # print results
+ # print(results_LMM_accuracy)
+ # results_LMM_accuracy <- get_contrasts(LMM_accuracy, "response_type * valence")                  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+ # print(results_LMM_accuracy$contrasts)                                                           # print contrasts
+ # print(results_LMM_accuracy$means)                                                               # investigate means
+ # 
+ # ggplot(results_LMM_accuracy$means, aes(x=response_type, y=Mean, color=valence, group=valence)) +# plot 
+ #   geom_line(position = position_dodge(.3)) +
+ #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+ #                   position = position_dodge(.3)) +
+ #   ylab("Accuracy in %") +
+ #   xlab("Response Type") +
+ #   theme_bw() 
+ # 
+ # 
+ # 
+ # # check normality of residuals
+ # qqnorm(resid(LMM_accuracy))
+ # qqline(resid(LMM_accuracy))
+ # shapiro.test(resid(LMM_accuracy))
+ # 
+ # 
+ # 
+ # # post hoc tests for resolving main effects and interaction effects 
+ # summary(glht(LMM_accuracy, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
+ # summary(glht(LMM_accuracy, linfct=mcp(valence = "Tukey")), test = adjusted("holm"))
+ # LMM_accuracy_posthoc_priming <- emmeans(LMM_accuracy, ~ valence|response_type, adjust="tukey")
+ # pairs(LMM_accuracy_posthoc_priming) 
+ # 
+ # 
+ # 
+ # 
+ # 
+ # 
+ # #####################    linear mixed models    ####################################
+ # #####################          GNG (RT)         #################################### 
+ # 
+ # # prepare master_GNG for single trial analysis: ecxlude incorrect responses, misses, wrong keys; turn relevant variables in factors; for LMM_GNG_rt also remove CI
+ # master_GNG$response_type <- factor(master_GNG$response_type, levels=c("FA","FH","CI","SH")) # reorder factor levels! (this is important, because first level is used as reference factor in LMM)
+ # master_GNG$number <- factor(master_GNG$number)  
+ # master_GNG_rt <- subset(master_GNG,t_resp <= 44)
+ # 
+ # # set contrasts
+ # contrasts(master_GNG$response_type) <- contr.sdif(4) 
+ # 
+ # 
+ # 
+ # # calculate LMM for rt and plot
+ # LMM_GNG_rt <- lmer(t_rt ~ response_type + (1|number), data=master_GNG_rt, REML = FALSE)                     
+ # anova(LMM_GNG_rt)                                                                            # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+ # results_LMM_GNG_rt <- analyze(LMM_GNG_rt)                                                    # print results
+ # print(results_LMM_GNG_rt)
+ # results_LMM_GNG_rt <- get_contrasts(LMM_GNG_rt, "response_type")                             # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
+ # print(results_LMM_GNG_rt$contrasts)                                                          # print contrasts
+ # print(results_LMM_GNG_rt$means)                                                              # investigate means
+ # 
+ # ggplot(results_LMM_GNG_rt$means, aes(x=response_type, y=Mean, color=response_type)) +        # plot 
+ #   geom_line(position = position_dodge(.3)) +
+ #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+ #                   position = position_dodge(.3)) +
+ #   ylab("Response Time in ms") +
+ #   xlab("Response Type") +
+ #   theme_bw()
+ # 
+ # 
+ # # post hoc tests for resolving main effect 
+ # summary(glht(LMM_GNG_rt, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
+ # 
+ # 
+ # 
+ # 
+ # 
+ # # accumulate data for LMM accuracy
+ # df4GNG_percent <-   reshape(data = df4save[,c(1,46:49)], 
+ #                                   direction = "long",
+ #                                   varying = list(c("GNG_percent_FA","GNG_percent_FH","GNG_percent_CI","GNG_percent_SH")),
+ #                                   v.names = c("percent"),
+ #                                   idvar = "number",
+ #                                   timevar = "condition",
+ #                                   times = c("FA","FH","CI","SH")
+ # )
+ # 
+ # row.names(df4GNG_percent) <- NULL
+ # df4GNG_percent <- df4GNG_percent[sort.list(df4GNG_percent$number),]                            # sort df by subject
+ # 
+ # df4GNG_percent$number <- factor(df4GNG_percent$number)                                         # create factors
+ # df4GNG_percent$condition <- factor(df4GNG_percent$condition)
+ # 
+ # 
+ # # set contrasts
+ # contrasts(df4GNG_percent$condition) <- contr.sdif(4) 
+ # 
+ # 
+ # 
+ # # calculate LMM for percent and plot
+ # LMM_GNG_percent <- lmer(percent ~ condition + (1|number), data=df4GNG_percent, REML = FALSE)                
+ # anova(LMM_GNG_percent)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+ # results_LMM_GNG_percent <- analyze(LMM_GNG_percent)                                            # print results
+ # print(results_LMM_GNG_percent)
+ # results_LMM_GNG_percent <- get_contrasts(LMM_GNG_percent, "condition")                         # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
+ # print(results_LMM_GNG_percent$contrasts)                                                       # print contrasts
+ # print(results_LMM_GNG_percent$means)                                                           # investigate means
+ # 
+ # ggplot(results_LMM_GNG_percent$means, aes(x=condition, y=Mean, color=condition)) +             # plot
+ #   geom_line(position = position_dodge(.3)) +
+ #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher),
+ #                   position = position_dodge(.3)) +
+ #   ylab("Frequency in %") +
+ #   xlab("Response Type") +
+ #   theme_bw()
+ # 
+ # 
+ # 
+ # # post hoc tests for resolving main effects 
+ # summary(glht(LMM_GNG_percent, linfct=mcp(condition = "Tukey")), test = adjusted("holm")) 
+ # 
+ # 
+ # 
+ # 
+ # 
+ # ########################################################################
+ # ##############################SCR#######################################
+ # ########################################################################
+ # ########################################################################
+ # 
+ # # exclude CI and SH, exclude trials with outlier or error in word or miss/wrong key in GNG 
+ # master_scr <- subset(master_scr,w_resp <= 52 & t_resp <= 46 & outlier_words == FALSE & (t_resp == 41 | t_resp == 43 | t_resp == 44))
+ # 
+ # 
+ # # log transform w_rt
+ # master_scr$w_rt_log <- log(master_scr$w_rt)
+ # 
+ # 
+ # # set contrasts for fixed effects
+ # master_scr$response_type <- as.factor(master_scr$response_type)
+ # master_scr$valence <- as.factor(master_scr$valence)
+ # contrasts(master_scr$response_type) <- contr.sdif(2) 
+ # contrasts(master_scr$valence) <- contr.sdif(2) 
+ # 
+ # 
+ # 
+ # # calculate LMM for SCR and plot (does not converge)
+ # model_lmer_SCR <- lmer(DDA.AMP.log ~ response_type * valence * w_rt_log + (1+ response_type * valence * w_rt_log|number)  + (w_rt_log|word), data=master_scr, REML = FALSE)       
+ # anova(model_lmer_SCR)                                                                          # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+ # results_model_lmer_SCR <- analyze(model_lmer_SCR)                                              # print results
+ # print(results_model_lmer_SCR)
+ # results_model_lmer_SCR <- get_contrasts(model_lmer_SCR, "response_type * valence")             # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+ # print(results_model_lmer_SCR$contrasts)                                                        # print contrasts
+ # print(results_model_lmer_SCR$means)                                                            # investigate means
+ # 
+ # 
+ # 
+ # # try if SCR to errors is predicted by w_rt_log
+ # master_scr_FA <- subset(master_scr, t_resp == 43 | t_resp == 44)
+ # 
+ # # set contrasts
+ # contrasts(master_scr_FA$valence) <- contr.sdif(2) 
+ # 
+ # model_lmer_SCR_FA <- lmer(DDA.AMP.log ~ valence * w_rt_log + (1|number), data=master_scr_FA, REML = FALSE)       
+ # anova(model_lmer_SCR_FA)                                                                      # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+ # results_model_lmer_SCR_FA <- analyze(model_lmer_SCR_FA)                                       # print results
+ # print(results_model_lmer_SCR_FA)
+ # results_model_lmer_SCR_FA <- get_contrasts(model_lmer_SCR_FA, "valence*w_rt_log")             # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+ # print(results_model_lmer_SCR_FA$contrasts)                                                    # print contrasts
+ # print(results_model_lmer_SCR_FA$means)   
+ # 
+ # 
+ # 
+ # 
+ # # try to calculate correlation (use log transformed and z standardized SCR and log transformed rt)
+ # master_scr_FA_neg <- subset(master_scr, (t_resp == 43 | t_resp == 44) & w_resp == 51)
+ # master_scr_FA_neg$w_rt_log <- scale(master_scr_FA_neg$w_rt_log, center = TRUE, scale = TRUE)
+ # cor.test(master_scr_FA_neg$DDA.AMP.z_scorelog,master_scr_FA_neg$w_rt_log)
+ # 
+ # ggplot(master_scr_FA_neg, aes (x= DDA.AMP.z_scorelog, y = w_rt_log)) +
+ #   geom_point(color="mediumblue", size=3) +
+ #   geom_smooth(method=lm, se=FALSE, color="limegreen", size = 1) +
+ #   ggtitle("Zusammenhang SCR und w_rt_log") +
+ #   labs(x="SCR", y = "w_rt_log") +
+ #   theme(axis.title = element_text(size = 15, hjust = 0.5)) + 
+ #   theme(axis.text=element_text(size=12)) +
+ #   theme(legend.title=element_text(size=15)) +
+ #   theme(legend.text=element_text(size=12)) +
+ #   theme(plot.title = element_text(size = 17, hjust = 0.5)) 
+ # 
+ # 
+ # 
+ # 
+ # # Check whether SCR differs between FA and FH calculate LMM for SCR and plot 
+ # model_lmer_SCR <- lmer(DDA.AMP.log ~ response_type + (1|number), data=master_scr, REML = FALSE)      
+ # anova(model_lmer_SCR)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+ # results_model_lmer_SCR <- analyze(model_lmer_SCR)                                             # print results
+ # print(results_model_lmer_SCR)
+ # results_model_lmer_SCR <- get_contrasts(model_lmer_SCR, "response_type")                      # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+ # print(results_model_lmer_SCR$contrasts)                                                       # print contrasts
+ # print(results_model_lmer_SCR$means)                                                           # investigate means
+ # 
+ # 
+ # 
+ # ggplot(results_model_lmer_SCR$means, aes(x=response_type, y=Mean)) +    # plot
+ #   geom_line(position = position_dodge(.3)) +
+ #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher),
+ #                   position = position_dodge(.3)) +
+ #   ylab("SCR in log(Microsiemens)") +
+ #   xlab("Response Type") +
+ #   theme_bw()
+ # 
+ # 
+ # summary(glht(model_lmer_SCR, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
+ # 
+ # 
+ # 
+ # 
 
  
  
  
- # Check SCR in different conditions calculate LMM for SCR and plot
- model_lmer_SCR <- lmer(DDA.AmpSum.TarResp ~ response_type + (1|number), data=master_scr)      # possibly add REML = FALSE?
- anova(model_lmer_SCR)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
- results_model_lmer_SCR <- analyze(model_lmer_SCR)                                             # print results
- print(results_model_lmer_SCR)
- results_model_lmer_SCR <- get_contrasts(model_lmer_SCR, "response_type")                      # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
- print(results_model_lmer_SCR$contrasts)                                                       # print contrasts
- print(results_model_lmer_SCR$means)                                                           # investigate means
  
  
- 
- ggplot(results_model_lmer_SCR$means, aes(x=response_type, y=Mean)) +    # plot
-   geom_line(position = position_dodge(.3)) +
-   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher),
-                   position = position_dodge(.3)) +
-   ylab("SCR in log(Microsiemens)") +
-   xlab("Response Type") +
-   theme_bw()
- 
- 
- summary(glht(model_lmer_SCR, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
