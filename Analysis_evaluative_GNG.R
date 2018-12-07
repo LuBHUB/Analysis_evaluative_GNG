@@ -408,20 +408,20 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
  
 
 
-  # calculate ANOVA with aov for rt -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) AND post hoc tests are NOT possible) 
-  anova_rt <- aov(rt ~ (response_type * word_valence) + 
-                  Error(subject/(response_type * word_valence)), 
-                  data = df4anova)
-  summary(anova_rt)                                                                             # to get ANOVA output
-  
-  
-
-  
-  # calculate ANOVA with aov for accuracy -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) AND post hoc tests are NOT possible)
-  anova_accuracy <- aov(accuracy ~ (response_type * word_valence) + 
-                    Error(subject/(response_type * word_valence)), 
-                    data = df4anova)
-  summary(anova_accuracy)                                                                       # to get ANOVA output 
+  # # calculate ANOVA with aov for rt -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) AND post hoc tests are NOT possible) 
+  # anova_rt <- aov(rt ~ (response_type * word_valence) + 
+  #                 Error(subject/(response_type * word_valence)), 
+  #                 data = df4anova)
+  # summary(anova_rt)                                                                             # to get ANOVA output
+  # 
+  # 
+  # 
+  # 
+  # # calculate ANOVA with aov for accuracy -> gives same result as SPSS :) (in this option, test for sphericity (Mauchly) AND post hoc tests are NOT possible)
+  # anova_accuracy <- aov(accuracy ~ (response_type * word_valence) + 
+  #                   Error(subject/(response_type * word_valence)), 
+  #                   data = df4anova)
+  # summary(anova_accuracy)                                                                       # to get ANOVA output 
   
   
   
@@ -452,79 +452,79 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
   
   # calculate LMM using lmer for rt and plot
   #### Add setting contrasts!!!!
-  model_lmer_rt <- lmer(rt ~ response_type * word_valence + (1|subject), data=df4anova)        # possibly add REML = FALSE?
-  anova(model_lmer_rt)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
-  results_model_lmer_rt <- analyze(model_lmer_rt)                                              # print results
-  print(results_model_lmer_rt)
-  results_model_lmer_rt <- get_contrasts(model_lmer_rt, "response_type * word_valence")        # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
-  print(results_model_lmer_rt$contrasts)                                                       # print contrasts
-  print(results_model_lmer_rt$means)                                                           # investigate means
-
-  ggplot(results_model_lmer_rt$means, aes(x=response_type, y=Mean, color=word_valence, group=word_valence)) +    # plot 
-    geom_line(position = position_dodge(.3)) +
-    geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
-                    position = position_dodge(.3)) +
-    ylab("Response Time in ms") +
-    xlab("Response Type") +
-    theme_bw()
-  
-  # check normality of residuals
-  qqnorm(resid(model_lmer_rt))
-  qqline(resid(model_lmer_rt))
-  shapiro.test(resid(model_lmer_rt))
-  
-  
-  # calculate LMM using lmer for accuracy and plot 
-  model_lmer_accuracy <- lmer(accuracy ~ response_type * word_valence + (1|subject), data=df4anova)  # possibly add REML = FALSE?
-  anova(model_lmer_accuracy)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
-  results_model_lmer_accuracy <- analyze(model_lmer_accuracy)                                        # print results
-  print(results_model_lmer_accuracy)
-  results_model_lmer_accuracy <- get_contrasts(model_lmer_accuracy, "response_type * word_valence")  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
-  print(results_model_lmer_accuracy$contrasts)                                                       # print contrasts
-  print(results_model_lmer_accuracy$means)                                                           # investigate means
-  
-  ggplot(results_model_lmer_accuracy$means, aes(x=response_type, y=Mean, color=word_valence, group=word_valence)) +    # plot 
-    geom_line(position = position_dodge(.3)) +
-    geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
-                    position = position_dodge(.3)) +
-    ylab("Accuracy in %") +
-    xlab("Response Type") +
-    theme_bw() 
-
-  
-  # check normality of residuals
-  qqnorm(resid(model_lmer_accuracy))
-  qqline(resid(model_lmer_accuracy))
-  shapiro.test(resid(model_lmer_accuracy))
-  
-  
-  # calculate LMM using lme for rt
-  model_lme_rt <- lme(rt ~ response_type * word_valence, random =~1|subject, data=df4anova)
-  anova(model_lme_rt)
-  summary(model_lme_rt)
-  
-  
-
-  # calculate LMM using lme for accuracy
-  model_lme_accuracy <- lme(accuracy ~ response_type * word_valence, random =~1|subject, data=df4anova)
-  anova(model_lme_accuracy)
-  summary(model_lme_accuracy)
-  
-  
-  
-  # post hoc tests for resolving main effects 
-  summary(glht(model_lmer_rt, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
-  summary(glht(model_lmer_rt, linfct=mcp(word_valence = "Tukey")), test = adjusted("holm"))   # same result can be obtained by lmer_rt_posthoc_response_type <- emmeans(model_lmer_rt, ~ word_valence);;pairs(lmer_rt_posthoc_response_type)
- 
-  summary(glht(model_lmer_accuracy, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
-  summary(glht(model_lmer_accuracy, linfct=mcp(word_valence = "Tukey")), test = adjusted("holm"))
-  
-  # post hoc tests for resolving interaction effects 
-  lmer_rt_posthoc_priming <- emmeans(model_lmer_rt, ~ word_valence|response_type, adjust="tukey")    # compare word valence within each level of response_type
-  pairs(lmer_rt_posthoc_priming) 
-   
-  lmer_accuracy_posthoc_priming <- emmeans(model_lmer_accuracy, ~ word_valence|response_type, adjust="tukey")
-  pairs(lmer_accuracy_posthoc_priming) 
+  # model_lmer_rt <- lmer(rt ~ response_type * word_valence + (1|subject), data=df4anova)        # possibly add REML = FALSE?
+  # anova(model_lmer_rt)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+  # results_model_lmer_rt <- analyze(model_lmer_rt)                                              # print results
+  # print(results_model_lmer_rt)
+  # results_model_lmer_rt <- get_contrasts(model_lmer_rt, "response_type * word_valence")        # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+  # print(results_model_lmer_rt$contrasts)                                                       # print contrasts
+  # print(results_model_lmer_rt$means)                                                           # investigate means
+  # 
+  # ggplot(results_model_lmer_rt$means, aes(x=response_type, y=Mean, color=word_valence, group=word_valence)) +    # plot 
+  #   geom_line(position = position_dodge(.3)) +
+  #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+  #                   position = position_dodge(.3)) +
+  #   ylab("Response Time in ms") +
+  #   xlab("Response Type") +
+  #   theme_bw()
+  # 
+  # # check normality of residuals
+  # qqnorm(resid(model_lmer_rt))
+  # qqline(resid(model_lmer_rt))
+  # shapiro.test(resid(model_lmer_rt))
+  # 
+  # 
+  # # calculate LMM using lmer for accuracy and plot 
+  # model_lmer_accuracy <- lmer(accuracy ~ response_type * word_valence + (1|subject), data=df4anova)  # possibly add REML = FALSE?
+  # anova(model_lmer_accuracy)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+  # results_model_lmer_accuracy <- analyze(model_lmer_accuracy)                                        # print results
+  # print(results_model_lmer_accuracy)
+  # results_model_lmer_accuracy <- get_contrasts(model_lmer_accuracy, "response_type * word_valence")  # Provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
+  # print(results_model_lmer_accuracy$contrasts)                                                       # print contrasts
+  # print(results_model_lmer_accuracy$means)                                                           # investigate means
+  # 
+  # ggplot(results_model_lmer_accuracy$means, aes(x=response_type, y=Mean, color=word_valence, group=word_valence)) +    # plot 
+  #   geom_line(position = position_dodge(.3)) +
+  #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+  #                   position = position_dodge(.3)) +
+  #   ylab("Accuracy in %") +
+  #   xlab("Response Type") +
+  #   theme_bw() 
+  # 
+  # 
+  # # check normality of residuals
+  # qqnorm(resid(model_lmer_accuracy))
+  # qqline(resid(model_lmer_accuracy))
+  # shapiro.test(resid(model_lmer_accuracy))
+  # 
+  # 
+  # # calculate LMM using lme for rt
+  # model_lme_rt <- lme(rt ~ response_type * word_valence, random =~1|subject, data=df4anova)
+  # anova(model_lme_rt)
+  # summary(model_lme_rt)
+  # 
+  # 
+  # 
+  # # calculate LMM using lme for accuracy
+  # model_lme_accuracy <- lme(accuracy ~ response_type * word_valence, random =~1|subject, data=df4anova)
+  # anova(model_lme_accuracy)
+  # summary(model_lme_accuracy)
+  # 
+  # 
+  # 
+  # # post hoc tests for resolving main effects 
+  # summary(glht(model_lmer_rt, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
+  # summary(glht(model_lmer_rt, linfct=mcp(word_valence = "Tukey")), test = adjusted("holm"))   # same result can be obtained by lmer_rt_posthoc_response_type <- emmeans(model_lmer_rt, ~ word_valence);;pairs(lmer_rt_posthoc_response_type)
+  # 
+  # summary(glht(model_lmer_accuracy, linfct=mcp(response_type = "Tukey")), test = adjusted("holm"))  
+  # summary(glht(model_lmer_accuracy, linfct=mcp(word_valence = "Tukey")), test = adjusted("holm"))
+  # 
+  # # post hoc tests for resolving interaction effects 
+  # lmer_rt_posthoc_priming <- emmeans(model_lmer_rt, ~ word_valence|response_type, adjust="tukey")    # compare word valence within each level of response_type
+  # pairs(lmer_rt_posthoc_priming) 
+  #  
+  # lmer_accuracy_posthoc_priming <- emmeans(model_lmer_accuracy, ~ word_valence|response_type, adjust="tukey")
+  # pairs(lmer_accuracy_posthoc_priming) 
   
    
   
@@ -600,60 +600,60 @@ descriptive_statistics <- stat.desc(df4save,basic=F)
   
 
   
-  #####################    linear mixed models    ####################################
-  #####################          GNG (RT)         #################################### 
-  
-  # calculate LMM using lmer for rt and plot
-  model_lmer_GNG_rt <- lmer(rt ~ condition + (1|subject), data=df4anova_GNG_rt)                    # possibly add REML = FALSE? 
-  anova(model_lmer_GNG_rt)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
-  results_model_lmer_GNG_rt <- analyze(model_lmer_GNG_rt)                                          # print results
-  print(results_model_lmer_GNG_rt)
-  results_model_lmer_GNG_rt <- get_contrasts(model_lmer_GNG_rt, "condition")                       # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
-  print(results_model_lmer_GNG_rt$contrasts)                                                       # print contrasts
-  print(results_model_lmer_GNG_rt$means)                                                           # investigate means
-  
-  ggplot(results_model_lmer_GNG_rt$means, aes(x=condition, y=Mean, color=condition)) +             # plot 
-    geom_line(position = position_dodge(.3)) +
-    geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
-                    position = position_dodge(.3)) +
-    ylab("Response Time in ms") +
-    xlab("Response Type") +
-    theme_bw()
-  
-  
-  
-  # calculate LMM using lmer for percent and plot 
-  model_lmer_GNG_percent <- lmer(percent ~ condition + (1|subject), data=df4anova_GNG_percent)          # possibly add REML = FALSE?
-  anova(model_lmer_GNG_percent)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
-  results_model_lmer_GNG_percent <- analyze(model_lmer_GNG_percent)                                     # print results
-  print(results_model_lmer_GNG_percent)
-  results_model_lmer_GNG_percent <- get_contrasts(model_lmer_GNG_percent, "condition")                  # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
-  print(results_model_lmer_GNG_percent$contrasts)                                                       # print contrasts
-  print(results_model_lmer_GNG_percent$means)                                                           # investigate means
-  
-  ggplot(results_model_lmer_GNG_percent$means, aes(x=condition, y=Mean, color=condition)) +             # plot 
-    geom_line(position = position_dodge(.3)) +
-    geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
-                    position = position_dodge(.3)) +
-    ylab("Frequency in %") +
-    xlab("Response Type") +
-    theme_bw() 
-  
-  
-  
-  # calculate LMM using lme for rt
-  model_lme_GNG_rt <- lme(rt ~ condition, random =~1|subject, data=df4anova_GNG_rt)
-  anova(model_lme_GNG_rt)
-  summary(model_lme_GNG_rt)
-  
-  
-  
-  # calculate LMM using lme for accuracy
-  model_lme_GNG_percent <- lme(percent ~ condition, random =~1|subject, data=df4anova_GNG_percent)
-  anova(model_lme_GNG_percent)
-  summary(model_lme_GNG_percent)
-  
-  
-  # post hoc tests for resolving main effects 
-  summary(glht(model_lmer_GNG_rt, linfct=mcp(condition = "Tukey")), test = adjusted("holm"))  
-  summary(glht(model_lmer_GNG_percent, linfct=mcp(condition = "Tukey")), test = adjusted("holm"))  
+  # #####################    linear mixed models    ####################################
+  # #####################          GNG (RT)         #################################### 
+  # 
+  # # calculate LMM using lmer for rt and plot
+  # model_lmer_GNG_rt <- lmer(rt ~ condition + (1|subject), data=df4anova_GNG_rt)                    # possibly add REML = FALSE? 
+  # anova(model_lmer_GNG_rt)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+  # results_model_lmer_GNG_rt <- analyze(model_lmer_GNG_rt)                                          # print results
+  # print(results_model_lmer_GNG_rt)
+  # results_model_lmer_GNG_rt <- get_contrasts(model_lmer_GNG_rt, "condition")                       # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
+  # print(results_model_lmer_GNG_rt$contrasts)                                                       # print contrasts
+  # print(results_model_lmer_GNG_rt$means)                                                           # investigate means
+  # 
+  # ggplot(results_model_lmer_GNG_rt$means, aes(x=condition, y=Mean, color=condition)) +             # plot 
+  #   geom_line(position = position_dodge(.3)) +
+  #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+  #                   position = position_dodge(.3)) +
+  #   ylab("Response Time in ms") +
+  #   xlab("Response Type") +
+  #   theme_bw()
+  # 
+  # 
+  # 
+  # # calculate LMM using lmer for percent and plot 
+  # model_lmer_GNG_percent <- lmer(percent ~ condition + (1|subject), data=df4anova_GNG_percent)          # possibly add REML = FALSE?
+  # anova(model_lmer_GNG_percent)                                                                         # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
+  # results_model_lmer_GNG_percent <- analyze(model_lmer_GNG_percent)                                     # print results
+  # print(results_model_lmer_GNG_percent)
+  # results_model_lmer_GNG_percent <- get_contrasts(model_lmer_GNG_percent, "condition")                  # Provide the model and the factors to contrast;; by default, get_contrasts uses the Tukey method for p value adjustment; add ,adjust="none" to turn off automatic p value correction after Tucky
+  # print(results_model_lmer_GNG_percent$contrasts)                                                       # print contrasts
+  # print(results_model_lmer_GNG_percent$means)                                                           # investigate means
+  # 
+  # ggplot(results_model_lmer_GNG_percent$means, aes(x=condition, y=Mean, color=condition)) +             # plot 
+  #   geom_line(position = position_dodge(.3)) +
+  #   geom_pointrange(aes(ymin=CI_lower, ymax=CI_higher), 
+  #                   position = position_dodge(.3)) +
+  #   ylab("Frequency in %") +
+  #   xlab("Response Type") +
+  #   theme_bw() 
+  # 
+  # 
+  # 
+  # # calculate LMM using lme for rt
+  # model_lme_GNG_rt <- lme(rt ~ condition, random =~1|subject, data=df4anova_GNG_rt)
+  # anova(model_lme_GNG_rt)
+  # summary(model_lme_GNG_rt)
+  # 
+  # 
+  # 
+  # # calculate LMM using lme for accuracy
+  # model_lme_GNG_percent <- lme(percent ~ condition, random =~1|subject, data=df4anova_GNG_percent)
+  # anova(model_lme_GNG_percent)
+  # summary(model_lme_GNG_percent)
+  # 
+  # 
+  # # post hoc tests for resolving main effects 
+  # summary(glht(model_lmer_GNG_rt, linfct=mcp(condition = "Tukey")), test = adjusted("holm"))  
+  # summary(glht(model_lmer_GNG_percent, linfct=mcp(condition = "Tukey")), test = adjusted("holm"))  
