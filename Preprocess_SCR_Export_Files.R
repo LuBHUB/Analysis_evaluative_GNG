@@ -28,7 +28,7 @@ for (subject in scrfiles){                                                      
   # create new column that represents correct order of triggers within one trial
   subset_scr$order[subset_scr$Event.NID <=23]                            <-1
   subset_scr$order[subset_scr$Event.NID >=40 & subset_scr$Event.NID <=49]<-2
-  subset_scr$order[subset_scr$Event.NID >=140 ]                           <-3
+  subset_scr$order[subset_scr$Event.NID >=140]                           <-3
   subset_scr$order[subset_scr$Event.NID >=50 & subset_scr$Event.NID <=59]<-4
   
   number_chunks <- nrow(subset_scr)/4                                                              # one chunk is one trial; one trial contains 4 triggers in scr
@@ -41,7 +41,7 @@ for (subject in scrfiles){                                                      
     chunk_ordered <- chunk[order(chunk$order),]                                              # order rows in chunk by the column "order"
     chunk_line <- c(chunk_ordered[1,],chunk_ordered[2,],chunk_ordered[3,],chunk_ordered[4,]) # write correctly ordered rows in single row
     scr_ordered <- rbind(scr_ordered, chunk_line)                                            # add line to new, ordered df                
-    names(scr_ordered) <- names(chunk_line)}                                                  # necessary to prevent error that column names of the data frames do not match; if column names don't match, line is not added to the df
+    names(scr_ordered) <- names(chunk_line)}                                                 # necessary to prevent error that column names of the data frames do not match; if column names don't match, line is not added to the df
   
 
   
@@ -58,11 +58,22 @@ for (subject in scrfiles){                                                      
   scr_with_ID <- data.frame(Participant.ID=substr(subject,14,15),Trial.ID =1:nrow(scr_ordered),scr_ordered)   # create new df to add ID for each subject in first column; ID derived from letter 14 and 15 of file name
   
   
+  # IMPORTANT: assign stimulus-locked SCR values to correctly inhibited trials and trials with missing response (makes no sense to take response-locked SCR value here, because there is no response and the evaluation trigger is send late)
+  for (ind in 1:nrow(scr_with_ID)) {
+    if (scr_with_ID$Event.ID.TarResp[ind] == 45 | scr_with_ID$Event.ID.TarResp[ind]  == 46 | scr_with_ID$Event.ID.TarResp[ind]  == 47)
+    {
+      scr_with_ID$DDA.AmpSum.TarResp[ind] <- scr_with_ID$DDA.AmpSum.Tar[ind]
+      scr_with_ID$DDA.AreaSum.TarResp[ind] <- scr_with_ID$DDA.AreaSum.Tar[ind]
+    }
+  }
   
-  # keep only columns of interest
-  scr_final <- scr_with_ID[ , c("Participant.ID","Trial.ID","Event.ID.Tar","Event.ID.TarResp","DDA.AmpSum.TarResp","DDA.AreaSum.TarResp", "Event.ID.Word","Event.ID.WordResp" )]
+  
+  # keep only columns of interest (keep stimulus-locked and response-locked SCR, because for CI I need it stimulus-locked, for FA, FH, SH I need SCR response-locked)
+  scr_final <- scr_with_ID[ , c("Participant.ID","Trial.ID","Event.ID.Tar","Event.ID.TarResp","DDA.AmpSum.TarResp","DDA.AreaSum.TarResp", "Event.ID.Word","Event.ID.WordResp")]
                                                                     
 
+
+  
   
   # display progress and abort if number of trials is not 516 -> in subject 5 line added between 1400 and 1401 (trigger 57 was missing)
   message("Preprocessing done for file: ",subject,appendLF=TRUE)
@@ -71,12 +82,15 @@ for (subject in scrfiles){                                                      
     stop("Incorrect number of trials in last subject. Check which trigger is missing and add manually in export file!")}
   
   
+
   
   
   ########################     save preprocessed   ##############################
   ########################        scr data         ##############################  
-  
-  # setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/SCR_Export_Preprocessed")                              
+
+
+
+ # setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/SCR_Export_Preprocessed")                              
   write.csv(scr_final, paste("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed", subject, sep="/"))
   
 }

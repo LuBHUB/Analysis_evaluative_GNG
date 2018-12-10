@@ -357,6 +357,7 @@ for (number in unique(master$number)){
  
  
  # calculate mean SCR in conditions (some subjects contain NAs, because SCR saving was disrupted -> exclude NA for mean calculation)
+ # Remember: for CI (and for missing responses), SCR values in table are stimulus-locked to the GNG target; for FA, FH, SH the SCR values are response locked -> see script "Preprocess_SCR_Export_Files"! there I assigned stimulus-locked SCR values to correctly inhibited trials and trials with missing response (makes no sense to take response-locked SCR value in these, because there is no response and the evaluation trigger is send late)
  mean_SCR_after_FA <- mean(singleID_SCR[(singleID_SCR$t_resp == 43 | singleID_SCR$w_resp == 44) & (singleID_SCR$t_resp == 51 | singleID_SCR$w_resp == 52),]$DDA.AMP.z_scorelog,na.rm=TRUE)
  mean_SCR_after_FH <- mean(singleID_SCR[(singleID_SCR$t_resp == 41) & (singleID_SCR$t_resp == 51 | singleID_SCR$w_resp == 52),]$DDA.AMP.z_scorelog,na.rm=TRUE)
  mean_SCR_after_CI <- mean(singleID_SCR[(singleID_SCR$t_resp == 45 | singleID_SCR$w_resp == 46) & (singleID_SCR$t_resp == 51 | singleID_SCR$w_resp == 52),]$DDA.AMP.z_scorelog,na.rm=TRUE)
@@ -526,7 +527,7 @@ for (number in unique(master$number)){
    geom_bar(stat="identity", position=position_dodge(), fill = "mediumblue") +                                  # add bars, based on stats values; dodge to avoid stacked bars; change bar color
    geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
    ggtitle("Skin Conductance Response") +                                                                       # add title
-   xlab("Response Type") + ylab("Logarithmized SCR (µS)") +                                                     # label axes
+   xlab("Response Type") + ylab("Logarithmized SCR (ÂµS)") +                                                     # label axes
    theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
    theme(axis.text=element_text(size=15)) +
    theme(legend.title=element_text(size=18)) +
