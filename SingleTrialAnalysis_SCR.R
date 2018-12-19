@@ -355,12 +355,6 @@ data4mixedmodels$valence       <- factor(data4mixedmodels$valence)              
 data4mixedmodels$subjectID     <- factor(data4mixedmodels$subjectID)
 
 
-# continue from calculate SCR; check merge evaluative_GNG; old signle_trials_evaluative_GNG
-# in general: hightlight outliers in column -> keep one df after loop; for analysis exclude certain rows!
-# create reduced df only in LMM part, not here!
-# single_trial_data_SCR <- single_trial_data_SCR[(single_trial_data_SCR$exclude == FALSE),]
-# compared that script with old loop and script without scr -> results identical except from mean SCR (very small differences in mean SCR only in second position after comma, mean 0.01; reason for difference: in loop for followed_or_preceded_by_FA_or_wrong_key, GNG_invalid_rt was excluded in previous script)
-# in general: I keep df with all trials; --> different outliers only marked here; exclude them later in lmms and other analyses!
 
 
  ####################     save df4save    ##################################
@@ -374,13 +368,8 @@ data4mixedmodels$subjectID     <- factor(data4mixedmodels$subjectID)
  filename <- paste("SummaryStatisticsSingleTrial_For_",length(logfiles),"_subjects_",date_time, ".xlsx", sep = "")
  
  # write.xlsx(df4save, filename)
- # save(df4save, file = filename)
- # write.foreign(as.data.frame(df4save), "P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/data4save.txt", "P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/df4save.sps", package="SPSS")
  
- 
- #### till here: check if I need more from other scripts
- 
- 
+
  ###########################################################################
  ###########################################################################
  ###########################################################################
@@ -633,21 +622,19 @@ data4mixedmodels$subjectID     <- factor(data4mixedmodels$subjectID)
  setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study")
  questionnaires <- list.files(pattern = ".sav")                                                         # make sure that only one .sav file (= the current PEQ export) exists there!
  questionnaires <- read.spss(questionnaires, to.data.frame = TRUE)
- questionnaires <- questionnaires[, colSums(is.na(questionnaires)) != nrow(questionnaires)]             # remove columns with only NA
  questionnaires <- questionnaires[,c("CODE", "BD2SUMT0","BASO00T0","BASO01T0","BASO02T0","BASO03T0","BASO04T0","FMPO00T0","FMPO01T0","FMPO02T0","FMPO03T0","FMPO04T0","NNGO00T0","NNGO01T0","OCISUMT0", "OCIO00T0", "OCIO01T0","OCIO02T0","OCIO03T0","OCIO04T0","OCIO05T0","PANO00T0","PANO01T0","PSWSUMT0","STSSUMT0","STTSUMT0","TCISUMT0","TCIO00T0","TCIO01T0","TCIO02T0","TCIO03T0","WSTSUMT0")] # only keep relevant columns (I chose to keep sum scores instead of mean scores, because for BDI and OCi only sum scores are available and missing data are not possible because data aquired with tablet)
  questionnaires <- questionnaires[grep("behav", questionnaires$CODE), ]                                 # only keep participants from behavioral study
- 
- questionnaires$CODE <- as.numeric(substr(questionnaires$CODE,14,15))                                   # convert code to number for joining
+ questionnaires <- questionnaires[, colSums(is.na(questionnaires)) != nrow(questionnaires)]             # remove columns with only NA
+ questionnaires$CODE <- paste0(questionnaires$CODE,".txt")                                              # convert code for joining (make it identical to code in df4save)                               
  colnames(questionnaires) <-c("CODE", "BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")   # rename columns 
  
  
  df4correlation_matrix <- left_join(df4save,questionnaires, by = c("subject" = "CODE"))
+ # possibly exclude subject 14 (great outlier, that causes most correlations/trends)!!!!
  
- # exclude subject 14 (great outlier, that causes most correlations/trends)
- # df4correlation <- df4correlation[-c(14), ]
  
  # test for normality
- normality <- do.call(rbind, lapply(df4correlation_matrix, function(x) shapiro.test(x)[c("statistic", "p.value")]))
+ normality <- do.call(rbind, lapply(df4correlation_matrix[,-1], function(x) shapiro.test(x)[c("statistic", "p.value")]))
  
  
  # create correlation matrices using my function "function_correlation_matrix_with_significance_levels.R"
@@ -657,13 +644,13 @@ data4mixedmodels$subjectID     <- factor(data4mixedmodels$subjectID)
  df4Pearson_Correlation <- df4correlation_matrix[,c("mean_priming_overall", "mean_priming_after_FA", "mean_priming_after_FH","mean_SCR_after_FA", "BIS_Total","BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PST", "FMPS_PER/Total", "NEO_Neuroticism", "PANAS_Pos", "PSWQ_Total", "STAI_Trait", "TCI_Total", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability")]   # only keep relevant columns 
  method <- "pearson"
  df4correlation <- df4Pearson_Correlation
- pearson_correlations <- correlations_with_significance_level(df4Pearson_Correlation)
+ correlations_pearson <- correlations_with_significance_level(df4Pearson_Correlation)
  
  
  df4Kendall_Correlation <- df4correlation_matrix[,c("mean_priming_overall", "mean_priming_after_FA", "mean_priming_after_FH","mean_SCR_after_FA","BDI_Total", "BAS_Total", "BAS_Drive", "FMPS_PEC","FMPS_ORG","NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising","PANAS_Neg","STAI_State","TCI_Anticipatory_worry")]   # only keep relevant columns 
  method <- "kendall"
  df4correlation <- df4Kendall_Correlation
- kendall_correlations <- correlations_with_significance_level(df4Kendall_Correlation)
+ correlations_kendall <- correlations_with_significance_level(df4Kendall_Correlation)
  
  
 
