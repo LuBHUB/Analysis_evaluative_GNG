@@ -1,6 +1,6 @@
 ##### Implement necessarry changes in SCR export files for further Analysis (Experiment on Affective Priming Effect 2018) ##### 
 ##### by Luisa Balzus
-##### 11.11.2018
+##### 11.11.2018 #
 
 
 # clear environment
