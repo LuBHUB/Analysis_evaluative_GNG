@@ -1,47 +1,46 @@
-##### Implement necessarry changes in SCR export files for further Analysis (Experiment on Affective Priming Effect 2018) ##### 
-##### by Luisa Balzus
-##### 11.11.2018 #
-
-
-# clear environment
-rm(list=ls())
-
-
-
-####################     load     #######################################
-####################   scr data   #######################################
-
-# Load SCR files (Ledalab output exported as .txt) 
-scrfiles <- list.files("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export", pattern = ".txt")             # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY scr-files 
-setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export")                              
-
-
-for (subject in scrfiles){                                                                              # loop reading csv-file
-  raw_scr <- read.table(subject, header = TRUE)
-  subset_scr <- subset(raw_scr, (Event.NID >= 21 & Event.NID <= 58) |(Event.NID >= 141 & Event.NID <= 149) |(Event.NID >= 241 & Event.NID <= 249))   # only keep required markers (responses to GNG target and words)
+  ##### Implement necessary changes in SCR export files for Signle Trial Analysis of evaluative GNG task (Experiment on Affective Priming Effect 2018) ##### 
+  ##### by Luisa Balzus
+  ##### 11.11.2018 
   
   
+  # clear environment
+  rm(list=ls())
+
+
+
+  ####################   load scr data   ####################
   
-  ####################   rearrange   #######################################
-  ####################   SCR data    #######################################
+  # load SCR files (Ledalab output exported as .txt) 
+  scrfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export", pattern = ".txt")    # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY scr files 
+  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export")                              
+  
+  # loop reading SCR file, only keep required markers (responses to GNG target and words)
+  for (subject in scrfiles){                                                                                         
+    raw_scr <- read.table(subject, header = TRUE)
+    subset_scr <- subset(raw_scr, (Event.NID >= 21 & Event.NID <= 58) |(Event.NID >= 141 & Event.NID <= 149) |(Event.NID >= 241 & Event.NID <= 249))   
+    
+  
+    
+  ####################   rearrange SCR data   ####################
   
   # create new column that represents correct order of triggers within one trial
   subset_scr$order[subset_scr$Event.NID <=23]                            <-1
-  subset_scr$order[subset_scr$Event.NID >=40 & subset_scr$Event.NID <=49]<-2
-  subset_scr$order[subset_scr$Event.NID >=140]                           <-3
-  subset_scr$order[subset_scr$Event.NID >=50 & subset_scr$Event.NID <=59]<-4
+  subset_scr$order[subset_scr$Event.NID >=41 & subset_scr$Event.NID <=49]<-2
+  subset_scr$order[subset_scr$Event.NID >=141]                           <-3
+  subset_scr$order[subset_scr$Event.NID >=51 & subset_scr$Event.NID <=59]<-4
   
-  number_chunks <- nrow(subset_scr)/4                                                              # one chunk is one trial; one trial contains 4 triggers in scr
+  # one chunk is one trial, containing 4 triggers: GNG stimulus, GNG response, word stimulus, word response
+  number_chunks <- nrow(subset_scr)/4                                                                       
   scr_ordered <- data.frame()  
   
   for (i in 0:(number_chunks-1)){
     chunk_start <- 1+4*i
     chunk_end <- 4+4*i
     chunk <- subset_scr[chunk_start:chunk_end,]                                              # extract rows 1-4 of current chunk from scr data frame        
-    chunk_ordered <- chunk[order(chunk$order),]                                              # order rows in chunk by the column "order"
+    chunk_ordered <- chunk[order(chunk$order),]                                              # order rows in chunk by the column "order" (this step may not be necessary anymore, because the downsampling is now done in Ledalab; before, it was done in BVA, so that the timing information was blurred and the CI triggers occurred after the word triggers in the exported file)
     chunk_line <- c(chunk_ordered[1,],chunk_ordered[2,],chunk_ordered[3,],chunk_ordered[4,]) # write correctly ordered rows in single row
     scr_ordered <- rbind(scr_ordered, chunk_line)                                            # add line to new, ordered df                
-    names(scr_ordered) <- names(chunk_line)}                                                 # necessary to prevent error that column names of the data frames do not match; if column names don't match, line is not added to the df
+    names(scr_ordered) <- names(chunk_line)}                                                 # make sure that column names of the data frames do match; if column names don't match, line is not added to the df
   
 
   
@@ -75,7 +74,7 @@ for (subject in scrfiles){                                                      
 
   
   
-  # display progress and abort if number of trials is not 516 -> in subject 5 line added between 1400 and 1401 (trigger 57 was missing)
+  # display progress and abort if number of trials is not 516 -> in subject 5, one line manually added between 1400 and 1401 (trigger 57 was not send)
   message("Preprocessing done for file: ",subject,appendLF=TRUE)
   
   if (nrow(scr_with_ID) != 516){
@@ -85,14 +84,10 @@ for (subject in scrfiles){                                                      
 
   
   
-  ########################     save preprocessed   ##############################
-  ########################        scr data         ##############################  
+  ####################   save preprocessed scr data   ####################
 
+  write.csv(scr_final, paste("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed", subject, sep="/"))
 
-
- # setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/SCR_Export_Preprocessed")                              
-  write.csv(scr_final, paste("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed", subject, sep="/"))
-  
 }
 
 
