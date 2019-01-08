@@ -29,8 +29,8 @@ options(scipen = 999)
 ####################   log data   #######################################
 
 # Load logfiles
-logfiles <- list.files("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_behav")       # lists files in folder
-setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_behav")                        # path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
+logfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_behav")       # lists files in folder
+setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_behav")                        # path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
 
 for (subject in logfiles){                                                                              # loop reading txt-file by txt-file as table, ommit first 58 lines and added lines after trials; use first line as header
 raw_log <- (read.table(subject, skip = 58, fill = TRUE, header = TRUE, nrows = 516))
@@ -45,8 +45,8 @@ else {log <- rbind(log,raw_log)}                                                
 ####################   scr data   #######################################
 
 # Load SCR files (Ledalab output exorted as .csv)
-scrfiles <- list.files("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_export_preprocessed") 
-setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_export_preprocessed")               # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
+scrfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_export_preprocessed") 
+setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_export_preprocessed")               # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
 
 for (subject in scrfiles){                                                                              # loop reading csv-file
 raw_scr <- read.table(subject, header = TRUE, sep=",")
@@ -383,7 +383,7 @@ for (number in unique(master$number)){
  ####################    as excel file    ##################################
  
  
- setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")    # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
+ setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")    # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
  
  date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
  
@@ -391,7 +391,7 @@ for (number in unique(master$number)){
  
  #write.xlsx(df4save, filename)
  #save(df4save, file = filename)
- #write.foreign(as.data.frame(df4save), "P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/data4save.txt", "P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/df4save.sps", package="SPSS")
+ #write.foreign(as.data.frame(df4save), "P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/data4save.txt", "P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/df4save.sps", package="SPSS")
 
  
  
@@ -689,7 +689,7 @@ for (number in unique(master$number)){
  ########################################################################################
  
  # Read in questionnaire data, merge with aggregated data, create correlation matrix
- setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study")
+ setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study")
  questionnaires <- list.files(pattern = ".sav")                                                         # make sure that only one .sav file (= the current PEQ export) exists there!
  questionnaires <- read.spss(questionnaires, to.data.frame = TRUE)
  questionnaires <- questionnaires[, colSums(is.na(questionnaires)) != nrow(questionnaires)]             # remove columns with only NA
@@ -709,7 +709,7 @@ for (number in unique(master$number)){
  
  
  # create correlation matrices using my function "function_correlation_matrix_with_significance_levels.R"
- source("P:/LuisaBalzus/1_PhD_Project/5_ModERN_Vorstudie/10_Single_Trial_Analysis_EEG_SCR_GNG/function_correlation_matrix_with_significance_levels.R")
+ source("P:/Luisa_Balzus/1_PhD_Project/5_ModERN_Vorstudie/10_Single_Trial_Analysis_EEG_SCR_GNG/function_correlation_matrix_with_significance_levels.R")
  
  
  df4Pearson_Correlation <- df4correlation_matrix[,c("mean_priming_overall", "mean_priming_after_FA", "mean_priming_after_FH","mean_SCR_after_FA", "BIS_Total","BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PST", "FMPS_PER/Total", "NEO_Neuroticism", "PANAS_Pos", "PSWQ_Total", "STAI_Trait", "TCI_Total", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability")]   # only keep relevant columns 
