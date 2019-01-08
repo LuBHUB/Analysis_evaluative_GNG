@@ -33,17 +33,17 @@
   
   ###################   Loop over Subjects to Preprocess Logfile Data and SCR Data for Statistical Analyses   ####################
   
-  # Load logfiles
-  logfiles <- list.files("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")       
+  # Load logfiles and start loop
+  logfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
   
   for (subject in logfiles){                                                                              # loop reading txt-files as table, ommit first 58 lines and added lines after trials; use first line as header
-    setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 # path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
-    raw_log <- (read.table(subject, skip = 58, fill = TRUE, header = TRUE, nrows = 516))
+    setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 # path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
+    raw_log <- read.table(subject, skip = 58, fill = TRUE, header = TRUE, nrows = 516)
     name_of_subject <-  gsub("\\.txt*","",subject)
   
     
   # Load SCR files 
-  setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed")               # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
+  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed")               # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
   filename_scr <- paste0(name_of_subject,"_SCR_Export_era.txt")
   raw_scr <- read.table(filename_scr, header = TRUE, sep=",")
   
@@ -51,13 +51,13 @@
   
   
   ####################   merge log and scr data   ####################
+ 
+  # show progress
+  message('Processing ', subject, ' of ', length(logfiles))
+  
   
   # return all rows of log, merged with matching columns of scr; rows in log with no match in scr will have NAs in the new columns; if there are multiple matches between log and scr, all combinations of the matches are returned
   data_log_scr <- left_join(raw_log,raw_scr,by = c("number"= "Participant.ID","count" = "Trial.ID","t_type"="Event.ID.Tar","t_resp"="Event.ID.TarResp","w_type"="Event.ID.Word","w_resp"="Event.ID.WordResp"))
-  
-  
-  # show progress
-  message('Processing ', subject, ' of ', length(logfiles))
   
   
   # check whether there were rows in logfile with no match in scr (is true for subject 25 and 29, because SCR recording was interrupted)
@@ -116,10 +116,10 @@
   
   ####################   define GNG  outliers   ####################   
   
-  # assign TRUE to column GNG_outlier < 150 or > 500 ms (according to Pourtois); here, GNG outliers are excluded only for GNG analyses, not for word categorization in corresponding trial (as in Pourtois)
+  # assign TRUE to column GNG_outlier < 100 or > 700 ms; here, trials with GNG outliers are excluded ALSO for word categorization in corresponding trial! (Pourtois used 150 and 500 ms, but unclear whether trials with GNG outliers were excluded for word classification there, too; I do not want to loose too many words, so I use 100 and 700 ms) (priming after FA is 119 if no gng outliers are excluded, 116 if 100/700 ms, 104 if 150/500 ms; priming after FH remains always the same)
   single_trial_data$gng_invalid_rt <- FALSE
-  single_trial_data$gng_invalid_rt[(single_trial_data$gng_resp != 45 & single_trial_data$gng_resp != 46 & single_trial_data$gng_resp != 47) & single_trial_data$gng_rt < 150 | single_trial_data$gng_rt > 500]  <- TRUE
-  count_outlier_GNG <- length(single_trial_data$gng_invalid_rt[single_trial_data$gng_miss_wrong_key_invalid_rt == TRUE])  # count number of outliers
+  single_trial_data$gng_invalid_rt[(single_trial_data$gng_resp != 45 & single_trial_data$gng_resp != 46 & single_trial_data$gng_resp != 47) & single_trial_data$gng_rt < 100 | single_trial_data$gng_rt > 700]  <- TRUE
+  count_outlier_GNG <- length(single_trial_data$gng_invalid_rt[single_trial_data$gng_invalid_rt == TRUE])  # count number of outliers
   
   
   
@@ -160,14 +160,14 @@
   ####################   define word conditions  ####################
   
   # FA = False Alarm; FH = Fast Hit; CI = Correctly Inhibited; SH = Slow Hit; subsetting only required for outlier detection
-  neg_after_FA <- subset(single_trial_data, valence == "neg" & response_type == "FA" & word_resp == 51)
-  pos_after_FA <- subset(single_trial_data, valence == "pos" & response_type == "FA" & word_resp == 52)
-  neg_after_FH <- subset(single_trial_data, valence == "neg" & response_type == "FH" & word_resp == 51)
-  pos_after_FH <- subset(single_trial_data, valence == "pos" & response_type == "FH" & word_resp == 52)
-  neg_after_CI <- subset(single_trial_data, valence == "neg" & response_type == "CI" & word_resp == 51)
-  pos_after_CI <- subset(single_trial_data, valence == "pos" & response_type == "CI" & word_resp == 52)
-  neg_after_SH <- subset(single_trial_data, valence == "neg" & response_type == "SH" & word_resp == 51)
-  pos_after_SH <- subset(single_trial_data, valence == "pos" & response_type == "SH" & word_resp == 52)
+  neg_after_FA <- subset(single_trial_data, valence == "neg" & response_type == "FA" & word_resp == 51 & gng_invalid_rt == FALSE)
+  pos_after_FA <- subset(single_trial_data, valence == "pos" & response_type == "FA" & word_resp == 52 & gng_invalid_rt == FALSE)
+  neg_after_FH <- subset(single_trial_data, valence == "neg" & response_type == "FH" & word_resp == 51 & gng_invalid_rt == FALSE)
+  pos_after_FH <- subset(single_trial_data, valence == "pos" & response_type == "FH" & word_resp == 52 & gng_invalid_rt == FALSE)
+  neg_after_CI <- subset(single_trial_data, valence == "neg" & response_type == "CI" & word_resp == 51 & gng_invalid_rt == FALSE)
+  pos_after_CI <- subset(single_trial_data, valence == "pos" & response_type == "CI" & word_resp == 52 & gng_invalid_rt == FALSE)
+  neg_after_SH <- subset(single_trial_data, valence == "neg" & response_type == "SH" & word_resp == 51 & gng_invalid_rt == FALSE)
+  pos_after_SH <- subset(single_trial_data, valence == "pos" & response_type == "SH" & word_resp == 52 & gng_invalid_rt == FALSE)
   
   
   
@@ -177,7 +177,7 @@
   
   # assign TRUE to rt_values deviating more than 3 median absolute deviations (MAD; value of 3 is quite conservative and leads to exclusion of fewer events)
   single_trial_data <- mutate(single_trial_data,
-                     outlier_words = ifelse((valence == "neg" & word_resp == 51),
+                       outlier_words = ifelse((valence == "neg" & word_resp == 51),
                                             ifelse(response_type == "FA", 
                                                    (abs(word_rt - median(neg_after_FA$word_rt))/mad(neg_after_FA$word_rt))>3,
                                                    ifelse(response_type == "FH", 
@@ -204,16 +204,16 @@
   
   
   
-  ####################   calculat priming effect with mean    ####################
+  ####################   calculat priming effect  word classification with mean    ####################
   
-  mean_neg_after_FA <- mean(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  mean_pos_after_FA <- mean(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  mean_neg_after_FH <- mean(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  mean_pos_after_FH <- mean(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  mean_neg_after_CI <- mean(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  mean_pos_after_CI <- mean(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  mean_neg_after_SH <- mean(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  mean_pos_after_SH <- mean(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE,]$word_rt)
+  mean_neg_after_FA <- mean(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  mean_pos_after_FA <- mean(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  mean_neg_after_FH <- mean(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  mean_pos_after_FH <- mean(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  mean_neg_after_CI <- mean(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  mean_pos_after_CI <- mean(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  mean_neg_after_SH <- mean(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  mean_pos_after_SH <- mean(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
   
   mean_priming_after_FA <-  mean_pos_after_FA - mean_neg_after_FA
   mean_priming_after_FH <-  mean_neg_after_FH - mean_pos_after_FH
@@ -223,9 +223,9 @@
   
  
   
-  ####################   calculate priming effect with median   ####################
+  ####################   calculate priming effect word classification with median   ####################
   
-  # calculate median without exclusion of word outliers
+  # calculate median without exclusion of word outliers and gng outliers
   median_neg_after_FA <- median(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51,]$word_rt)
   median_pos_after_FA <- median(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52,]$word_rt)
   median_neg_after_FH <- median(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51,]$word_rt)
@@ -247,32 +247,32 @@
   ####################   count number of events word classification   ####################
   
   # count number of events,  outliers are removed; if I want to work with median, do not exclude outlier
-  count_neg_after_FA        <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_pos_after_FA        <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_neg_after_FH        <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_pos_after_FH        <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_neg_after_CI        <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_pos_after_CI        <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_neg_after_SH        <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_pos_after_SH        <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_neg_after_FA        <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_pos_after_FA        <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_neg_after_FH        <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_pos_after_FH        <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_neg_after_CI        <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_pos_after_CI        <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_neg_after_SH        <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 51 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_pos_after_SH        <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 52 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
   
-  count_incorr_neg_after_FA <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 53 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_incorr_pos_after_FA <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 54 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_incorr_neg_after_FH <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 53 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_incorr_pos_after_FH <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 54 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_incorr_neg_after_CI <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 53 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_incorr_pos_after_CI <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 54 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_incorr_neg_after_SH <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 53 & single_trial_data$outlier_words == FALSE,]$word_rt)
-  count_incorr_pos_after_SH <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 54 & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_incorr_neg_after_FA <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 53 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_incorr_pos_after_FA <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 54 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_incorr_neg_after_FH <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 53 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_incorr_pos_after_FH <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 54 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_incorr_neg_after_CI <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 53 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_incorr_pos_after_CI <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 54 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_incorr_neg_after_SH <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 53 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
+  count_incorr_pos_after_SH <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 54 & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE,]$word_rt)
   
-  count_miss_neg_after_FA   <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 55,]$word_rt)
-  count_miss_pos_after_FA   <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 56,]$word_rt)
-  count_miss_neg_after_FH   <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 55,]$word_rt)
-  count_miss_pos_after_FH   <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 56,]$word_rt)
-  count_miss_neg_after_CI   <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 55,]$word_rt)
-  count_miss_pos_after_CI   <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 56,]$word_rt)
-  count_miss_neg_after_SH   <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 55,]$word_rt)
-  count_miss_pos_after_SH   <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 56,]$word_rt)
+  count_miss_neg_after_FA   <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 55 & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  count_miss_pos_after_FA   <- length(single_trial_data[single_trial_data$response_type == "FA" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 56 & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  count_miss_neg_after_FH   <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 55 & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  count_miss_pos_after_FH   <- length(single_trial_data[single_trial_data$response_type == "FH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 56 & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  count_miss_neg_after_CI   <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 55 & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  count_miss_pos_after_CI   <- length(single_trial_data[single_trial_data$response_type == "CI" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 56 & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  count_miss_neg_after_SH   <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "neg" & single_trial_data$word_resp == 55 & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
+  count_miss_pos_after_SH   <- length(single_trial_data[single_trial_data$response_type == "SH" & single_trial_data$valence == "pos" & single_trial_data$word_resp == 56 & single_trial_data$gng_invalid_rt == FALSE,]$word_rt)
   
   
  
@@ -296,13 +296,13 @@
   
   ####################   log and z transform scr and word rt     ####################
   
-  single_trial_data$scr_amplitude_log <- NA
+  single_trial_data$scr_amplitude_z_score_log <- NA    # z transformation depends on mean -> exclude outliers for that
   single_trial_data$word_rt_z_score <- NA
-  single_trial_data$word_rt_log <- NA
-  single_trial_data[single_trial_data$gng_invalid_rt == FALSE,]$scr_amplitude_log <- log(single_trial_data[single_trial_data$gng_invalid_rt == FALSE,]$scr_amplitude + 1)                    # log transform SCR (for mean calculation excluding outlier in GNG only, exclude word outlier in single trial part, log-transform and standardize (z-score) SCR data)
-  single_trial_data$scr_amplitude_z_score_log <- scale(single_trial_data$scr_amplitude_log, center = TRUE, scale = TRUE)                                                                     # z-transform log-SCR
-  single_trial_data[single_trial_data$gng_invalid_rt == FALSE,]$word_rt_z_score <- scale(single_trial_data[single_trial_data$gng_invalid_rt == FALSE,]$word_rt, center = TRUE, scale = TRUE) # z-transform word rt
-  single_trial_data[single_trial_data$gng_invalid_rt == FALSE,]$word_rt_log <- log(single_trial_data[single_trial_data$gng_invalid_rt == FALSE,]$word_rt)                                    # log transform word rt
+  
+  single_trial_data$scr_amplitude_log <- log(single_trial_data$scr_amplitude + 1)                    # log transform SCR (for mean calculation excluding outlier in GNG only, exclude word outlier in single trial part, log-transform and standardize (z-score) SCR data)
+  single_trial_data[single_trial_data$gng_invalid_rt == FALSE,]$scr_amplitude_z_score_log <- scale(single_trial_data[single_trial_data$gng_invalid_rt == FALSE,]$scr_amplitude_log, center = TRUE, scale = TRUE)                                                                     # z-transform log-SCR
+  single_trial_data[(single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE),]$word_rt_z_score <- scale(single_trial_data[(single_trial_data$gng_invalid_rt == FALSE & single_trial_data$outlier_words == FALSE),]$word_rt, center = TRUE, scale = TRUE) # z-transform word rt
+  single_trial_data$word_rt_log <- log(single_trial_data$word_rt)                                    # log transform word rt
   
   
   
@@ -337,9 +337,10 @@
   
   
   
+  
   ####################   add df of one subject to df containing all subjects  ####################
   
-  df4save <- rbind(df4save, data.frame(subject,mean_neg_after_FA,mean_pos_after_FA,mean_neg_after_FH,mean_pos_after_FH,mean_neg_after_CI,mean_pos_after_CI,mean_neg_after_SH,mean_pos_after_SH,mean_priming_overall,mean_priming_after_FA,mean_priming_after_FH,median_neg_after_FA,median_pos_after_FA,median_neg_after_FH,median_pos_after_FH,median_neg_after_CI,median_pos_after_CI,median_neg_after_SH,median_pos_after_SH,median_priming_overall,median_priming_after_FA,median_priming_after_FH,count_neg_after_FA,count_pos_after_FA,count_neg_after_FH,count_pos_after_FH,count_outlier_words_FA_FH,percent_correct_neg_after_FA,percent_correct_pos_after_FA,percent_correct_neg_after_FH,percent_correct_pos_after_FH,percent_correct_neg_after_CI,percent_correct_pos_after_CI,percent_correct_neg_after_SH,percent_correct_pos_after_SH,GNG_mean_FA,GNG_mean_FH,GNG_mean_SH,GNG_percent_FA,GNG_percent_FH,GNG_percent_CI,GNG_percent_SH,GNG_percent_miss, mean_SCR_after_FA,mean_SCR_after_FH,mean_SCR_after_CI,mean_SCR_after_SH))
+  df4save <- rbind(df4save, data.frame(subject,mean_neg_after_FA,mean_pos_after_FA,mean_neg_after_FH,mean_pos_after_FH,mean_neg_after_CI,mean_pos_after_CI,mean_neg_after_SH,mean_pos_after_SH,mean_priming_overall,mean_priming_after_FA,mean_priming_after_FH,median_neg_after_FA,median_pos_after_FA,median_neg_after_FH,median_pos_after_FH,median_neg_after_CI,median_pos_after_CI,median_neg_after_SH,median_pos_after_SH,median_priming_overall,median_priming_after_FA,median_priming_after_FH,count_neg_after_FA,count_pos_after_FA,count_neg_after_FH,count_pos_after_FH,count_outlier_words_FA_FH,percent_correct_neg_after_FA,percent_correct_pos_after_FA,percent_correct_neg_after_FH,percent_correct_pos_after_FH,percent_correct_neg_after_CI,percent_correct_pos_after_CI,percent_correct_neg_after_SH,percent_correct_pos_after_SH,GNG_mean_FA,GNG_mean_FH,GNG_mean_SH,GNG_percent_FA,GNG_percent_FH,GNG_percent_CI,GNG_percent_SH,GNG_percent_miss, mean_SCR_after_FA,mean_SCR_after_FH,mean_SCR_after_CI,mean_SCR_after_SH,count_outlier_GNG))
   data4mixedmodels <- rbind(data4mixedmodels,single_trial_data)
   
   
@@ -361,7 +362,7 @@
  
   ###################   Save df4save as Excel File   ####################
 
-  setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")    # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
+  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")    # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
   date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
   filename <- paste("SummaryStatisticsSingleTrial_For_",length(logfiles),"_subjects_",date_time, ".xlsx", sep = "")
   #write.xlsx(df4save, filename)
@@ -379,7 +380,7 @@
   
   ###################   Bar Plots    ####################
   
-  # plot rt all conditions
+  # plot word classification rt all conditions
   df4plotRT <- data.frame(
     response = c("false alarm","false alarm","fast hit","fast hit","correctly inhibited","correctly inhibited","slow hit", "slow hit"),
     valence = c("neg","pos","neg","pos","neg","pos","neg","pos"),
@@ -405,7 +406,7 @@
     scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
   
   
-  # plot accuracy all conditions
+  # plot word classification accuracy all conditions
   df4plotACC <- data.frame(
     response = c("false alarm","false alarm","fast hit","fast hit","correctly inhibited","correctly inhibited","slow hit", "slow hit"),
     valence = c("neg","pos","neg","pos","neg","pos","neg","pos"),
@@ -466,7 +467,7 @@
   options(contrasts=c("contr.sum","contr.poly")) # to adhere to the sum-to-zero convention for effect weights, always do this before running ANOVAs in R. This matters sometimes (not always). If I don’t do it, the sum of squares calculations may not match what I get e.g. in SPSS
   
  
-  ###################   ANOVA Words   #################### 
+  ###################   ANOVA Word Classification   #################### 
   
   # ANOVA requires several rows for each subject, each one row per factor: here I reorder data by reshaping existing data frame
   df4anova <-   reshape(data = df4save[,c(1:9,29:36)], 
@@ -534,7 +535,7 @@
   df4anova_GNG_rt$condition <- factor(df4anova_GNG_rt$condition)
   
   
-  # calculate ANOVA for rt -> gives same result as SPSS :)
+  # calculate ANOVA for rt GNG -> gives same result as SPSS :)
   anova_GNG_rt <- ezANOVA(data = df4anova_GNG_rt, 
                           dv = .(rt), 
                           wid = .(subject), 
@@ -563,7 +564,7 @@
   row.names(df4anova_GNG_scr) <- NULL
   df4anova_GNG_scr <- df4anova_GNG_scr[sort.list(df4anova_GNG_scr$subject),]                        # sort df by subject
   
-  df4anova_GNG_scr$subject   <- factor(df4anova_GNG_scr$subject)                                          # create factors
+  df4anova_GNG_scr$subject   <- factor(df4anova_GNG_scr$subject)                                    # create factors
   df4anova_GNG_scr$condition <- factor(df4anova_GNG_scr$condition)
   
   
@@ -583,7 +584,7 @@
   
   
   
-  # calculate ANOVA with ezANOVA for SCR
+  # calculate ANOVA for SCR
   anova_GNG_SCR <- ezANOVA(data = df4anova_GNG_scr, 
                            dv = .(SCR), 
                            wid = .(subject), 
@@ -600,9 +601,9 @@
   ###################   Correlations with Traits   ####################
 
   # Read in questionnaire data, merge with aggregated data, create correlation matrix
-  setwd("P:/LuisaBalzus/1_PhD_Project/6_ModERN_Behavioral_Study")
+  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study")
   questionnaires <- list.files(pattern = ".sav")                                                         # make sure that only one .sav file (= the current PEQ export) exists there!
-  questionnaires <- read.spss(questionnaires, to.data.frame = TRUE, add.undeclared.levels = "no")
+  questionnaires <- read.spss(questionnaires, to.data.frame = TRUE, add.undeclared.levels = "no")        # add.undeclared.levels required to prevent irrelevant warning message
   questionnaires <- questionnaires[,c("CODE", "BD2SUMT0","BASO00T0","BASO01T0","BASO02T0","BASO03T0","BASO04T0","FMPO00T0","FMPO01T0","FMPO02T0","FMPO03T0","FMPO04T0","NNGO00T0","NNGO01T0","OCISUMT0", "OCIO00T0", "OCIO01T0","OCIO02T0","OCIO03T0","OCIO04T0","OCIO05T0","PANO00T0","PANO01T0","PSWSUMT0","STSSUMT0","STTSUMT0","TCISUMT0","TCIO00T0","TCIO01T0","TCIO02T0","TCIO03T0","WSTSUMT0")] # only keep relevant columns (I chose to keep sum scores instead of mean scores, because for BDI and OCI only sum scores are available and missing data are not possible because data aquired with tablet)
   questionnaires <- questionnaires[grep("behav", questionnaires$CODE), ]                                 # only keep participants from behavioral study
   questionnaires$CODE <- paste0(questionnaires$CODE,".txt")                                              # convert code for joining (make it identical to code in df4save)                               
@@ -618,7 +619,7 @@
   
   
   # create correlation matrices using my function "function_correlation_matrix_with_significance_levels.R"
-  source("P:/LuisaBalzus/1_PhD_Project/5_ModERN_Vorstudie/10_Single_Trial_Analysis_EEG_SCR_GNG/function_correlation_matrix_with_significance_levels.R")
+  source("P:/Luisa_Balzus/1_PhD_Project/5_ModERN_Vorstudie/10_Single_Trial_Analysis_EEG_SCR_GNG/function_correlation_matrix_with_significance_levels.R")
   
   
   df4Pearson_Correlation <- df4correlation_matrix[,c("mean_priming_overall", "mean_priming_after_FA", "mean_priming_after_FH","mean_SCR_after_FA", "BIS_Total","BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PST", "FMPS_PER/Total", "NEO_Neuroticism", "PANAS_Pos", "PSWQ_Total", "STAI_Trait", "TCI_Total", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability")]   # only keep normally distributed variables 
