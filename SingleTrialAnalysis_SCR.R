@@ -744,8 +744,9 @@
  
   # exclude CI, exclude trials with outlier or error in word or miss/wrong key in GNG, exclude trials with invalid GNG rt, exclude trials followed or preceded by false alarm or wrong key in GNG or by incorrect word categorization or wrong key in word categorization
   data4mixedmodels_scr <- subset(data4mixedmodels,word_resp <= 52 & gng_resp <= 44 & outlier_words == FALSE & gng_invalid_rt == FALSE & followed_or_preceded_by_FA_or_wrong_key == FALSE)
- 
- 
+  data4mixedmodels_scr$response_type <- droplevels(data4mixedmodels_scr$response_type) # drop unused levels in response type, because one condition (CI) was excluded
+  
+  
   # set contrasts for fixed effects
   contrasts(data4mixedmodels_scr$response_type) <- contr.sdif(3)
   contrasts(data4mixedmodels_scr$valence)       <- contr.sdif(2)
