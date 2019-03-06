@@ -17,7 +17,7 @@
   library(foreign)
   library(psych)
   library(ez)
-
+  library(jtools)
   
   # clear environment
   rm(list=ls())
@@ -323,6 +323,30 @@
   
   
   
+  ####################   calculate priming facilitation score for LMM   #####################
+  
+  single_trial_data$facilitation_score <- NA      # score shall be higher the more priming a person shows in a trial (i.e. fast for neg words after FA, slow for pos words; fast for pos words after FH, slow for neg words)
+  
+  for (j in 1:nrow(single_trial_data)) {
+    if (single_trial_data[j,]$response_type == "FH" & single_trial_data[j,]$valence == "neg")  {
+    single_trial_data[j,]$facilitation_score <- single_trial_data[j,]$word_rt - mean_neg_after_FH
+    }
+    if (single_trial_data[j,]$response_type == "FH" & single_trial_data[j,]$valence == "pos")  {
+      single_trial_data[j,]$facilitation_score <- mean_pos_after_FH - single_trial_data[j,]$word_rt
+    }
+    if (single_trial_data[j,]$response_type == "FA" & single_trial_data[j,]$valence == "neg")  {
+      single_trial_data[j,]$facilitation_score <- mean_neg_after_FA - single_trial_data[j,]$word_rt
+    }
+    if (single_trial_data[j,]$response_type == "FA" & single_trial_data[j,]$valence == "pos")  {
+      single_trial_data[j,]$facilitation_score <- single_trial_data[j,]$word_rt - mean_pos_after_FA
+    }
+  }
+  # I don't z-standardize facilitation score, because subjects are entered as random intercept in LMM anyway; I don't log-transform facilitation score, because it is normally distributed -> hist(single_trial_data$facilitation_score)
+  
+  
+  
+  
+  
   
   ####################   calculate mean SCR in conditions (some subjects contain NAs, because SCR recording was disrupted -> exclude NA for mean calculation)   ####################
   
@@ -404,7 +428,7 @@
     theme(legend.position="bottom") +
     coord_cartesian(ylim = c(300,900)) +
     scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
-  
+  ggsave("plot_rt.png", dpi=2000)
   
   # plot word classification accuracy all conditions
   df4plotACC <- data.frame(
@@ -430,7 +454,7 @@
     theme(legend.position="bottom") +
     coord_cartesian(ylim = c(30,120)) +
     scale_fill_manual(values=c("mediumblue", "limegreen"))                                                       # change bar colors
-  
+  ggsave("plot_acc.png", dpi=2000)
   
   # plot SCR all conditions
   df4plotSCR <- data.frame(
@@ -454,7 +478,7 @@
     theme(plot.title = element_text(size = 20, hjust = 0.5)) +
     coord_cartesian(ylim = c(-0.2,0.7)) +
     scale_y_continuous(breaks=seq(0,40,0.2))                                                                     # set specific tic marks                                       
-  
+  ggsave("plot_scr.png", dpi=2000)
   
   
   
@@ -742,21 +766,22 @@
   
   ###################   Linear Mixed Models for SCR   ####################
  
-  # exclude CI, exclude trials with outlier or error in word or miss/wrong key in GNG, exclude trials with invalid GNG rt, exclude trials followed or preceded by false alarm or wrong key in GNG or by incorrect word categorization or wrong key in word categorization
-  data4mixedmodels_scr <- subset(data4mixedmodels,word_resp <= 52 & gng_resp <= 44 & outlier_words == FALSE & gng_invalid_rt == FALSE & followed_or_preceded_by_FA_or_wrong_key == FALSE)
-  data4mixedmodels_scr$response_type <- droplevels(data4mixedmodels_scr$response_type) # drop unused levels in response type, because one condition (CI) was excluded
+  # exclude CI and SH (SH excluded to only have 2 levels and make interpretation easier), exclude trials with outlier or error in word or miss/wrong key in GNG, exclude trials with invalid GNG rt, exclude trials followed or preceded by false alarm or wrong key in GNG or by incorrect word categorization or wrong key in word categorization
+  data4mixedmodels_scr <- subset(data4mixedmodels,word_resp <= 52 & (gng_resp == 41 | gng_resp == 43 | gng_resp == 44)  & outlier_words == FALSE & gng_invalid_rt == FALSE & followed_or_preceded_by_FA_or_wrong_key == FALSE)
+  data4mixedmodels_scr$response_type <- droplevels(data4mixedmodels_scr$response_type) # drop unused levels in response type, because conditions (CI and SH) were excluded
   
   
   # set contrasts for fixed effects
-  contrasts(data4mixedmodels_scr$response_type) <- contr.sdif(3)
+  contrasts(data4mixedmodels_scr$response_type) <- contr.sdif(2)
   contrasts(data4mixedmodels_scr$valence)       <- contr.sdif(2)
- 
   
-  # calculate LMM for SCR and plot (does not converge)
-  emm_options(pbkrtest.limit = 7000)
-  emm_options(lmerTest.limit = 7000) # due to warning D.f. calculations have been disabled because the number of observations exceeds 3000.To enable adjustments, set emm_options(pbkrtest.limit = 5866)
   
-  LMM_SCR <- lmer(scr_amplitude_log ~ response_type * valence * word_rt_log + (1+ response_type * valence * word_rt_log|subjectID)  + (word_rt_log|word), data=data4mixedmodels_scr, REML = FALSE)
+  # calculate LMM for SCR and plot 
+  emm_options(pbkrtest.limit = 4000)
+  emm_options(lmerTest.limit = 4000) # due to warning D.f. calculations have been disabled because the number of observations exceeds 3000.To enable adjustments, set emm_options(pbkrtest.limit = 5866)
+  
+  
+  LMM_SCR <- lmer(scr_amplitude_log ~ response_type*valence*facilitation_score + (1 + response_type | subjectID) + (1|word), data=data4mixedmodels_scr, REML = FALSE)
   summary(LMM_SCR)
   anova(LMM_SCR)                                                                          # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
   results_LMM_SCR <- analyze(LMM_SCR)                                                     # print results
@@ -764,29 +789,13 @@
   results_LMM_SCR <- get_contrasts(LMM_SCR, "response_type * valence")                    # provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
   print(results_LMM_SCR$contrasts)                                                        # print contrasts
   print(results_LMM_SCR$means)                                                            # investigate means
- 
   
-  # test reduced model: n.s.
-  LMM_SCR <- lmer(scr_amplitude_log ~ response_type * valence * word_rt_log + (1|subjectID), data=data4mixedmodels_scr, REML = FALSE)
-  summary(LMM_SCR)
-  anova(LMM_SCR)                                                                          # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
-  results_LMM_SCR <- analyze(LMM_SCR)                                                     # print results
-  print(results_LMM_SCR)
-  results_model_lmer_SCR <- get_contrasts(LMM_SCR, "response_type * valence")             # provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
-  print(results_LMM_SCR$contrasts)                                                        # print contrasts
-  print(results_LMM_SCR$means)                                                            # investigate means
+  # significant main effect of response type: FA lead to higher SCR then FH
+  # significant interaction response_type*facilitation: driven by neg words after FA, high priming magnitude (fast response to neg words) related to low SCR -> see plot of 3-way interaction
+  # significant interaction response_type*valence*facilitation_score: only for neg words after FA, high priming magnitude (fast response to neg words) related to low SCR
+  # (hypothesis was that high facilitation for neg words after incorrect responses predicts higher SCR)
+  interact_plot(LMM_SCR, pred = "facilitation_score", modx = "response_type", mod2 = "valence", interval = TRUE,int.width = 0.8,
+                x.label = "Magnitude of Priming (ms)", y.label = "Logarithmized SCR (µS)", modx.labels = c("false alarm","fast hit"), mod2.labels = c("Word Valence = neg","Word Valence = pos"),
+                main.title = "SCR Depending on Priming Effect, Response Type, and Word Valence", legend.main = "Response type")
   
- 
-  
-  # try if SCR to errors is predicted by w_rt_log -> interaction valence*word_rt n.s.
-  data4mixedmodels_scr_FA <- subset(data4mixedmodels_scr, gng_resp == 43 | gng_resp == 44)
-  contrasts(data4mixedmodels_scr_FA$valence) <- contr.sdif(2)
- 
-  LMM_SCR_FA <- lmer(scr_amplitude_log ~ valence * word_rt_log + (1|subjectID), data=data4mixedmodels_scr_FA, REML = FALSE)
-  summary(LMM_SCR_FA)
-  anova(LMM_SCR_FA)                                                                       # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
-  results_LMM_SCR_FA <- analyze(LMM_SCR_FA)                                               # print results
-  print(results_LMM_SCR_FA)
-  results_LMM_SCR_FA <- get_contrasts(LMM_SCR_FA, "valence*word_rt_log")                  # provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
-  print(results_LMM_SCR_FA$contrasts)                                                     # print contrasts
-  print(results_LMM_SCR_FA$means) 
+  ggsave("plot_lmm.png", dpi=2000)
