@@ -470,15 +470,15 @@
     geom_bar(stat="identity", position=position_dodge(), fill = "mediumblue") +                                  # add bars, based on stats values; dodge to avoid stacked bars; change bar color
     geom_errorbar(aes(ymax = mean + se, ymin= mean - se), position = position_dodge(width=0.95), width=0.1) +    # add error bars
     ggtitle("Skin Conductance Response") +                                                                       # add title
-    xlab("Response Type") + ylab("Logarithmized SCR (ÂµS)") +                                                     # label axes
+    xlab("Response Type") + ylab("Logarithmized SCR (µS)") +                                                     # label axes
     theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
     theme(axis.text=element_text(size=15)) +
     theme(legend.title=element_text(size=18)) +
     theme(legend.text=element_text(size=15)) +
     theme(plot.title = element_text(size = 20, hjust = 0.5)) +
-    coord_cartesian(ylim = c(-0.2,0.7)) +
+    coord_cartesian(ylim = c(-0.25,0.7)) +
     scale_y_continuous(breaks=seq(0,40,0.2))                                                                     # set specific tic marks                                       
-  ggsave("plot_scr.png", dpi=2000)
+  ggsave("plot_scr.png", width = 6, height = 5.5, dpi=2000)
   
   
   
@@ -785,17 +785,28 @@
   summary(LMM_SCR)
   anova(LMM_SCR)                                                                          # get ANOVA Output from LMM (results differs a bit from that obtained by using aov/ezANOVA; https://stackoverflow.com/questions/20959054/why-is-there-a-dramatic-difference-between-aov-and-lmer)
   results_LMM_SCR <- analyze(LMM_SCR)                                                     # print results
-  print(results_LMM_SCR)
+  print(results_LMM_SCR)                                                                  # reports incorrect beta estimates
   results_LMM_SCR <- get_contrasts(LMM_SCR, "response_type * valence")                    # provide the model and the factors to contrast;; add ,adjust="none" to turn off automatic p value correction after Tucky
   print(results_LMM_SCR$contrasts)                                                        # print contrasts
   print(results_LMM_SCR$means)                                                            # investigate means
+  
+  stdCoef.merMod <- function(object) {
+    sdy <- sd(getME(object,"y"))
+    sdx <- apply(getME(object,"X"), 2, sd)
+    sc <- fixef(object)*sdx/sdy
+    se.fixef <- coef(summary(object))[,"Std. Error"]
+    se <- se.fixef*sdx/sdy
+    return(data.frame(stdcoef=sc, stdse=se))
+  }
+  
+  stdCoef.merMod(LMM_SCR)
   
   # significant main effect of response type: FA lead to higher SCR then FH
   # significant interaction response_type*facilitation: driven by neg words after FA, high priming magnitude (fast response to neg words) related to low SCR -> see plot of 3-way interaction
   # significant interaction response_type*valence*facilitation_score: only for neg words after FA, high priming magnitude (fast response to neg words) related to low SCR
   # (hypothesis was that high facilitation for neg words after incorrect responses predicts higher SCR)
   interact_plot(LMM_SCR, pred = "facilitation_score", modx = "response_type", mod2 = "valence", interval = TRUE,int.width = 0.8,
-                x.label = "Magnitude of Priming (ms)", y.label = "Logarithmized SCR (ÂµS)", modx.labels = c("false alarm","fast hit"), mod2.labels = c("Word Valence = neg","Word Valence = pos"),
-                main.title = "SCR Depending on Priming Effect, Response Type, and Word Valence", legend.main = "Response type")
+                x.label = "Magnitude of Priming (ms)", y.label = "Logarithmized SCR (µS)", modx.labels = c("false alarm","fast hit"), mod2.labels = c("Word Valence = neg","Word Valence = pos"),
+                main.title = "SCR Depending on Priming Effect, Response Type, and Word Valence", legend.main = "Response Type")
   
-  ggsave("plot_lmm.png", dpi=2000)
+  ggsave("plot_lmm.png", width = 6, height = 3.5, dpi=2000)
