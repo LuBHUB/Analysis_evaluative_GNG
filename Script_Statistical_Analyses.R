@@ -32,9 +32,6 @@ rm(list=ls())
 options(scipen = 999)
 
 #reading in datafile
-load(file = ".rda")
-
-
 datafiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = ".rda")       
 for (datafile in datafiles){  
   load(file = datafile)}
