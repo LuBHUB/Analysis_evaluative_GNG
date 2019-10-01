@@ -1,0 +1,35 @@
+name: "website_ModERN_behavioral"
+output_dir: "website_ModERN_behavioral"   # specify name of output directory
+exclude: ["ledalab-349", "*.sav", "old_scripts"]
+navbar:
+  title: "ModERN behavioral"
+  #type: inverse 
+  left:
+    - text: "Home"
+      icon: glyphicon-home
+      href: index.html
+    - text: "Demographic Data"
+      icon: glyphicon-user
+      href: Demographic_Data.html
+    - text: "Word Categorization Data"
+      icon: glyphicon-hand-up
+      href: Word_Categorization_Data.html
+    - text: "GNG Data"
+      icon: glyphicon-hand-up
+      href: GNG_Data.html
+    - text: "Trait Data & Correlations"
+      icon: glyphicon-list-alt
+      href: Trait_Data_Correlations.html
+    - text: "SCR Data"
+      icon: glyphicon-tint
+      href: SCR_Data.html 
+output:
+  html_document:
+    toc: true           # insert table of content
+    toc_depth: 4        # upto four depths of headings
+    toc_float:          # floating toc on the left
+        collapsed: false   # all header levels always visible
+    theme: cerulean     # style of html
+    highlight: textmate # specifies the syntax highlighting style
+    
+# for icons use homepage: https://getbootstrap.com/docs/3.3/components/

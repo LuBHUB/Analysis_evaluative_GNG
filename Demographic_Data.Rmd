@@ -1,0 +1,97 @@
+---
+title: "Subjects and Demographics"
+author: "Luisa Balzus"
+date: "26 Juli 2019"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  tidy = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  dpi = 150
+)
+```
+
+
+```{r libraries, include = FALSE}
+library(pastecs)    # for descriptive stats
+library(foreign)    # for reading in SPSS file
+library(knitr)      # for nice tables in html
+library(kableExtra) # for nice tables in html
+
+# clear environment
+rm(list=ls())
+
+# force R to not use exponential notation
+options(scipen = 999)
+
+# reading in datafile
+subject_data <- read.spss("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/participant_data.sav", to.data.frame = TRUE)
+```
+<br>
+<br>
+
+# Exclusion of Subjects 
+
+* 31 subjects were assessed. 
+
+* 1 subject was excluded due to a current mental illness and an insufficient number of errors. 
+
+* One further subject (subject 3) had only 2 valid responses to positive words after an error (after an error, this subject classified only 33% of positive words correctly - in comparision to 100% of negative words). However, the criterion used by Aarts (minimum 10 errors) is fulfilled, so the subject does not have to be excluded.
+
+* It remains to be seen, whether subjects have to be excluded as SCR non-responders. 
+
+<br>
+<br>
+<br>
+
+# Exclusion of Trials 
+
+* 1: invalid rt in gng and word excluded in all analyses to have consistency
+
+* 2: for priming: additionally to 1 excluded wrong keys / misses in gng or words; incorrect responses to words (for RT)
+
+* 3: for scr / priming-scr: additionally to 2 excluded CI, trials followed or preceded by FA / wrong key
+
+* 4: for gng: additionally to 1 excluded wrong keys / misses / CI in gng
+
+
+<br>
+<br>
+<br>
+
+
+# Overview Subjects 
+
+<br>
+
+* N = 30 (22 female, age: M = 22.03, SD = 5.46)
+
+* native German speakers
+
+* all right handed, normal or corrected-to-normal vision
+
+* HU psychology students, participated for course credit
+
+* 7 with past mental issues 
+
+    * I compared ANOVAs for response time and accuracy as well as post hoc tests between the sample including and excluding these subjects. The results do not differ at
+    all.
+    
+    * I also ran *t* tests comparing priming effect in response time and accuracy after FA and FH between the 7 subjects with past mental issues and the 23 subjects
+    without. They do not differ in priming effect after FA in response time and accuracy and priming effect after FH in response time and accuracy.
+
+
+
+<br>
+```{r demographic}
+
+kable(subject_data[,c("CODE","Alter","Geschlecht","Muttersprache","Haendigkeit","Anzahl_verbales_Speeden","Psych_Behandlung","Psych_Behandlung_Grund")], caption = "Subject Data")  %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
+
+age <- round(stat.desc(subject_data$Alter,basic=F),digits = 2)
+````

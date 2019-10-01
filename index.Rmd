@@ -1,0 +1,21 @@
+---
+title: "Results ModERN Behavioral Study"
+output:
+  html_document:
+    df_print: paged
+date: '18 Juli 2019'
+---
+
+This is an overview to summarize the data from the ModERN behavioral study, created by using RMarkdown. In this study, behavioral measures and skin conductance were assed during performance of the evaluative Go/NoGo task. The design of this task was adapted and modified from Aarts et al. (2012). 30 psychology students participated in this study.
+
+
+
+Abbreviations I use in this overview are:
+
+* FA = False Alarm (incorrect response to a NoGo target)
+
+* FH = Fast Hit (correct response to a Go target that is 10 - 20 % faster than the mean response time to Go trials in the preceding training block)
+
+* SH = Slow Hit (correct response to a Go target that is slower than the time window for a fast hit)
+
+* CI = Correctly Inhibited (correct response to a NoGo target = inhibited response)
