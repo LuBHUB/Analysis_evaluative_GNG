@@ -3,76 +3,80 @@
   ##### 11.11.2018 
   
   
+  library(readxl)
+  library(openxlsx)
+  
+  
   # clear environment
   rm(list=ls())
 
 
-
   ####################   load scr data   ####################
   
-  # load SCR files (Ledalab output exported as .txt) 
-  scrfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export", pattern = ".txt")    # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY scr files 
+  # load SCR files (Ledalab output exported as .xls -> opening it requires readxl) 
+  scrfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export", pattern = ".xls")    # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY scr files 
   setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export")                              
   
-  # loop reading SCR file, only keep required markers (responses to GNG target and words)
+  # loop reading SCR file
   for (subject in scrfiles){                                                                                         
-    raw_scr <- read.table(subject, header = TRUE)
-    subset_scr <- subset(raw_scr, (Event.NID >= 21 & Event.NID <= 58) |(Event.NID >= 141 & Event.NID <= 149) |(Event.NID >= 241 & Event.NID <= 249))   
+    raw_scr <- read_excel(subject,sheet="CDA")
+        
+ 
     
+  ####################   clean and rearrange SCR data   ####################
   
+  # only keep events (GNG and Word presentation and responses) and columns of interest 
+  subset_scr <- subset(raw_scr, (Event.NID >= 21 & Event.NID <= 58) |(Event.NID >= 141 & Event.NID <= 149) |(Event.NID >= 241 & Event.NID <= 249))  
+  subset_scr <- subset_scr[,c("Event.Nr","Event.NID","CDA.ISCR [muSxs]")] 
     
-  ####################   rearrange SCR data   ####################
-  
+   
   # create new column that represents correct order of triggers within one trial
   subset_scr$order[subset_scr$Event.NID <=23]                            <-1
   subset_scr$order[subset_scr$Event.NID >=41 & subset_scr$Event.NID <=49]<-2
   subset_scr$order[subset_scr$Event.NID >=141]                           <-3
   subset_scr$order[subset_scr$Event.NID >=51 & subset_scr$Event.NID <=59]<-4
   
+  
   # one chunk is one trial, containing 4 triggers: GNG stimulus, GNG response, word stimulus, word response
   number_chunks <- nrow(subset_scr)/4                                                                       
-  scr_ordered <- data.frame()  
+  scr_ordered   <- data.frame()  
   
   for (i in 0:(number_chunks-1)){
-    chunk_start <- 1+4*i
-    chunk_end <- 4+4*i
-    chunk <- subset_scr[chunk_start:chunk_end,]                                              # extract rows 1-4 of current chunk from scr data frame        
-    chunk_ordered <- chunk[order(chunk$order),]                                              # order rows in chunk by the column "order" (this step may not be necessary anymore, because the downsampling is now done in Ledalab; before, it was done in BVA, so that the timing information was blurred and the CI triggers occurred after the word triggers in the exported file)
-    chunk_line <- c(chunk_ordered[1,],chunk_ordered[2,],chunk_ordered[3,],chunk_ordered[4,]) # write correctly ordered rows in single row
-    scr_ordered <- rbind(scr_ordered, chunk_line)                                            # add line to new, ordered df                
-    names(scr_ordered) <- names(chunk_line)}                                                 # make sure that column names of the data frames do match; if column names don't match, line is not added to the df
+    chunk_start        <- 1+4*i
+    chunk_end          <- 4+4*i
+    chunk              <- subset_scr[chunk_start:chunk_end,]                                         # extract rows 1-4 of current chunk from scr data frame        
+    chunk_ordered      <- chunk[order(chunk$order),]                                                 # order rows in chunk by the column "order" (this step may not be necessary anymore, because the downsampling is now done in Ledalab; before, it was done in BVA, so that the timing information was blurred and the CI triggers occurred after the word triggers in the exported file)
+    chunk_line         <- c(chunk_ordered[1,],chunk_ordered[2,],chunk_ordered[3,],chunk_ordered[4,]) # write correctly ordered rows in single row
+    scr_ordered        <- rbind(scr_ordered, chunk_line)                                             # add line to new, ordered df                
+    names(scr_ordered) <- names(chunk_line)}                                                         # make sure that column names of the data frames do match; if column names don't match, line is not added to the df
   
 
   
   # rename columns; previous command (names(scr_ordered) <- names(chunk_line)) resulted in repetition of identical column names
-  colnames(scr_ordered) <-c("Event.Nr.Tar","DDA.nSCR.Tar","DDA.Latency.Tar","DDA.AmpSum.Tar","DDA.AreaSum.Tar","DDA.Tonic.Tar","TTP.nSCR.Tar","TTP.Latency.Tar","TTP.AmpSum.Tar","Global.Mean.Tar","Global.MaxDeflection.Tar","Event.ID.Tar","Event.Name.Tar","order.Tar",                                     
-                            "Event.Nr.TarResp","DDA.nSCR.TarResp","DDA.Latency.TarResp","DDA.AmpSum.TarResp","DDA.AreaSum.TarResp","DDA.Tonic.TarResp","TTP.nSCR.TarResp","TTP.Latency.TarResp","TTP.AmpSum.TarResp","Global.Mean.TarResp","Global.MaxDeflection.TarResp","Event.ID.TarResp","Event.Name.TarResp","order.TarResp",                                    
-                            "Event.Nr.Word","DDA.nSCR.Word","DDA.Latency.Word","DDA.AmpSum.Word","DDA.AreaSum.Word","DDA.Tonic.Word","TTP.nSCR.Word","TTP.Latency.Word","TTP.AmpSum.Word","Global.Mean.Word","Global.MaxDeflection.Word","Event.ID.Word","Event.Name.Word","order.Word",                                         
-                            "Event.Nr.WordResp","DDA.nSCR.WordResp","DDA.Latency.WordResp","DDA.AmpSum.WordResp","DDA.AreaSum.WordResp","DDA.Tonic.WordResp","TTP.nSCR.WordResp","TTP.Latency.WordResp","TTP.AmpSum.WordResp","Global.Mean.WordResp","Global.MaxDeflection.WordResp","Event.ID.WordResp","Event.Name.WordResp","order.WordResp")                       
+  colnames(scr_ordered) <-c("Event.Nr.GNG","Event.ID.GNG","CDA.ISCR.GNG","order.GNG",                                     
+                            "Event.Nr.GNG_Resp","Event.ID.GNG_Resp","CDA.ISCR.GNG_Resp","order.GNG_Resp",
+                            "Event.Nr.Word","Event.ID.Word","CDA.ISCR.Word","order.Word",
+                            "Event.Nr.Word_Resp","Event.ID.Word_Resp","CDA.ISCR.Word_Resp","order.Word_Resp")
+                            
+               
+  # add participant ID and trial ID
+  scr_with_ID <- data.frame(Participant.ID=substr(subject,14,15),Trial.ID =1:nrow(scr_ordered),scr_ordered)   # create new df to add ID for each subject in first column; ID derived as numeric from file name
   
 
-  
-  
-  # add participant ID and trial ID
-  scr_with_ID <- data.frame(Participant.ID=substr(subject,14,15),Trial.ID =1:nrow(scr_ordered),scr_ordered)   # create new df to add ID for each subject in first column; ID derived from letter 14 and 15 of file name
-  
-  
-  # IMPORTANT: assign stimulus-locked SCR values to correctly inhibited trials and trials with missing response (makes no sense to take response-locked SCR value here, because there is no response and the evaluation trigger is send late)
+  # IMPORTANT: assign stimulus-locked SCR values to correctly inhibited trials and trials with missing response (makes no sense to take response-locked SCR value here, because there is no response and the evaluation trigger is sent late)
   for (ind in 1:nrow(scr_with_ID)) {
-    if (scr_with_ID$Event.ID.TarResp[ind] == 45 | scr_with_ID$Event.ID.TarResp[ind]  == 46 | scr_with_ID$Event.ID.TarResp[ind]  == 47)
-    {
-      scr_with_ID$DDA.AmpSum.TarResp[ind] <- scr_with_ID$DDA.AmpSum.Tar[ind]
-      scr_with_ID$DDA.AreaSum.TarResp[ind] <- scr_with_ID$DDA.AreaSum.Tar[ind]
-    }
+    if (scr_with_ID$Event.ID.GNG_Resp[ind] == 45 | scr_with_ID$Event.ID.GNG_Resp[ind]  == 46 | scr_with_ID$Event.ID.GNG_Resp[ind]  == 47)
+    {scr_with_ID$CDA.ISCR.GNG_Resp[ind] <- scr_with_ID$CDA.ISCR.GNG[ind]}
   }
   
   
-  # keep only columns of interest (keep stimulus-locked and response-locked SCR, because for CI I need it stimulus-locked, for FA, FH, SH I need SCR response-locked)
-  scr_final <- scr_with_ID[ , c("Participant.ID","Trial.ID","Event.ID.Tar","Event.ID.TarResp","DDA.AmpSum.TarResp","DDA.AreaSum.TarResp", "Event.ID.Word","Event.ID.WordResp")]
+  # keep only columns of interest
+  scr_final <- scr_with_ID[ , c("Participant.ID","Trial.ID","Event.ID.GNG","CDA.ISCR.GNG","Event.ID.GNG_Resp","CDA.ISCR.GNG_Resp","Event.ID.Word","CDA.ISCR.Word","Event.ID.Word_Resp","CDA.ISCR.Word_Resp")]
                                                                     
 
-
   
+  
+  ####################   check file   ####################
   
   # display progress and abort if number of trials is not 516 -> in subject 5, one line manually added between 1400 and 1401 (trigger 57 was not send)
   message("Preprocessing done for file: ",subject,appendLF=TRUE)
@@ -81,13 +85,11 @@
     stop("Incorrect number of trials in last subject. Check which trigger is missing and add manually in export file!")}
   
   
+  # for subject 25 and 29, SCR recording was interrupted; the missing trials were added manually to the files from the ledalab export (except for trigger number, these rows were left empty, because filling them with NA or NAN does nor work)
 
   
   
-  ####################   save preprocessed scr data   ####################
+  ####################   save preprocessed scr data as xlsx   ####################
 
-  write.csv(scr_final, paste("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed", subject, sep="/"))
-
+  write.xlsx(scr_final, paste0("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed","/",subject,"x"))
 }
-
-
