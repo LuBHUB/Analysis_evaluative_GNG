@@ -672,9 +672,9 @@ kable(t_tests[,c("condition","t(29)","p value")], caption = "t tests count pos n
 
 <br>
 
-#### Influence of Color Fixation Cross on SCR
+#### Influence Fix Cross Color on SCR
 
-I cannot evaluate effect of color of fixation cross in a really clean way. For doing this, I would need to include trials with write and red crosses that were only preceded and followed by white crosses. If I do this, only 1205 trials remain for the analysis. There, there indeed is a trend for the effect of color of fixation cross on SCR. The effect actually is significant if I remove the random slope (which according to anova function does not improve the fit). But this analysis is based on a tiny subset of the original data and not representative.
+I cannot evaluate effect of color of fixation cross in a convincing way. For doing this, I would need to include trials with white and red crosses that were only preceded and followed by white crosses. If I did this, only 1205 trials remain for the analysis. There, there indeed is a trend for the effect of color of fixation cross on SCR. The effect actually is significant if I remove the random slope (which should be done, as according to the *anova* function it does not improve the fit). But this analysis is based on a tiny subset of the original data and not representative.
 
 Thus, I also checked whether the color of fixation cross affects the SCR in current trial (independent of color of fix cross in previous or following trial; note that the time window of SCR is much longer than current trial, leading to overlapping effects of subsequent fixation crosses). At least in this analysis, which allowed overlapping effects of fixation crosses of different color, the color of the fixation cross does not affect the SCR in the current trial.
 
@@ -710,8 +710,8 @@ contrasts(data4mixedmodels_words_scr$color_cross)   <- contr.sdif(2)
 mm_c2    <- model.matrix( ~ response_type*color_cross, data4mixedmodels_words_scr) # stick in model matrix 6 columns
 
 # attach to dataframe 
-data4mixedmodels_words_scr[,(ncol(data4mixedmodels_words_scr)+1):(ncol(data4mixedmodels_words_scr)+6)] <- mm_c2
-names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-5):ncol(data4mixedmodels_words_scr)] <- c("Grand Mean", "FH_minus_SH","FA_minus_FH","red_minus_white", "FH_minus_SH:red_minus_white", "FA_minus_FH:red_minus_white")
+data4mixedmodels_words_scr[,(ncol(data4mixedmodels_words_scr)+1):(ncol(data4mixedmodels_words_scr)+3)] <- mm_c2[,c(4:6)]
+names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-2):ncol(data4mixedmodels_words_scr)] <- c("red_minus_white", "FH_minus_SH:red_minus_white", "FA_minus_FH:red_minus_white")
 
 
 
