@@ -2,9 +2,7 @@
 title: "GNG Data"
 author: "Luisa Balzus"
 date: "2 August 2019"
-output:
-  pdf_document: default
-  html_document: default
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -309,11 +307,8 @@ See which approach I chose for building the model in the section "Word Categoriz
 
 ```{r run LMM RT, echo = 1} 
 LMM_rt_gng_final <- lmer(gng_rt_inverse ~ SH_minus_FA + FA_minus_FH + (1 + SH_minus_FA + FA_minus_FH  | subjectID), data=data4mixedmodels_gng, REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_rt_gng_final)                         # model does converge -> identified model
 
-LMM_rt_gng_final_summary <- summary(LMM_rt_gng_final)   # model does converge -> identified model
-kable(LMM_rt_gng_final_summary$coefficients, caption = "Overview Fixed Effects LMM GNG RT") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(LMM_rt_gng_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE",  show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "GNG RT")
 ```
 
 The results are: SH > FA, FH = FA. This is in line with the results obtained by the ANOVA post hoc tests. In these, FH vs SH was also tested. They differ significantly.
