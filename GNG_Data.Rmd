@@ -289,6 +289,12 @@ contrasts(data4mixedmodels_gng$response_type) <- contr.sdif(3)
 mm_c    <- model.matrix( ~ response_type, data4mixedmodels_gng) # stick in model matrix 3 columns
 data4mixedmodels_gng[,((ncol(data4mixedmodels_gng)+1):(ncol(data4mixedmodels_gng)+3))] <- mm_c
 names(data4mixedmodels_gng)[(ncol(data4mixedmodels_gng)-2):ncol(data4mixedmodels_gng)] <- c("Grand Mean", "FA_minus_FH","SH_minus_FA")
+
+# prepare labels for tables
+pl <- c(
+  "(Intercept)" = "Intercept",
+  "response_type2-1" = "FH - SH", 
+  "response_type3-2" = "FA - FH")
 ```
 
 <br>
@@ -303,7 +309,7 @@ See which approach I chose for building the model in the section "Word Categoriz
 
 #### Run LMM
 
-* For the GNG RT, the maximal model containing all random slopes, intercept and correlations of these converged and had the best fit.
+* For the GNG RT, the LMM containing the maximal random effects structure and correlation parameters was used.
 
 ```{r run LMM RT, echo = 1} 
 LMM_rt_gng_final <- lmer(gng_rt_inverse ~ SH_minus_FA + FA_minus_FH + (1 + SH_minus_FA + FA_minus_FH  | subjectID), data=data4mixedmodels_gng, REML = TRUE, control=lmerControl(optimizer="bobyqa"))
