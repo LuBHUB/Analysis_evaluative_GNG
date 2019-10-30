@@ -389,6 +389,26 @@ mm_c    <- model.matrix( ~ response_type*valence, data4mixedmodels_words_scr) # 
 # attach to dataframe 
 data4mixedmodels_words_scr[,(ncol(data4mixedmodels_words_scr)+1):(ncol(data4mixedmodels_words_scr)+6)] <- mm_c
 names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-5):ncol(data4mixedmodels_words_scr)] <- c("Grand Mean", "FH_minus_SH","FA_minus_FH","pos_minus_neg", "FH_minus_SH:pos_minus_neg", "FA_minus_FH:pos_minus_neg")
+
+# prepare labels for tables
+pl <- c(
+  "(Intercept)" = "Intercept",
+  "valence2-1" = "Positive - Negative",
+  "response_type2-1" = "FH - SH", 
+  "response_type3-2" = "FA - FH",
+  "response_type4-3" = "CI - FA",
+  "response_type2-1:valence2-1" = "FH - SH x Positive - Negative", 
+  "response_type3-2:valence2-1" = "FA - FH x Positive - Negative",
+  "response_typeSH:valence2-1" = "SH: Positive - Negative",
+  "response_typeFH:valence2-1" = "FH: Positive - Negative",
+  "response_typeFA:valence2-1" = "FA: Positive - Negative",
+  "response_typeSH:iscr_gng_resp_sqrt_z_score" = "SH: SCR",
+  "response_typeFH:iscr_gng_resp_sqrt_z_score" = "FH: SCR",
+  "response_typeFA:iscr_gng_resp_sqrt_z_score" = "FA: SCR", 
+  "response_typeSH:valence2-1:iscr_gng_resp_sqrt_z_score" = "SH: Positive - Negative x SCR",
+  "response_typeFH:valence2-1:iscr_gng_resp_sqrt_z_score" = "FH: Positive - Negative x SCR",
+  "response_typeFA:valence2-1:iscr_gng_resp_sqrt_z_score" = "FA: Positive - Negative x SCR")
+
 ```
 
 <br>
@@ -401,23 +421,15 @@ See which approach I chose for building the model in the section "Word Categoriz
 
 #### Run LMM
 
-For the SCR, the final model that converged and had the best fit included a fully specified by-subject random structure (random intercepts and random slopes for all fixed effects, including correlation parameters). This is also the final model I get when I initially include (1 + FH_minus_SH + FA_minus_FH  | word) as random effect in the maximal model.
+* For the SCR, the LMM containing the maximal random effects structure and correlation parameters was used. This is also the final model I get when I initially include (1 + FH_minus_SH + FA_minus_FH  | word) as random effect in the maximal model: rePCA shows that for word, all random effects including intercept explain zero variance. 
 
 
 ```{r build LMM SCR, echo = 2}
-
 LMM_scr_no_val_final <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + (1 + FH_minus_SH + FA_minus_FH  | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_scr_no_val_final)                         # model does converge, no singular fit -> model is identified
 
-LMM_scr_no_val_final_summary <- summary(LMM_scr_no_val_final)
-
-kable(LMM_scr_no_val_final_summary$coefficients, caption = "Overview Fixed Effects LMM SCR") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(LMM_scr_no_val_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "SCR [sqrt(microsiemens)]")
 ```
 <br>
-
-Akin to the ANOVA omnibus test, it can be tested whether the main effect of response type improves the model fit significantly. It does. Thus, there is an omnibus main effect of response type. 
-
 <br>
 
 #### Summary LMM
@@ -428,13 +440,16 @@ The SCR differs significantly between FAs and FHs but not between FHs and SHs (b
 
 #### Check Assumptions LMM
 
+Some assumptions (1 and 2) seem violated here. The plot of the residuals versus the predicted variable looks better when z-standardized and square root transformed SCR data are used in the LMM instead of only square root transformed. But I do not really want to use z-standardization here, as the random effects already account for variability between subjects.For both dependent variables the results are the same and they are also quite consistent with the ANOVA. So it seems ok to use square root transformed SCR data, even though some assumptions might be violated.
+
+
 **Assumption 1 - Linearity**: dependent variable linearly related to the fixed factors, random factors, and covariates (dv is result of a linear combination of the predictors)
 
-* not so ok (see plot of the residuals versus the predicted variable)
+* not so ok (see plot of the residuals versus the predicted variable) 
 
 **Assumption 2 - Homogeneity of Variance**: residuals have constant variance (variability of data approximately equal across range of predicted values)
 
-* not so ok? (see plot of the residuals versus the predicted variable)
+* not so ok? (see plot of the residuals versus the predicted variable) 
 
 **Assumption 3 - Independence**: not necessary to check, because there is not more than one predictor
 
@@ -599,18 +614,16 @@ Furthermore, the additional responses that may elicit confounding SCRs within th
 
 #### Influence of Word Valence on SCR
 
-To check whether the SCR is affected by the word following the GNG response, I also conducted a LMM and an ANOVA including the factors response type and valence of the following word (levels neg, pos). The results can be reported as a footnote: There is still a main effect of Response Type. There is no main effect of valence and in interaction of valence and response type. Hence, the SCR is not influenced by valence of following word. The results of the LMM and the ANOVA including response type and valence are mostly consistent (as before FH vs SH is a trend in the LMM, but in the ANOVA it gets significant here).
+To check whether the SCR is affected by the word following the GNG response, I also conducted a LMM and an ANOVA including the factors response type and valence of the following word (levels neg, pos). 
+For the LMM, the  maximal random effects were reduced of the random effect explaining zero variance “FA - FH” and "Intercept" for word and "FH - SH x pos - neg" for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “FA - FH” and "Intercept" for word and "FH - SH x pos - neg" for subject - also including correlations?) also converged and yielded the same estimates. As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components. 
+The results can be reported as a footnote: There is still a main effect of Response Type. There is no main effect of valence and in interaction of valence and response type. Hence, the SCR is not influenced by valence of following word. The results of the LMM and the ANOVA including response type and valence are mostly consistent (as before FH vs SH is a trend in the LMM, but in the ANOVA it gets significant here).
 
 ```{r test effect of valence on SCR}
 
 # LMM
-LMM_scr_final <- lmer(iscr_gng_resp_sqrt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-#summary(LMM_scr_final)            # model does converge, no singular fit -> model is identified
+LMM_scr_final <- lmer(iscr_gng_resp_sqrt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg || subjectID) + (0 + FH_minus_SH  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-LMM_scr_final_summary <- summary(LMM_scr_final)
-
-kable(LMM_scr_final_summary$coefficients, caption = "Overview Fixed Effects LMM SCR Including Valence") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(LMM_scr_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE",  order.terms = c(1,2,6,5,4,3), show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "SCR [sqrt(microsiemens)] predicted by Response Type and Word Valence")
 
 
 # ANOVA
@@ -865,17 +878,14 @@ See which approach I chose for building the model in the section "Word Categoriz
 
 #### Run LMM
 
-For the Priming - SCR LMM, the final model that converged and had the best fit included for the random effect of subject: random intercept and slope of response type, valence, response type*valence, and SCR (excluding correlation parameters). For the random effect of word it included the random intercept and slope of response type (excluding correlation parameters).
+For the Priming - SCR LMM, the  maximal random effects were reduced of the random effect explaining zero variance: all interactions response_type x SCR for word and subject and interactions response_type x valence x SCR and valence x SCR for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (including correlations) also converged and yielded the same estimates (for the fuller model, only the trend of main effect SCR was less pronounced). 
+It would be not ok to not include SCR in random structure, because this predictor is of major interest and we want to make valid inferences from the  corresponding fixed effect. It is not a covariate for which we do not need to generalize the effect and for which we only want to account for the variance it explains.
 
 ```{r build LMM Priming SCR, echo = 2}
 
-LMM_rt_scr_final <- lmer(word_rt_inverse ~ FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score + FH_minus_SH:iscr_gng_resp_sqrt_z_score + FA_minus_FH:iscr_gng_resp_sqrt_z_score + pos_minus_neg:iscr_gng_resp_sqrt_z_score + FH_minus_SH:pos_minus_neg:iscr_gng_resp_sqrt_z_score + FA_minus_FH:pos_minus_neg:iscr_gng_resp_sqrt_z_score + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score  || subjectID) + (1 + FH_minus_SH + FA_minus_FH  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_rt_scr_final)                        # model does converge, no singular fit -> model is identified
+LMM_rt_scr_final <- lmer(word_rt_inverse ~ response_type*valence*iscr_gng_resp_sqrt_z_score + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-LMM_rt_scr_final_summary <- summary(LMM_rt_scr_final)
-
-kable(LMM_rt_scr_final_summary$coefficients, caption = "Overview Fixed Effects LMM SCR") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(LMM_rt_scr_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.r2 = FALSE, order.terms = c(1,2,3,7,8,9,10,11,12,4,5,6), show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "RT [-1000/RT(ms)]] Word Categorization")
 ```
 
 <br>
@@ -891,13 +901,9 @@ I tested the effect of valence, of scr, and of valence*scr within each response 
 ```{r nested LMM RT, echo = 2}
 
 # valence, scr, valence*scr within response condition 
-LMM_rt_scr_nested <- lmer(word_rt_inverse ~ response_type/valence  + response_type/iscr_gng_resp_sqrt_z_score + response_type/(valence*iscr_gng_resp_sqrt_z_score) + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score  || subjectID) + (1 + FH_minus_SH + FA_minus_FH  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_rt_scr_nested)                       # model does converge, no singular fit -> model is identified
+LMM_rt_scr_nested <- lmer(word_rt_inverse ~ response_type/(valence*iscr_gng_resp_sqrt_z_score) + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score  || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-LMM_rt_scr_nested_summary <- summary(LMM_rt_scr_nested)
-
-kable(LMM_rt_scr_nested_summary$coefficients, caption = "Overview Fixed Effects Nested LMM Word RT") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(LMM_rt_scr_nested,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.r2 = FALSE, order.terms = c(1,2,3,7,8,9,10,11,12,4,5,6), show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "RT [-1000/RT(ms)]] Word Categorization")
 ```
 
 <br>
