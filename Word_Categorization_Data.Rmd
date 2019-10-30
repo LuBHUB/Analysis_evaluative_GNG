@@ -39,6 +39,7 @@ library(lmerTest)                # for p values for tests for fixed effects (Sat
 library(MASS)                    # for box cox and contrast definition
 library("GeneralizedHyperbolic") # for fitting inverse gaussian distribution
 library(car)                     # for qqp() - QQplot
+library(sjPlot)                  # for tab_model
 
 # clear environment
 rm(list=ls())
@@ -172,7 +173,7 @@ kable(outlier[2:3], caption = "RT Word Outlier (%)") %>%
 
 #### RT & Accuracy
 
-I decided to transform the RT data, because they severely deviate from normal distribution. **Normal distribution of the residuals in the different conditions is a prerequisite for ANOVAs and LMMs** and violation has been found to have an effect on the probability of Type I error and the power. According to method papers, inverse transformation is better than the widely used log transformation to achieve normality and increase power. Checking my data with a *boxcox* function, the lambda (-0.83, so close to -1) also suggests that inverse transformation (1/RT) is the best option for my data. I also tested the log transformation. Visually, this leads to a comparable normalization of the data. I still chose the inverse transformation, as here the skewness is a bit smaller and the inverse transformation is assumed to yield better power. Based on the paper "A linear mixed model analysis of masked repetition priming" by Kliegl (2010), I used the reciprocal version of inverse transformation (-1/RT), as this transformation affords an interpretation of effects in terms of rate or speed rather than time. Instead of -1/RT, I calculated -1000/RT, to avoid having very small decimal numbers. I multiplied the inversely transformed RTs by -1000 so that coefficients will have the same sign as for models fitted to the untransformed latencies, at the same time avoiding very small values and too restricted range for the dependent variable (from Baayen 2010 Analyzing Reaction Times).
+I decided to transform the RT data, because they severely deviate from normal distribution. **Normal distribution of the residuals in the different conditions is a prerequisite for ANOVAs and LMMs** and violation has been found to have an effect on the probability of Type I error and the power. According to method papers, inverse transformation is better than the widely used log transformation to achieve normality and increase power. Checking my data with a *boxcox* function, the lambda (-0.83, so close to -1) also suggests that inverse transformation (1/RT) is the best option for my data. I also tested the log transformation. Visually, this leads to a comparable normalization of the data. I still chose the inverse transformation, as here the skewness is a bit smaller and the inverse transformation is assumed to yield better power. Based on the paper "A linear mixed model analysis of masked repetition priming" by Kliegl (2010), I used the reciprocal version of inverse transformation (-1/RT), as this transformation affords an interpretation of effects in terms of rate or speed rather than time. I  multiplied reciprocal scores by minus 1 to maintain the direction of effects compatible to the raw values, effectively converting speed into “rate of slowing”. Instead of -1/RT, I calculated -1000/RT, to avoid having very small decimal numbers. I multiplied the inversely transformed RTs by -1000 so that coefficients will have the same sign as for models fitted to the untransformed latencies, at the same time avoiding very small values and too restricted range for the dependent variable (from Baayen 2010 Analyzing Reaction Times).
 
 I decided to exclude outliers before the transformation. I think that outlier exclusion is reasonable for the word RT from a theoretical point of view and it contributed to achieving a normal distribution (only transforming without excluding outliers still resulted in a non-normal distribution). As can be seen in the plots, the transformed RT data have approximately normal distribution. I will use the transformed RT for the ANOVA. For the mixed models, I prefer to analyze the raw RT with a GLMM (see below for the reasons).
 
@@ -311,9 +312,9 @@ Trials with invalid RT to GNG stimulus or word were excluded from all analyses. 
 
 <br>
 
-#### GNG RT as Covariate?
+#### GNG RT or Error Rate as Covariate?
 
-The response types differ in terms of RT: FA = FH, but FA and FH < SH. Hence, including GNG RT as a covariate might be a good idea. But several things are problematic when including GNG RT as covariate. The most important one:
+The response types differ in terms of RT: FA = FH, but FA and FH < SH. Hence, including **GNG RT** as a covariate might be a good idea. But several things are problematic when including GNG RT as covariate. The most important one:
 
 * When I want to include CI in the contrasts and analysis, there is no GNG RT for these trials.
     * Assigning NaN to these trials leads to dropping of estimation for all CI main effects and interactions.
@@ -326,6 +327,9 @@ But I checked whether inclusion of this covariate may change the results. I incl
 The results for the LMM (and GLMM) were exactly the same:
 The 3-way interaction gng_rt_inverse:valence:response_type did not improve the model fit. There is a main effect of GNG RT but no interaction with valence*response_type. Hence, the priming effect is not modulated by the GNG RT. The model fit is a bit better when the covariate is included (both for the full and the nested model). 
 The results of all main effects and interactions are the same, independent of whether the covariate is included or not.
+
+
+I also checked **error rate** as a covariate (only in the LMM). The 3-way interaction error_rate:valence:response_type did not improve the model fit. There is a main effect of error rate but no interaction with valence*response_type. Hence, the priming effect is not modulated by the error rate. When I include error rate as a covariate in the nested model, the priming effect after SH becomes a trend only (p = .09), the priming effect after FH and FA remain significant.
 
 
 <br>
@@ -356,7 +360,7 @@ I chose sliding difference (aka "repeated") contrasts, which successively test n
 
 An alternative in order to calculate all comparisons may be to use response type as covariate instead of a factor (then I would leave it as numeric variable, not as factor, and would not specify contrasts). I decided not to do that. This approach would be quite uncommon and using a limited amount of predefined comparisons is actually a good thing.
 
-I could also use custom contrast to build sliding contrast for response condition and then directly test valence effect in each response condition. I tested this, my custom contrasts investigating directly the nested interaction give the same result as the nested model derived from the full interaction model with sliding contrasts. This custom interaction contrast fits my hypotheses and tests them directly instead of calculating a model with the interaction valence * response type and then breaking down the interaction. However, the custom interaction contrast gives no estimate for the effect of word valence and I want to show that there is no such main effect. Thus, I decided to first calculate the interaction model and then nested model to break down the interaction.
+I could also use custom contrast to build sliding contrast for response condition and then directly test valence effect nested in each response condition. I tested this, my custom contrasts investigating directly the nested interaction give the same result as the nested model derived from the full interaction model with sliding contrasts. This custom interaction contrast fits my hypotheses and tests them directly instead of calculating a model with the interaction valence * response type and then breaking down the interaction. However, the custom interaction contrast gives no estimate for the effect of word valence and I want to show that there is no such main effect. Thus, I decided to first calculate the interaction model and then nested model to break down the interaction. Also other people with expterise in this field who were interested in the nested interaction first run the full model and then the nested model. I may put the full model in the supplement, if it is too much to report all models. Daniel Schad slightly favored to directly test the hypotheses, so the nested model first, then the full model maybe as a supplement for the valence effect. But either way might be fine. 
 
 ```{r contrasts (G)LMM Words}
 # make categorical variables factors
@@ -377,6 +381,21 @@ mm_c    <- model.matrix( ~ response_type*valence, data4mixedmodels_words) # stic
 # attach to dataframe 
 data4mixedmodels_words[,(ncol(data4mixedmodels_words)+1):(ncol(data4mixedmodels_words)+8)] <- mm_c
 names(data4mixedmodels_words)[(ncol(data4mixedmodels_words)-7):ncol(data4mixedmodels_words)] <- c("Grand Mean", "FH_minus_SH","FA_minus_FH","CI_minus_FA","pos_minus_neg", "FH_minus_SH:pos_minus_neg", "FA_minus_FH:pos_minus_neg", "CI_minus_FA:pos_minus_neg")
+
+# prepare labels for (G)LMM tables
+pl <- c(
+  "(Intercept)" = "Intercept",
+  "valence2-1" = "Positive - Negative",
+  "response_type2-1" = "FH - SH", 
+  "response_type3-2" = "FA - FH",
+  "response_type4-3" = "CI - FA",
+  "response_type2-1:valence2-1" = "FH - SH x Positive - Negative", 
+  "response_type3-2:valence2-1" = "FA - FH x Positive - Negative",
+  "response_type4-3:valence2-1" = "CI - FA x Positive - Negative",
+  "response_typeSH:valence2-1" = "SH: Positive - Negative",
+  "response_typeFH:valence2-1" = "FH: Positive - Negative",
+  "response_typeFA:valence2-1" = "FA: Positive - Negative",
+  "response_typeCI:valence2-1" = "CI: Positive - Negative")
 ```
 
 <br>
@@ -384,13 +403,8 @@ names(data4mixedmodels_words)[(ncol(data4mixedmodels_words)-7):ncol(data4mixedmo
 #### Model Building
 
 * I always started with a model including the maximal random structure. 
-* When the model was degenerate (singular fit), I reduced the random effects structure by running a principal component analysis and excluded random-effects variance-covariance estimates and correlation parameters until the random structure was supported and convergence achieved (Barr, Levy, Scheepers, & Tily, 2013; Bates, Kliegl, Vasishth, & Baayen, 2015; Singmann & Kellen, n.d.).
+* (When the model was degenerate (singular fit),) I reduced the random effects structure by running a principal component analysis and excluded random-effects variance-covariance estimates and correlation parameters until the random structure was supported and convergence achieved (Barr, Levy, Scheepers, & Tily, 2013; Bates, Kliegl, Vasishth, & Baayen, 2015; Singmann & Kellen, n.d.).
     * For that, I always started with first removing the correlation parameters between random slopes and intercepts (using the double bar syntax), then all other random parameters that explained zero variance till an identified, not degenerate model was achieved.
-* Then, I checked whether all the variance components of the identified model are necessary by using a likelihood ratio test. Taking out one term at a time and checking again whether there is a significant drop in goodness of fit, allowed to identify variance components that are not supported by the data.
-    * This way, I reduced the random effects structure, taking out random slopes in order of the variance they account for (starting with the lowest estimated variance).
-    * Then, I tested random intercepts.
-* Afterwards, I rechecked whether the goodness of fit of the iteratively reduced model increases if it is extended with correlation parameters.
-* After reducing the random structure, the omnibus significance of the fixed effects was tested by using likelihood ratio tests (anova() function)
 * I presented the final model by using the REML estimation, as ML may underestimate variance of the random effects.
     * The parameter estimates were obtained using the restricted maximum likelihood (REML) estimation method which produces relatively unbiased estimates. However, the Akaike information criterion (AIC) and log-likelihood values can only be obtained by using the same models with the maximum likelihood (ML) estimation method. 
 
@@ -404,23 +418,18 @@ names(data4mixedmodels_words)[(ncol(data4mixedmodels_words)-7):ncol(data4mixedmo
 
 #### Run LMM
 
-* For the Word Categorization RT, the final model that converged and had the best fit included a random intercept for words and fully specified random structure (random intercepts and random slopes for all fixed effects plus interactions, excluding correlation parameters) for subjects.
-
+* For the Word Categorization RT, the  maximal random effects were reduced of the random effect explaining zero variance “CI - FA” for word; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “CI - FA” - and also correlations?) also converged and yielded the same estimates. As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components. 
 
 ```{r build LMM RT, echo = 2}
 
-LMM_rt_final <- lmer(word_rt_inverse ~ FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_rt_final)           # model does converge, no singular fit -> model is identified
+LMM_rt_final <- lmer(word_rt_inverse ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-LMM_rt_final_summary <- summary(LMM_rt_final)
-
-kable(LMM_rt_final_summary$coefficients, caption = "Overview Fixed Effects LMM Word RT") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(LMM_rt_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", order.terms = c(1,2,6,3,7,4,8,5), show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "RT [-1000/RT(ms)]] Word Categorization")
 ```
 <br>
 
 Output Interpretation: The intercept reflects the grand mean of all conditions. The slopes express the difference between the conditions. The slope estimate is influenced by which other fixed and random effects are included in the model.
-Akin to the ANOVA omnibus test, it can be tested whehter the interaction response type*valence improves the model fit significantly. It does. Thus, there is an omnibus interaction effect. This interaction was resolved in the next step.
+(Akin to the ANOVA omnibus test, it can be tested whehter the interaction response type x valence improves the model fit significantly. It does. Thus, there is an omnibus interaction effect.) The interaction valence x response type was resolved in the next step.
 
 <br>
 
@@ -429,14 +438,9 @@ Akin to the ANOVA omnibus test, it can be tested whehter the interaction respons
 I tested the effect of valence within each response condition by calculating a LMM that is nested in the final model above. 
 
 ```{r nested LMM RT, echo = 2}
+LMM_rt_nested <- lmer(word_rt_inverse ~ response_type/valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-LMM_rt_nested <- lmer(word_rt_inverse ~ response_type/valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_rt_nested)           # model does converge, no singular fit -> model is identified
-
-LMM_rt_nested_summary <- summary(LMM_rt_nested)
-
-kable(LMM_rt_nested_summary$coefficients, caption = "Overview Fixed Effects Nested LMM Word RT") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(LMM_rt_nested,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "RT [-1000/RT(ms)]] Word Categorization")
 ```
 
 <br>
@@ -490,18 +494,14 @@ par(mfrow = c(1, 1)) # reset "par" parameter
 
 #### Run GLMM
 
-* For the word categorization accuracy, the model including random intercepts for subjects and words and random slopes for subjects for valence and valence:response_type converged and had the best fit.
-
+* For the Word Categorization Accuracy, the  maximal random effects were reduced of the random effect explaining zero variance “FA - FH” for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “CI - FA”) also converged and yielded the same estimates (some authors prefer to have lower-order effects included as long as higher-order effects are included). As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components, even if they are lower-oder effects when higher-order effects are still included. 
 
 ```{r build GLMM Acc, echo = 2}
 
-GLMM_acc_final <- glmer(word_accuracy ~ FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg + (1 + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words, family = binomial, control=glmerControl(optimizer="bobyqa"))
+GLMM_acc_final <- glmer(word_accuracy ~ response_type*valence + (1 + FH_minus_SH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), data=data4mixedmodels_words, family = binomial, control=glmerControl(optimizer="bobyqa"))
 summary(GLMM_acc_final)                        
 
-GLMM_acc_final_summary <- summary(GLMM_acc_final)
-
-kable(GLMM_acc_final_summary$coefficients, caption = "Overview Fixed Effects GLMM Word Accuracy") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(GLMM_acc_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE",  show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "Correctness of Word Categorization")
 ```
 <br>
 
@@ -514,14 +514,9 @@ Akin to the ANOVA omnibus test, it can be tested whehter the interaction respons
 I tested the effect of valence within each response condition by calculating a GLMM that is nested in the final model above. 
 
 ```{r nested GLMM Acc, echo = 2}
+GLMM_acc_nested <- glmer(word_accuracy ~ response_type/valence + (1 + FH_minus_SH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), data=data4mixedmodels_words, family = binomial, control=glmerControl(optimizer="bobyqa"))
 
-GLMM_acc_nested <- glmer(word_accuracy ~ response_type/valence + (1 + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words, family = binomial, control=glmerControl(optimizer="bobyqa"))
-summary(GLMM_acc_nested)      # model fails to converge, unless optimizer="bobyqa" is used              
-
-GLMM_acc_nested_summary <- summary(GLMM_acc_nested)
-
-kable(GLMM_acc_nested_summary$coefficients, caption = "Overview Fixed Effects Nested GLMM Word Accuracy") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(GLMM_acc_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE",  show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "Correctness of Word Categorization")
 ```
 
 <br>
@@ -554,26 +549,37 @@ qqnorm(r_int_subjects, main = "Q-Q Plot Random Intercept Subjects")
 qqline(r_int_subjects)
 shapiro_int_subjects <- shapiro.test(r_int_subjects)["p.value"]
 
-r_slope1_subjects <- ranef(GLMM_acc_final)$subjectID$pos_minus_neg
-qqnorm(r_slope1_subjects, main = "Q-Q Plot Slope pos_minus_neg")
+r_slope1_subjects <- ranef(GLMM_acc_final)$subjectID$'FH_minus_SH'
+qqnorm(r_slope1_subjects, main = "Q-Q Plot Slope FH_minus_SH")
 qqline(r_slope1_subjects)
 shapiro_slope1_subjects <- shapiro.test(r_slope1_subjects)["p.value"] 
-# ranef(GLMM_acc_final)$subjectID$pos_minus_neg: 2 subjects (Ss 3 and 4) are mild outliers; rest is normally distributed, but Shapiro is sign., but only with 0.04
 
-r_slope2_subjects <- ranef(GLMM_acc_final)$subjectID[,1]
-qqnorm(r_slope2_subjects, main = "Q-Q Plot Slope CI_minus_FA:pos_minus_neg")
+r_slope2_subjects <- ranef(GLMM_acc_final)$subjectID$'CI_minus_FA'
+qqnorm(r_slope2_subjects, main = "Q-Q Plot Slope CI_minus_FA")
 qqline(r_slope2_subjects)
 shapiro_slope2_subjects <- shapiro.test(r_slope2_subjects)["p.value"] 
 
-r_slope3_subjects <- ranef(GLMM_acc_final)$subjectID[,2]
-qqnorm(r_slope3_subjects, main = "Q-Q Plot Slope FA_minus_FH:pos_minus_neg")
+r_slope3_subjects <- ranef(GLMM_acc_final)$subjectID$pos_minus_neg
+qqnorm(r_slope3_subjects, main = "Q-Q Plot Slope pos_minus_neg")
 qqline(r_slope3_subjects)
 shapiro_slope3_subjects <- shapiro.test(r_slope3_subjects)["p.value"] 
+# ranef(GLMM_acc_final)$subjectID$pos_minus_neg: 2 subjects (Ss 3 and 4) are mild outliers; rest is normally distributed, but Shapiro is sign., but only with 0.04
 
-r_slope4_subjects <- ranef(GLMM_acc_final)$subjectID[,3]
+r_slope4_subjects <- ranef(GLMM_acc_final)$subjectID$'FH_minus_SH:pos_minus_neg'
 qqnorm(r_slope4_subjects, main = "Q-Q Plot Slope FH_minus_SH:pos_minus_neg")
 qqline(r_slope4_subjects)
 shapiro_slope4_subjects <- shapiro.test(r_slope4_subjects)["p.value"] 
+
+r_slope5_subjects <- ranef(GLMM_acc_final)$subjectID$'pos_minus_neg:FA_minus_FH'
+qqnorm(r_slope5_subjects, main = "Q-Q Plot Slope FA_minus_FH:pos_minus_neg")
+qqline(r_slope5_subjects)
+shapiro_slope5_subjects <- shapiro.test(r_slope5_subjects)["p.value"] 
+
+r_slope6_subjects <- ranef(GLMM_acc_final)$subjectID$'CI_minus_FA:pos_minus_neg'
+qqnorm(r_slope6_subjects, main = "Q-Q Plot Slope CI_minus_FA:pos_minus_neg")
+qqline(r_slope6_subjects)
+shapiro_slope6_subjects <- shapiro.test(r_slope6_subjects)["p.value"] 
+# ranef(GLMM_acc_final)$subjectID$'CI_minus_FA:pos_minus_neg': 1 subject (Ss 5) is outlier; rest is normally distributed, but Shapiro is sign., but only with 0.04
 
 r_int_words <- ranef(GLMM_acc_final)$word$`(Intercept)`
 qqnorm(r_int_words, main = "Q-Q Plot Random Intercept Words")
@@ -581,10 +587,25 @@ qqline(r_int_words)
 shapiro_int_words <- shapiro.test(r_int_words)["p.value"] 
 #ranef(GLMM_acc_final)$word$`(Intercept)`: 3 words (einsam, herzlos, lieblos) are outliers; rest is normally distributed, but Shapiro is sign.
 
+r_slope1_words <- ranef(GLMM_acc_final)$word$FH_minus_SH
+qqnorm(r_slope1_words, main = "Q-Q Plot Slope FH_minus_SH")
+qqline(r_slope1_words)
+shapiro_slope1_words <- shapiro.test(r_slope1_words)["p.value"] 
+
+r_slope2_words <- ranef(GLMM_acc_final)$word$FA_minus_FH
+qqnorm(r_slope2_words, main = "Q-Q Plot Slope FA_minus_FH")
+qqline(r_slope2_words)
+shapiro_slope2_words <- shapiro.test(r_slope2_words)["p.value"] 
+
+r_slope3_words <- ranef(GLMM_acc_final)$word$CI_minus_FA
+qqnorm(r_slope3_words, main = "Q-Q Plot Slope CI_minus_FA")
+qqline(r_slope3_words)
+shapiro_slope3_words <- shapiro.test(r_slope3_words)["p.value"] 
+
 par(mfrow = c(1, 1)) # reset "par" parameter
 
-rand_effects_shapiro <- data.frame(round(c(unlist(shapiro_int_subjects),unlist(shapiro_slope1_subjects),unlist(shapiro_slope2_subjects),unlist(shapiro_slope3_subjects),unlist(shapiro_slope4_subjects),unlist(shapiro_int_words)), digits = 4))
-rownames(rand_effects_shapiro) <- c("Random Intercept Subjects","Random Slope Subjects pos_minus_neg", "Random Slope Subjects CI_minus_FA:pos_minus_neg", "Random Slope Subjects FA_minus_FH:pos_minus_neg", "Random Slope Subjects FH_minus_SH:pos_minus_neg", "Random Intercept Words")
+rand_effects_shapiro <- data.frame(round(c(unlist(shapiro_int_subjects),unlist(shapiro_slope1_subjects),unlist(shapiro_slope2_subjects),unlist(shapiro_slope3_subjects),unlist(shapiro_slope4_subjects),unlist(shapiro_slope5_subjects),unlist(shapiro_slope6_subjects),unlist(shapiro_int_words),unlist(shapiro_slope1_words),unlist(shapiro_slope2_words),unlist(shapiro_slope3_words)), digits = 4))
+rownames(rand_effects_shapiro) <- c("Random Intercept Subjects","Random Slope Subjects FH_minus_SH","Random Slope Subjects CI_minus_FA","Random Slope Subjects pos_minus_neg", "Random Slope Subjects FH_minus_SH:pos_minus_neg", "Random Slope Subjects FA_minus_FH:pos_minus_neg", "Random Slope Subjects CI_minus_FA:pos_minus_neg", "Random Intercept Words","Random Slope Words FH_minus_SH","Random Slope FA_minus_FH","Random Slope Words CI_minus_FA")
 colnames(rand_effects_shapiro) <- "Shapiro-Wilk p Value"
 rand_effects_shapiro <- t(rand_effects_shapiro)
 
@@ -604,7 +625,7 @@ overdisp_fun <- function(model) {
   pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
   c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
 }
-overdisp_fun(GLMM_acc_final) # If the p-value is < 0.05, the data are overdispersed. Here p > 0.05. Overpersion is not a problem here. 
+overdisp_fun(GLMM_acc_final) # If the p-value is < 0.05, the data are overdispersed. Here p > 0.05. Overdispersion is not a problem here. 
 ```
 
 <br>
