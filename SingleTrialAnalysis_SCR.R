@@ -29,7 +29,8 @@
     setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 # path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
     raw_log <- read.table(subject, skip = 58, fill = TRUE, header = TRUE, nrows = 516)
     name_of_subject <-  gsub("\\.txt*","",subject)
-  
+    rating <- read.table(subject, skip = 575, fill = TRUE, header = TRUE, sep = ":", stringsAsFactors = FALSE)
+    
     
   # Load SCR files 
   setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed")               # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
@@ -420,12 +421,18 @@
 
 
 
+  ####################   add rating variables  #################### 
+  
+  effort            <- as.numeric(rating[1,1])
+  error_avoidance   <- as.numeric(rating[2,1])
+  error_frustration <- as.numeric(rating[3,1])
+  fatigue           <- as.numeric(rating[4,1])
   
   
   
   ####################   add df of one subject to df containing all subjects  ####################
   
-  df4save <- rbind(df4save, data.frame(subject,rt_neg_after_FA,rt_pos_after_FA,rt_neg_after_FH,rt_pos_after_FH,rt_neg_after_SH,rt_pos_after_SH,rt_neg_after_CI,rt_pos_after_CI,rt_priming_overall,rt_priming_after_FA,rt_priming_after_FH,correct_responses_neg_after_FA,correct_responses_pos_after_FA,correct_responses_neg_after_FH,correct_responses_pos_after_FH,count_outlier_words_FA_FH,percent_outlier_words_overall,percent_correct_responses_neg_after_FA,percent_correct_responses_pos_after_FA,percent_correct_responses_neg_after_FH,percent_correct_responses_pos_after_FH,percent_correct_responses_neg_after_SH,percent_correct_responses_pos_after_SH,percent_correct_responses_neg_after_CI,percent_correct_responses_pos_after_CI,percent_correct_overall,accuracy_priming_overall,accuracy_priming_after_FA,accuracy_priming_after_FH,GNG_rt_FA,GNG_rt_FH,GNG_rt_SH,GNG_percent_FA,GNG_percent_FH,GNG_percent_CI,GNG_percent_SH,GNG_percent_outlier,SCR_after_FA,SCR_after_FH,SCR_after_SH,SCR_after_CI,SCR_neg_after_FA,SCR_neg_after_FH,SCR_neg_after_SH,SCR_neg_after_CI,SCR_pos_after_FA,SCR_pos_after_FH,SCR_pos_after_SH,SCR_pos_after_CI,for_SCR_count_neg_after_FA,for_SCR_count_pos_after_FA,for_SCR_count_neg_before_FA,for_SCR_count_pos_before_FA,for_SCR_count_neg_after_FA_next_trial,for_SCR_count_pos_after_FA_next_trial))
+  df4save <- rbind(df4save, data.frame(subject,rt_neg_after_FA,rt_pos_after_FA,rt_neg_after_FH,rt_pos_after_FH,rt_neg_after_SH,rt_pos_after_SH,rt_neg_after_CI,rt_pos_after_CI,rt_priming_overall,rt_priming_after_FA,rt_priming_after_FH,correct_responses_neg_after_FA,correct_responses_pos_after_FA,correct_responses_neg_after_FH,correct_responses_pos_after_FH,count_outlier_words_FA_FH,percent_outlier_words_overall,percent_correct_responses_neg_after_FA,percent_correct_responses_pos_after_FA,percent_correct_responses_neg_after_FH,percent_correct_responses_pos_after_FH,percent_correct_responses_neg_after_SH,percent_correct_responses_pos_after_SH,percent_correct_responses_neg_after_CI,percent_correct_responses_pos_after_CI,percent_correct_overall,accuracy_priming_overall,accuracy_priming_after_FA,accuracy_priming_after_FH,GNG_rt_FA,GNG_rt_FH,GNG_rt_SH,GNG_percent_FA,GNG_percent_FH,GNG_percent_CI,GNG_percent_SH,GNG_percent_outlier,SCR_after_FA,SCR_after_FH,SCR_after_SH,SCR_after_CI,SCR_neg_after_FA,SCR_neg_after_FH,SCR_neg_after_SH,SCR_neg_after_CI,SCR_pos_after_FA,SCR_pos_after_FH,SCR_pos_after_SH,SCR_pos_after_CI,for_SCR_count_neg_after_FA,for_SCR_count_pos_after_FA,for_SCR_count_neg_before_FA,for_SCR_count_pos_before_FA,for_SCR_count_neg_after_FA_next_trial,for_SCR_count_pos_after_FA_next_trial,effort,error_avoidance,error_frustration,fatigue))
   data4mixedmodels <- rbind(data4mixedmodels,single_trial_data)
   
   }
@@ -453,13 +460,13 @@
 
   setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")    # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
   date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
-  
+
   filename_singletrial <- paste("Data_Single_Trial_For_",length(logfiles),"_subjects_",date_time, ".rda", sep = "")
-  save(data4mixedmodels,file=filename_singletrial)    
-  
+  save(data4mixedmodels,file=filename_singletrial)
+
   filename_traits <- paste("Data_Trait_Variables_For_",length(logfiles),"_subjects_",date_time, ".rda", sep = "")
-  save(questionnaires,file=filename_traits) 
-  
+  save(questionnaires,file=filename_traits)
+
   filename_aggregated <- paste("Data_only_for_overview.rda")
   save(df4save,file=filename_aggregated) 
   
