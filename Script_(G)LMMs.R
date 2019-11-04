@@ -431,21 +431,99 @@ anova(LMM_rt_nested, LMM_rt_cov_nested) # fit is better with covariate
 
 
 ###### Include Error Rate as covariate??
+# Center Covariate
+data4mixedmodels_words$error_rate <- scale(data4mixedmodels_words$error_rate, center = TRUE, scale = FALSE)
 
-LMM_rt_cov_error <- lmer(word_rt_inverse ~ response_type*valence*error_rate + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_rt_cov_error)
+# Full model: response type:valence remains significant; there is no significant 3 way interaction response_type4-3:valence2-1:error_rate
+LMM_rt_cov_error_rate <- lmer(word_rt_inverse ~ response_type*valence*error_rate + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_rate)
 
-# test whether 3-way interaction improves fit
-LMM_rt_cov_error_red1 <- lmer(word_rt_inverse ~ response_type*valence + error_rate + error_rate:response_type + error_rate:valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_rt_cov_error_red1)                     # model does converge -> identified model
-anova(LMM_rt_cov_error,LMM_rt_cov_error_red1)      # 3-way interaction error_rate:valence:response type does not improve fit (no sign. diff.) -> priming not modulated by error rate!!!!
+# Nested model: priming after FA, FH, SH remains (for no response type there is a significant interaction valence x error rate)
+LMM_rt_cov_error_rate_nested <- lmer(word_rt_inverse ~ (response_type/valence)*error_rate + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_rate_nested)
 
-# priming after Sh is only trend when error rate is included as covariate, priming after FH and FA remains
-LMM_rt_cov_error_red3 <- lmer(word_rt_inverse ~ (response_type/valence)*error_rate + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
-summary(LMM_rt_cov_error_red3)
+# 3-way interaction error_rate:valence:response type does not improve fit (no sign. diff.) -> priming not modulated by error rate!!!!
+LMM_rt_cov_error_rate_red1 <- lmer(word_rt_inverse ~ response_type*valence + error_rate + error_rate:response_type + error_rate:valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_rate_red1)                          
+anova(LMM_rt_cov_error_rate,LMM_rt_cov_error_rate_red1)      
 
 
 
+
+
+###### Include Error Frustration / Avoidance as covariate?? (just had a quick glimpse at it)
+
+# Load ratings and merge to data4mixedmodels
+ratings  <- data.frame()  
+logfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
+
+for (subject in logfiles){                                                                               
+  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 
+  rating <- read.table(subject, skip = 575, fill = TRUE, header = TRUE, sep = ":", stringsAsFactors = FALSE)
+  subjectID <-  factor(as.numeric(substr(subject,14,15)))
+  
+  effort            <- as.numeric(rating[1,1])
+  error_avoidance   <- as.numeric(rating[2,1])
+  error_frustration <- as.numeric(rating[3,1])
+  fatigue           <- as.numeric(rating[4,1])
+  
+  ratings <- rbind(ratings,data.frame(subjectID,effort,error_avoidance,error_frustration,fatigue))
+} 
+data4mixedmodels_words <- left_join(data4mixedmodels_words,ratings,by = "subjectID")
+
+
+### error avoidance
+# Center Covariate
+data4mixedmodels_words$error_avoidance <- scale(data4mixedmodels_words$error_avoidance, center = TRUE, scale = FALSE)
+
+# Full model: response type:valence remains significant; there is also a significant 3 way interaction response_type4-3:valence2-1:error_avoidance
+LMM_rt_cov_error_avoidance <- lmer(word_rt_inverse ~ response_type*valence*error_avoidance + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_avoidance) # interestingly, there is no main effect of error_avoidance on word_rt
+ 
+# Nested model: priming after FA, FH, SH remains (for no response type there is a significant interaction valence x frustration)
+LMM_rt_cov_error_avoidance_nested <- lmer(word_rt_inverse ~ (response_type/valence)*error_avoidance + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_avoidance_nested)
+
+# 3-way interaction error_avoidance:valence:response type does not improve fit (no sign. diff.) -> priming not modulated by error avoidance!!!!
+LMM_rt_cov_error_avoidance_red1 <- lmer(word_rt_inverse ~ response_type*valence + error_avoidance + error_avoidance:response_type + error_avoidance:valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_avoidance_red1)                          
+anova(LMM_rt_cov_error_avoidance,LMM_rt_cov_error_avoidance_red1)      
+
+
+### error frustration
+# Center Covariate
+data4mixedmodels_words$error_frustration <- scale(data4mixedmodels_words$error_frustration, center = TRUE, scale = FALSE)
+
+# Full model: response type:valence remains significant, there is no  3-way interaction error_frustration:valence:response type
+LMM_rt_cov_error_frustration <- lmer(word_rt_inverse ~ response_type*valence*error_frustration + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_frustration)
+
+# Nested model: priming after FA, FH, and SH remains (for no response type there is a significant interaction valence x frustration)
+LMM_rt_cov_error_frustration_nested <- lmer(word_rt_inverse ~ (response_type/valence)*error_frustration + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_frustration_nested)
+
+# 3-way interaction error_frustration:valence:response type does not improve fit (no sign. diff.) -> priming not modulated by error frustration!!!!
+LMM_rt_cov_error_frustration_red1 <- lmer(word_rt_inverse ~ response_type*valence + error_frustration + error_frustration:response_type + error_frustration:valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_error_frustration_red1)                          
+anova(LMM_rt_cov_error_frustration,LMM_rt_cov_error_frustration_red1)      
+
+
+### effort
+# Center Covariate
+data4mixedmodels_words$effort <- scale(data4mixedmodels_words$effort, center = TRUE, scale = FALSE)
+
+# Full model: response type:valence remains significant, there is no  3-way interaction effort:valence:response type
+LMM_rt_cov_effort <- lmer(word_rt_inverse ~ response_type*valence*effort + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_effort)
+
+# Nested model: priming after FA, FH, SH remains (for no response type there is a significant interaction valence x frustration)
+LMM_rt_cov_effort_nested <- lmer(word_rt_inverse ~ (response_type/valence)*effort + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_effort_nested)
+
+# 3-way interaction effort:valence:response type does not improve fit (no sign. diff.) -> priming not modulated by error frustration!!!!
+LMM_rt_cov_effort_red1 <- lmer(word_rt_inverse ~ response_type*valence + effort + effort:response_type + effort:valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+summary(LMM_rt_cov_effort_red1)                          
+anova(LMM_rt_cov_effort,LMM_rt_cov_effort_red1)      
 
 
 
