@@ -37,6 +37,8 @@ library(lmerTest)                # extends lme4: p values for tests for fixed ef
 library(car)                     # for qqp
 library("GeneralizedHyperbolic") # for fitting inverse gaussian distribution
 library(MASS)                    # for contr.sdiff
+library(sjPlot)                  # for tab_model
+library(Rmisc)                   # for summarySEwithin
 
 # clear environment
 rm(list=ls())
@@ -72,12 +74,14 @@ df_aggregated_per_subject_gng$response_type <- factor(df_aggregated_per_subject_
     
 
 
-# aggregating over subjects per condition (needed for barplots)
-df_aggregated_over_subjects_gng <- df_aggregated_per_subject_gng %>%
-  group_by(response_type) %>%
-    summarise_at(.vars = c("rt","proportion"), funs(mean,sd,se=sd(.)/sqrt(n())))
+# aggregating over subjects per condition and calculate SE/CI corrected for within design (only needed for barplots)
+source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R")
+df_aggregated_over_subjects_gng_rt <- summarySEwithinO(data4mixedmodels_gng, measurevar="gng_rt", withinvars="response_type", idvar="subjectID", conf.interval=.95)
+df_aggregated_over_subjects_gng_rt$response_type <- factor(df_aggregated_over_subjects_gng_rt$response_type, levels=c("FA","FH","SH")) 
 
-df_aggregated_over_subjects_gng$response_type <- factor(df_aggregated_over_subjects_gng$response_type, levels=c("FA","FH","SH","CI")) 
+# for proportion of response_types, I can only apply function to the data already aggregated per subject (attaching proportion for response type to each trial in each subject makes no sense, as then I duplicate the data and artificially set the variance within one subject to 0)
+df_aggregated_over_subjects_gng_prop <- summarySEwithinO(df_aggregated_per_subject_gng, measurevar="proportion", withinvars="response_type", idvar="subjectID", conf.interval=.95)
+df_aggregated_over_subjects_gng_prop$response_type <- factor(df_aggregated_over_subjects_gng_prop$response_type, levels=c("FA","FH","SH","CI")) 
 
 
 
@@ -258,7 +262,7 @@ GNG RT is not normally distributed. Distribution fits inverse gaussian distribut
 
 #### Check Distribution 
 
-GNG RT is not normally distributed (see above). The transfomed GNG RT Inverse approaches normal distribution (but the kurtosis is 3.4; the kurtosis of the residuals is even worse - 6.1). But as this deviation is mild and the analysis is of no interest and the GLMM and the ANOVA show the same results, results by means of an LMM may be reliable here. 
+GNG RT is not normally distributed (see above). The transfomed GNG RT Inverse approaches normal distribution (but the kurtosis is 3.4; the kurtosis of the residuals is even worse - 6.3). But as this deviation is mild and the analysis is of no interest and the GLMM and the ANOVA show the same results, results by means of an LMM may be reliable here. 
 
 ```{r distribution 1 LMM RT, fig.width=10, fig.height=6}
 
@@ -309,13 +313,15 @@ See which approach I chose for building the model in the section "Word Categoriz
 
 #### Run LMM
 
-* For the GNG RT, the LMM containing the maximal random effects structure and correlation parameters was used.
+For the GNG RT, the LMM containing the maximal random effects structure and correlation parameters was used.
 
 ```{r run LMM RT, echo = 1} 
 LMM_rt_gng_final <- lmer(gng_rt_inverse ~ SH_minus_FA + FA_minus_FH + (1 + SH_minus_FA + FA_minus_FH  | subjectID), data=data4mixedmodels_gng, REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_rt_gng_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE",  show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "GNG RT")
+tab_model(LMM_rt_gng_final,dv.labels = "GNG RT", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 ```
+
+<br>
 
 The results are: SH > FA, FH = FA. This is in line with the results obtained by the ANOVA post hoc tests. In these, FH vs SH was also tested. They differ significantly.
 
@@ -333,7 +339,7 @@ Assumption 2: Homogeneity of Variance
     
 Assumption 3: Normality of Residuals 
 * Residuals are approximately normally distributed.
-* Q-Q plot looks not really great; quite a bit off at the extremes (kurtosis is 6.1, skewness is -0.5) -> normality not really given
+* Q-Q plot looks not really great; quite a bit off at the extremes (kurtosis is 6.3, skewness is -0.5) -> normality not really given
 
 ```{r test LMM assumptions, fig.width=10, fig.height=4, fig.align='center'} 
 par(mfrow = c(1,2))  # use par function in base graphics approach to arrange plots side by side here; grid.arrange only works for ggplot grahpics
@@ -346,6 +352,12 @@ qqnorm(resid(LMM_rt_gng_final))
 qqline(resid(LMM_rt_gng_final)) 
 
 par(mfrow = c(1, 1)) # reset "par" parameter
+
+skewness <- round(skewness(resid(LMM_rt_gng_final)),digits = 2) 
+kurtosis <- round(kurtosis(resid(LMM_rt_gng_final)),digits = 2) 
+
+print(paste("Skewness Residuals Distribution:", skewness))
+print(paste("Kurtosis Residuals Distribution:", kurtosis))
 ```
 
 
@@ -414,11 +426,11 @@ anova_rt_posthoc_response_type <- pairwise.t.test(df_aggregated_per_subject_gng[
 anova_proportion_posthoc_response_type <- pairwise.t.test(df_aggregated_per_subject_gng$proportion,df_aggregated_per_subject_gng$response_type, p.adjust.method="holm",paired=TRUE)
 
 kable(anova_rt_posthoc_response_type$p.value, caption = "RT: Post Hoc Test Response Type")  %>%
- kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")  %>%
+ kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
  footnote(general = "P value adjusted with Holm method.")
 
 kable(anova_proportion_posthoc_response_type$p.value, caption = "Proportion of Response Types: Post Hoc Test Response Type")  %>%
- kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")  %>%
+ kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
  footnote(general = "P value adjusted with Holm method.")
 ```
 
@@ -526,9 +538,9 @@ grid.arrange(hist_residuals_gng_rt_inverse,qqplot_residuals_gng_rt_inverse,hist_
 
 ```{r bar plots, fig.width=10, fig.align='center'}
   
-barplot_rt <- ggplot(df_aggregated_over_subjects_gng[df_aggregated_over_subjects_gng$response_type != "CI",],aes (x = response_type,y = rt_mean)) +
+barplot_rt <- ggplot(df_aggregated_over_subjects_gng_rt,aes (x = response_type,y = gng_rt)) +
   geom_bar(stat="identity", position=position_dodge(), fill = "wheat2", width = 0.7) +                                                       
-  geom_errorbar(aes(ymax = rt_mean + rt_se, ymin = rt_mean - rt_se), position = position_dodge(width=0.95), width=0.1) +    
+  geom_errorbar(aes(ymax = gng_rt + ci, ymin = gng_rt - ci), position = position_dodge(width=0.95), width=0.1) +    
   ggtitle("Response Time") +                                                                            
   xlab("Response Type") + ylab("Response Time (ms)") +                                                                  
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -539,9 +551,10 @@ barplot_rt <- ggplot(df_aggregated_over_subjects_gng[df_aggregated_over_subjects
   theme(plot.title = element_text(size = 20, hjust = 0.5)) +
   geom_signif(y_position=c(360,380), xmin=c(1, 1), xmax=c(2,3),annotation=c("NS","***"), tip_length=0.02) 
  
-barplot_cond <- ggplot(df_aggregated_over_subjects_gng,aes (x = response_type,y = proportion_mean)) +
+
+barplot_cond <- ggplot(df_aggregated_over_subjects_gng_prop,aes (x = response_type,y = proportion)) +
   geom_bar(stat="identity", position=position_dodge(), fill = "wheat2") +                                                       
-  geom_errorbar(aes(ymax = proportion_mean + proportion_se, ymin = proportion_mean - proportion_se), position = position_dodge(width=0.95), width=0.1) +  
+  geom_errorbar(aes(ymax = proportion + ci, ymin = proportion - ci), position = position_dodge(width=0.95), width=0.1) +  
   ggtitle("Proportion of Response Type") +                                                                            
   xlab("Response Type") + ylab("Proportion of Response Type (%)") +                                                                  
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -550,22 +563,55 @@ barplot_cond <- ggplot(df_aggregated_over_subjects_gng,aes (x = response_type,y 
   theme(legend.title=element_text(size=15)) +
   theme(legend.text=element_text(size=15)) +
   theme(plot.title = element_text(size = 20, hjust = 0.5)) +
-  geom_signif(y_position=c(43,43,43), xmin=c(1.02, 2.02,3.02), xmax=c(1.98, 2.98,3.98),annotation=c("***","***","***"), tip_length=0.02) +
-  geom_signif(y_position=c(47,51,55), xmin=c(1.02, 2.02,1.02), xmax=c(2.98, 3.98,3.98),annotation=c("***","NS","***"), tip_length=0.02) 
+  geom_signif(y_position=c(45,45,45), xmin=c(1.02, 2.02,3.02), xmax=c(1.98, 2.98,3.98),annotation=c("***","***","***"), tip_length=0.02) +
+  geom_signif(y_position=c(49,53,57), xmin=c(1.02, 2.02,1.02), xmax=c(2.98, 3.98,3.98),annotation=c("***","NS","***"), tip_length=0.02) 
+
 
 grid.arrange(barplot_rt,barplot_cond,nrow=1)
 
 # save image
- gng <- arrangeGrob(barplot_rt,barplot_cond,nrow=1)
- grid.draw(gng) # interactive device
- ggsave("gng.png", gng, width = 36, height = 16, units = "cm")
+# gng <- arrangeGrob(barplot_rt,barplot_cond,nrow=1)
+# grid.draw(gng) # interactive device
+# ggsave("gng.png", gng, width = 36, height = 16, units = "cm")
 
 ```
+<br>
+
+Error bars depict 95% CI. Values are adjusted for within-participant designs following Morey (2008). Calculation of error bars for the RT was based on the non-aggregated data, as this better reflects the LMM approach. Computing error bars based on the aggregated data per subject yields different results, as in the mean of the group means it would not be considered that subjects have different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable / relies on the same amount of information, which is not true. For the Proportion of Response Type, I can only calculate error bars based on the data already aggregated per subject. Attaching proportion for response type to each trial in each subject makes no sense, as then I duplicate the data and artificially set the variance within one subject to 0.
 
 <br>
 <br>
 <br>
 
+
+#### Tables Mean and CI
+
+```{r descriptive}
+
+# this shows the data calculated based on the non aggregated (single trial) data. This corresponds to the LMM approach and my plots.
+table_rt <- df_aggregated_over_subjects_gng_rt[,c("response_type","N","gng_rt","sd","se","ci")]
+table_rt[,c("gng_rt","sd","se","ci")] <- round(table_rt[,c("gng_rt","sd","se","ci")], digits = 2)
+table_rt <- t(table_rt)
+rownames(table_rt) <- c("","N","M","SD","SE","95% CI")
+
+kable(table_rt, caption = 'Reaction Time') %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
+
+table_prop <- df_aggregated_over_subjects_gng_prop[,c("response_type","N","proportion","sd","se","ci")]
+table_prop[,c("proportion","sd","se","ci")] <- round(table_prop[,c("proportion","sd","se","ci")], digits = 2)
+table_prop <- t(table_prop)
+rownames(table_prop) <- c("","N","M","SD","SE","95% CI")
+table_prop <- table_prop[,c(2,3,4,1)]
+
+kable(table_prop, caption = 'Proportion of Response Types') %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
+```
+
+Note: The RT values here are based on the non-aggregated single trial data. This corresponds to the LMM approach and my plots. The Proportion of response types is based on the data first aggregated per subject and then over subjects.
+
+<br>
+<br>
+<br>
 
 # Summary
 
