@@ -40,6 +40,7 @@ library(MASS)                    # for box cox and contrast definition
 library("GeneralizedHyperbolic") # for fitting inverse gaussian distribution
 library(car)                     # for qqp() - QQplot
 library(sjPlot)                  # for tab_model
+library(Rmisc)                   # for summarySEwithin
 
 # clear environment
 rm(list=ls())
@@ -92,16 +93,17 @@ df_aggregated_per_subject$response_type <- factor(substr(df_aggregated_per_subje
 df_aggregated_per_subject$word_valence  <- factor(substr(df_aggregated_per_subject$condition, 1, 3))
 df_aggregated_per_subject$subjectID     <- factor(df_aggregated_per_subject$subjectID)                              
   
-                          
 
-# aggregating over subjects per condition (needed for barplots)
-df_aggregated_over_subjects <- df_aggregated_per_subject %>%
-  group_by(condition) %>%
-    summarise_at(.vars = c("rt","percent_correct_responses"), funs(mean,sd,se=sd(.)/sqrt(n())))
+# aggregating over subjects per condition and calculate SE/CI corrected for within design (only needed for barplots)
+# I apply function to the non-aggregated (data4mixedmodels_words) data, as this better reflects the LMM approach (Julia also does it like that). Computing this with the aggregated data per subject (df_aggregated_per_subject) yields different results, as in the mean of the group means it would not be considered that subjects have different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable / relies on the same amount of information, which is not true
+source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R")
+df_aggregated_over_subjects_rt <- summarySEwithinO(data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], measurevar="word_rt", withinvars="condition", idvar="subjectID", conf.interval=.95)
+df_aggregated_over_subjects_rt$response_type <- factor(substr(df_aggregated_over_subjects_rt$condition, 11, 12), levels=c("FA","FH","SH","CI"))
+df_aggregated_over_subjects_rt$word_valence  <- factor(substr(df_aggregated_over_subjects_rt$condition, 1, 3))
 
-df_aggregated_over_subjects$response_type <- factor(substr(df_aggregated_over_subjects$condition, 11, 12), levels=c("FA","FH","SH","CI"))
-df_aggregated_over_subjects$word_valence  <- factor(substr(df_aggregated_over_subjects$condition, 1, 3))
-                               
+df_aggregated_over_subjects_acc <- summarySEwithinO(data4mixedmodels_words, measurevar="word_accuracy", withinvars="condition", idvar="subjectID", conf.interval=.95)
+df_aggregated_over_subjects_acc$response_type <- factor(substr(df_aggregated_over_subjects_acc$condition, 11, 12), levels=c("FA","FH","SH","CI"))
+df_aggregated_over_subjects_acc$word_valence  <- factor(substr(df_aggregated_over_subjects_acc$condition, 1, 3))
 
 
 # long to wide format and calculate priming effect -> variables in df_wide are identical to those in df4save! I just avoid using df4save for the subsequent analyses... 
@@ -175,7 +177,7 @@ kable(outlier[2:3], caption = "RT Word Outlier (%)") %>%
 
 I decided to transform the RT data, because they severely deviate from normal distribution. **Normal distribution of the residuals in the different conditions is a prerequisite for ANOVAs and LMMs** and violation has been found to have an effect on the probability of Type I error and the power. According to method papers, inverse transformation is better than the widely used log transformation to achieve normality and increase power. Checking my data with a *boxcox* function, the lambda (-0.83, so close to -1) also suggests that inverse transformation (1/RT) is the best option for my data. I also tested the log transformation. Visually, this leads to a comparable normalization of the data. I still chose the inverse transformation, as here the skewness is a bit smaller and the inverse transformation is assumed to yield better power. Based on the paper "A linear mixed model analysis of masked repetition priming" by Kliegl (2010), I used the reciprocal version of inverse transformation (-1/RT), as this transformation affords an interpretation of effects in terms of rate or speed rather than time. I  multiplied reciprocal scores by minus 1 to maintain the direction of effects compatible to the raw values, effectively converting speed into “rate of slowing”. Instead of -1/RT, I calculated -1000/RT, to avoid having very small decimal numbers. I multiplied the inversely transformed RTs by -1000 so that coefficients will have the same sign as for models fitted to the untransformed latencies, at the same time avoiding very small values and too restricted range for the dependent variable (from Baayen 2010 Analyzing Reaction Times).
 
-I decided to exclude outliers before the transformation. I think that outlier exclusion is reasonable for the word RT from a theoretical point of view and it contributed to achieving a normal distribution (only transforming without excluding outliers still resulted in a non-normal distribution). As can be seen in the plots, the transformed RT data have approximately normal distribution. I will use the transformed RT for the ANOVA. For the mixed models, I prefer to analyze the raw RT with a GLMM (see below for the reasons).
+I decided to exclude outliers before the transformation. I think that outlier exclusion is reasonable for the word RT from a theoretical point of view and it contributed to achieving a normal distribution (only transforming without excluding outliers still resulted in a non-normal distribution). As can be seen in the plots, the transformed RT data have approximately normal distribution. I will use the transformed RT for the ANOVA and the LMM.
 
 Accuracy data (and residuals of accuracy in the different conditions) are not normally distributed and there is no transformation that leads to normality (see below). Aggregated accuracy (percent correct in the different conditions) will be analyzed with an ANOVA anyway, as no suitable non-parametric alternative is available. The correctness on single trial level will be analyzed with a GLMM, as such binary events have a binomial distribution. 
 
@@ -284,8 +286,8 @@ kable(normality) %>%
 
 #### Summary
 
-* Normal distribution of sampling data can be assumed for inverse word RT
-* Normal distribution of sampling data **cannot** be assumed for untransformed word RT and for accuracy.
+Normal distribution of sampling data can be assumed for inverse word RT.
+Normal distribution of sampling data **cannot** be assumed for untransformed word RT and for accuracy.
 
 
 
@@ -298,7 +300,7 @@ kable(normality) %>%
 
 I used a linear mixed model to evaluate whether the response time and accuracy of the word categorization differs depending on type of the previous response to the GNG stimulus and the word valence. 
 I thought about analyzing word categorization RT by means of a GLMM on the raw RTs instead of a LMM on the transformed RT. This is recommended by Lo & Anderson (2015) and more recent statistics literature, because transformation makes interpretation of model estimates more difficult, and it makes mischief with the variance of the transformed variable. Follwing this recommendation, I also analyzed word categorization RT by means on a GLMM. Lo & Anderson (2015) recommend gamma or inverse gaussian distribution for RTs. For the word RTs, inverse gaussian distribution fits very well and better than gamma distribution. Hence, I chose inverse gaussian distribution and the identity link funktion (recommended by Lo & Andrews, 2015) for my GLMM. 
-Unfortunately, convergence is much more difficult, especially for the inverse gaussian distribution, which fits our data best. The GLMM only converges with less random slopes than the LMM. The effects of interest (interaction response type*valence) are the same in GLMM and LMM. The only difference is that in the GLMM there is also a significant difference between response types FH_vs_SH (in the full and the nested model). This maybe results from a type I error that may be increased due to the sparse random structure (this effect is also not significant in the ANOVA post hoc test). Further arguments favoring the LMM are that I can more flexibly included control variables (as GNG RT) and still have converging models and that it is consistent with the choice of an LMM to analyze SCR, which I did not manage to do with the GLMM due to the weird distribution of the SCR data. Hence, I decide to run LMMs (except for the binomial accuracy data) but I may report that parallel analyses conducted on raw RT using GLMM models that assumed an inverse gaussian distribution of residuals yielded the same outcomes.
+Unfortunately, convergence is much more difficult, especially for the inverse gaussian distribution, which fits our data best. The GLMM only converges with less random slopes than the LMM. The effects of interest (interaction response type x valence) are the same in GLMM and LMM. The only difference is that in the GLMM there is also a significant difference between response types FH_vs_SH (in the full and the nested model). This maybe results from a type I error that may be increased due to the sparse random structure (this effect is also not significant in the ANOVA post hoc test). Further arguments favoring the LMM are that I can more flexibly included control variables (as GNG RT) and still have converging models and that it is consistent with the choice of an LMM to analyze SCR, which I did not manage to do with the GLMM due to the weird distribution of the SCR data. Hence, I decide to run LMMs (except for the binomial accuracy data) but I may report that parallel analyses conducted on raw RT using GLMM models that assumed an inverse gaussian distribution of residuals yielded the same outcomes.
 
 **Overview (G)LMM:**
 
@@ -322,14 +324,15 @@ The response types differ in terms of RT: FA = FH, but FA and FH < SH. Hence, in
 
 I prefer to not include GNG RT as covariate. Reliably testing priming (also after CI) is more important to me than having GNG RT as covariate. 
 
-But I checked whether inclusion of this covariate may change the results. I included GNG RT as a covariate in the LMM on the transformed word RT inverse (and I also tested it in the GLMM on the raw RT). I did not include it as a random slope, I just included the covariate as a fixed effect in the final model I obtained for Word RT/Word RT inverse without the covariate (instead of building the model from the scratch and including the covariate as random slope).
+But I checked whether inclusion of this covariate may change the results. I included GNG RT as a covariate in the LMM on the transformed word RT inverse (and I also tested it in the GLMM on the raw RT). I did not include it as a random slope.
 
 The results for the LMM (and GLMM) were exactly the same:
-The 3-way interaction gng_rt_inverse:valence:response_type did not improve the model fit. There is a main effect of GNG RT but no interaction with valence*response_type. Hence, the priming effect is not modulated by the GNG RT. The model fit is a bit better when the covariate is included (both for the full and the nested model). 
+The 3-way interaction gng_rt_inverse x valence x response_type did not improve the model fit. There is a main effect of GNG RT but no interaction with valence x response_type. Hence, the priming effect is not modulated by the GNG RT. The model fit is a bit better when the covariate is included (both for the full and the nested model). 
 The results of all main effects and interactions are the same, independent of whether the covariate is included or not.
 
 
-I also checked **error rate** as a covariate (only in the LMM). The 3-way interaction error_rate:valence:response_type did not improve the model fit. There is a main effect of error rate but no interaction with valence*response_type. Hence, the priming effect is not modulated by the error rate. When I include error rate as a covariate in the nested model, the priming effect after SH becomes a trend only (p = .09), the priming effect after FH and FA remain significant.
+I also checked **error rate**, **avoidance of errors**, **frustration over errors** and **effort** as a covariate (only in the LMM). The covariates were centered and only included as fixed effect, not as random slope. For avoidance of errors and frustration over errors there might be a ceiling effect, as all subjects rated these variables quite high
+For all of these covariates, the 3-way interaction cov x valence x response_type was not significant and did not improve the model fit. In the nested model, the priming effect after FA, FH, SH remains significant. The priming effect (response_type x valence or response_type/valence) remained significant in all full and nested models, for no response type there was a significant interaction valence x cov in any nested model. I can conclude that the priming effect is not modulated by any of these variables. 
 
 
 <br>
@@ -358,9 +361,7 @@ Accuracy is a binary variable (TRUE / FALSE, 0/1, presence / absence data) and t
 
 I chose sliding difference (aka "repeated") contrasts, which successively test neighboring factor levels against each other. The resulting estimates can be interpreted as the difference between subsequent factor levels. The advantage of this contrast is that the fixed effect intercept (group-level mean) is estimated as the grand average across all conditions, rather than the mean of a baseline condition, as for example for the default treatment contrast, which can cause troubles when using multiple predictors or interactions. Sliding constrasts are centered, meaning that the intercept reflects the grand mean. This is really important if the factors have more than 2 levels and when interactions between levels are tested. Compared to treatment contrasts, sliding contrasts allow better interpretation of interactions. For these contrasts, the predictor variables actually measure their main effects, i.e., their effects AVERAGED across the conditions of the other factor. I decided to compare FH with SH, FA with FH, and CI with FA (we can only compare n-1 factor levels in each model). 
 
-An alternative in order to calculate all comparisons may be to use response type as covariate instead of a factor (then I would leave it as numeric variable, not as factor, and would not specify contrasts). I decided not to do that. This approach would be quite uncommon and using a limited amount of predefined comparisons is actually a good thing.
-
-I could also use custom contrast to build sliding contrast for response condition and then directly test valence effect nested in each response condition. I tested this, my custom contrasts investigating directly the nested interaction give the same result as the nested model derived from the full interaction model with sliding contrasts. This custom interaction contrast fits my hypotheses and tests them directly instead of calculating a model with the interaction valence * response type and then breaking down the interaction. However, the custom interaction contrast gives no estimate for the effect of word valence and I want to show that there is no such main effect. Thus, I decided to first calculate the interaction model and then nested model to break down the interaction. Also other people with expterise in this field who were interested in the nested interaction first run the full model and then the nested model. I may put the full model in the supplement, if it is too much to report all models. Daniel Schad slightly favored to directly test the hypotheses, so the nested model first, then the full model maybe as a supplement for the valence effect. But either way might be fine. 
+I could also use custom contrast to build sliding contrast for response condition and then directly test valence effect nested in each response condition. I tested this, my custom contrasts investigating directly the nested interaction give the same result as the nested model derived from the full interaction model with sliding contrasts. This custom interaction contrast fits my hypotheses and tests them directly instead of calculating a model with the interaction valence x response type and then breaking down the interaction. However, the custom interaction contrast gives no estimate for the effect of word valence and I want to show that there is no such main effect. Thus, I decided to first calculate the interaction model and then nested model to break down the interaction. Also other people with expterise in this field who were interested in the nested interaction first run the full model and then the nested model. I may put the full model in the supplement, if it is too much to report all models. Daniel Schad slightly favored to directly test the hypotheses, so the nested model first, then the full model maybe as a supplement for the valence effect. But either way might be fine. 
 
 ```{r contrasts (G)LMM Words}
 # make categorical variables factors
@@ -418,18 +419,18 @@ pl <- c(
 
 #### Run LMM
 
-* For the Word Categorization RT, the  maximal random effects were reduced of the random effect explaining zero variance “CI - FA” for word; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “CI - FA” - and also correlations?) also converged and yielded the same estimates. As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components. 
+For the Word Categorization RT, the  maximal random effects were reduced of the random effect explaining zero variance “CI - FA” for word; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “CI - FA”) also converged and yielded the same estimates. As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components. 
 
 ```{r build LMM RT, echo = 2}
 
 LMM_rt_final <- lmer(word_rt_inverse ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_rt_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", order.terms = c(1,2,6,3,7,4,8,5), show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "RT [-1000/RT(ms)]] Word Categorization")
+tab_model(LMM_rt_final, order.terms = c(1,2,6,3,7,4,8,5), dv.labels = "RT [-1000/RT(ms)]] Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 ```
 <br>
 
 Output Interpretation: The intercept reflects the grand mean of all conditions. The slopes express the difference between the conditions. The slope estimate is influenced by which other fixed and random effects are included in the model.
-(Akin to the ANOVA omnibus test, it can be tested whehter the interaction response type x valence improves the model fit significantly. It does. Thus, there is an omnibus interaction effect.) The interaction valence x response type was resolved in the next step.
+(Akin to the ANOVA omnibus test, it can be tested whether the interaction response type x valence improves the model fit significantly. It does. Thus, there is an omnibus interaction effect.) The interaction valence x response type was resolved in the next step.
 
 <br>
 
@@ -440,16 +441,18 @@ I tested the effect of valence within each response condition by calculating a L
 ```{r nested LMM RT, echo = 2}
 LMM_rt_nested <- lmer(word_rt_inverse ~ response_type/valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_rt_nested,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "RT [-1000/RT(ms)]] Word Categorization")
+tab_model(LMM_rt_nested,dv.labels = "RT [-1000/RT(ms)]] Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 ```
 
 <br>
+<br>
+
 
 #### Summary LMM
 
 For RT, there is a priming effect after FH, SH, FA but not after CI. There is no effect of word valence. An effect of response type is evident for FH vs FA. These results are consistent with the ANOVA post-hoc tests. 
 
-The results are also in line with the GLMM on the raw word RT. The only difference is that in the GLMM there is also a significant difference between response types FH_vs_SH (in full and nested model) and FH_vs_SH:neg_vs:pos. This is of no interest. It is probably caused by the sparse random structure in the GLMM which resulted from convergence problems. But due to the presence of a disordinal interaction effect, the main effects cannot be sensibly interpreted anyway so maybe it does not matter?
+The results are also in line with the GLMM on the raw word RT. The only difference is that in the GLMM there is also a significant difference between response types FH_vs_SH. (But only if I run the full model that corresponds to the nested model that would converge. It is not signitificant in the really full GLMM). This is of no interest. It is probably caused by the sparse random structure in the GLMM which resulted from convergence problems. But due to the presence of a disordinal interaction effect, the main effects cannot be sensibly interpreted anyway.
 
 
 <br>
@@ -479,6 +482,12 @@ qqnorm(resid(LMM_rt_final))
 qqline(resid(LMM_rt_final)) 
 
 par(mfrow = c(1, 1)) # reset "par" parameter
+
+skewness <- round(skewness(resid(LMM_rt_final)),digits = 2) 
+kurtosis <- round(kurtosis(resid(LMM_rt_final)),digits = 2) 
+
+print(paste("Skewness Residuals Distribution:", skewness))
+print(paste("Kurtosis Residuals Distribution:", kurtosis))
 ```
 
 
@@ -494,18 +503,17 @@ par(mfrow = c(1, 1)) # reset "par" parameter
 
 #### Run GLMM
 
-* For the Word Categorization Accuracy, the  maximal random effects were reduced of the random effect explaining zero variance “FA - FH” for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “CI - FA”) also converged and yielded the same estimates (some authors prefer to have lower-order effects included as long as higher-order effects are included). As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components, even if they are lower-oder effects when higher-order effects are still included. 
+For the Word Categorization Accuracy, the  maximal random effects were reduced of the random effect explaining zero variance “FA - FH” for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “CI - FA”) also converged and yielded the same estimates (some authors prefer to have lower-order effects included as long as higher-order effects are included). As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components, even if they are lower-oder effects when higher-order effects are still included. 
 
 ```{r build GLMM Acc, echo = 2}
 
 GLMM_acc_final <- glmer(word_accuracy ~ response_type*valence + (1 + FH_minus_SH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), data=data4mixedmodels_words, family = binomial, control=glmerControl(optimizer="bobyqa"))
-summary(GLMM_acc_final)                        
 
-tab_model(GLMM_acc_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE",  show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "Correctness of Word Categorization")
+tab_model(GLMM_acc_final,dv.labels = "Correctness of Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 ```
 <br>
 
-Akin to the ANOVA omnibus test, it can be tested whehter the interaction response type*valence improves the model fit significantly. It does. Thus, there is an omnibus interaction effect. This interaction was resolved in the next step.
+Akin to the ANOVA omnibus test, it can be tested whehter the interaction response type x valence improves the model fit significantly. It does. Thus, there is an omnibus interaction effect. This interaction was resolved in the next step.
 
 <br>
 
@@ -516,14 +524,14 @@ I tested the effect of valence within each response condition by calculating a G
 ```{r nested GLMM Acc, echo = 2}
 GLMM_acc_nested <- glmer(word_accuracy ~ response_type/valence + (1 + FH_minus_SH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), data=data4mixedmodels_words, family = binomial, control=glmerControl(optimizer="bobyqa"))
 
-tab_model(GLMM_acc_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE",  show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "Correctness of Word Categorization")
+tab_model(GLMM_acc_nested,dv.labels = "Correctness of Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 ```
 
 <br>
 
 #### Summary GLMM
 
-For accuracy, there is a priming effect after FA but not after FH, SH, or CI. An effect of response type for FH vs FA and FA vs CI and an effect of valence pos vs neg is evident. These results are consistent with the ANOVA post-hoc tests. 
+For accuracy, there is a priming effect after FA but not after FH, SH, or CI. An effect of response type for FH vs FA and FA vs CI and an effect of valence pos vs neg is evident. Due to the presence of an interaction, the main effects will not be interpreted. These results are consistent with the ANOVA post-hoc tests. 
 
 
 
@@ -539,7 +547,7 @@ For GLMMs, testing assumptions is not straightforward, see: https://www.theanaly
 * Assumption 2: Random effects (intercepts and slopes) are normally distributed
     * Is only partly ok. As can be seen in the Q-Q plot, there are 3 outliers that lead to deviation from normal distribution of random intercept of words.
     * Inspection of the random effect revealed that the words "einsam", "herzlos", and "lieblos" are these outliers (these words were related to slow responses). 
-    * For the random intercept for words, the Shapiro-Wilk test is significant. It is also significant for the random slope pos_minus_neg for subjects, but this ransom slope only seems to mildly deviate from normal distribution (subjects 3 and 4 are mild outliers here).
+    * For the random intercept for words, the Shapiro-Wilk test is significant. It is also significant for the random slope pos_minus_neg and CI_minus_FA:pos_minus_neg for subjects, but this random slope only seems to mildly deviate from normal distribution (subjects 3 and 4 / subject 5 are mild outliers here).
 
 ```{r test GLMM assumption 2, fig.width=10, fig.height=3} 
 par(mfrow = c(1,3))  # use par function in base graphics approach to arrange plots side by side here; grid.arrange only works for ggplot grahpics
@@ -639,7 +647,7 @@ overdisp_fun(GLMM_acc_final) # If the p-value is < 0.05, the data are overdisper
 #### ANOVA RT and Accuracy
 
 I calculated an univariate two-way repeated measures ANOVAs, containing the within-subjects factors response type (levels FA, FH, SH, CI) and word valence (levels neg, pos). 
-Aarts et al. (2012, 2013) only used 2 levels of the factor response type (FA, FH). They agued that the word categorization was not influenced by preceding CIs and SHs and thus did not include these factor levels in the ANOVA. To my mind, it makes sense to include all levels (also due to the fact that we find an effect after SHs). But my power analysis was based on their analysis and for matters of replication it may be reasonable to calculate their model?
+Aarts et al. (2012, 2013) only used 2 to 3 levels of the factor response type (FA, FH, SH). They agued that the word categorization was not influenced by preceding CIs and SHs and thus did not include these factor levels in the ANOVA. To my mind, it makes sense to include all levels (also due to the fact that we find an effect after SHs). 
 
 For RT, I also computed an ANOVA with untransformed RTs. The results are qualitatively the same. There is an additional tend for a main effect of word valence (p = .054). Also the results of all post hoc comparisons remain the same (with pairwise *t* tests and with Tukey).
 
@@ -705,7 +713,7 @@ grid.arrange(plot_anova_rt,plot_anova_accuracy,legend, nrow=1,widths=c(2.5, 2.5,
 
 #### Post Hoc Tests
 
-For within-subject repeated measures ANOVAs, pairwise *t* tests with an adjustment for multiple comparisons (e.g. Bonferroni or Holm) are recommended (see Evernote entry, 2019_07_26). The violation of sphericity in within subjects designs makes the error term incorrect and the Tukey approach problematic. For my RTs and the interaction effect of accuracy, Tukey post hoc tests come to the same result anyway. As the results of Tukey are available in nicer tables, I visualize these results here. 
+For within-subject repeated measures ANOVAs, pairwise *t* tests with an adjustment for multiple comparisons (e.g. Bonferroni or Holm) are recommended (see Evernote entry, 2019_07_26). The violation of sphericity in within subjects designs makes the error term incorrect and the Tukey approach problematic. For my RTs and the interaction effect of accuracy, Tukey post hoc tests come to the same result anyway. Pairwise t tests with Holm adjustments are presented here.
 
 
 **Main Effect of Response Type on RT:**
@@ -720,70 +728,74 @@ RT for negative and positive words differs significantly after FA, FH, and SH bu
 According to pairwise comparison with *t* tests, all conditions differ, only FH = SH. With regard to the visualized results, this is a bit strange (FH/SH and CI seem quite similar). Using the Tukey post hoc adjustment, only FA differs from all other conditions (FH, SH, CI). But as before, due to the presence of a disordinal interaction effect, this main effect cannot be sensibly interpreted.
 
 **Interaction Reyponse Type x Word Valence on RT:**
-Accuracy for negative and positive differs significantly after FA, but not after FH, SH, and CI.
+Accuracy for negative and positive words differs significantly after FA, but not after FH, SH, and CI.
 
 
 <br>
 
 ```{r word ANOVAs post hoc tests}
 
-# anova_rt_posthoc_response_type       <- pairwise.t.test(df_aggregated_per_subject$rt, df_aggregated_per_subject$response_type, p.adjust.method="holm", paired=TRUE)
+anova_rt_posthoc_response_type       <- pairwise.t.test(df_aggregated_per_subject$rt, df_aggregated_per_subject$response_type, p.adjust.method="holm", paired=TRUE)
+
+anova_rt_posthoc_interaction         <- pairwise.t.test(df_aggregated_per_subject$rt, df_aggregated_per_subject$condition, p.adjust.method="holm", paired=TRUE)
+
+anova_accuarcy_posthoc_response_type <- pairwise.t.test(df_aggregated_per_subject$percent_correct_responses, df_aggregated_per_subject$response_type, p.adjust.method="holm", paired=TRUE)
+
+anova_accuracy_posthoc_interaction   <- pairwise.t.test(df_aggregated_per_subject$percent_correct_responses, df_aggregated_per_subject$condition, p.adjust.method="holm",paired=TRUE)
+
+ kable(anova_rt_posthoc_response_type$p.value, caption = "RT: Post Hoc Test Response Type")  %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
+   footnote(general = "P value adjusted with Holm method.")
+
+ kable(anova_rt_posthoc_interaction$p.value, caption = "RT: Post Hoc Test Response Type x Word Valence")  %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
+   footnote(general = "P value adjusted with Holm method.")
+
+  kable(anova_accuarcy_posthoc_response_type$p.value, caption = "Accuracy: Post Hoc Test Response Type")  %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
+   footnote(general = "P value adjusted with Holm method.")
+
+ kable(anova_accuracy_posthoc_interaction$p.value, caption = "Accuracy: Post Hoc Test Response Type x Word Valence")  %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
+   footnote(general = "P value adjusted with Holm method.")
+
+
+# # using emmeans and tukey adjustment for multiple comparisons (default p-value adjustment is "tukey")
+# afex_options(emmeans_model = "multivariate") # A caveat regarding the use of emmeans concerns the assumption of sphericity for ANOVAs including within-subjects/repeated-measures factors. The current default for follow-up tests uses a univariate model, which does not adequately control for violations of sphericity. This may result in anti-conservative tests and contrasts somewhat with the default ANOVA table which reports results based on the Greenhousse-Geisser correction. An alternative is to use a multivariate model  which should handle violations of sphericity better.
 # 
-# anova_rt_posthoc_interaction         <- pairwise.t.test(df_aggregated_per_subject$rt, df_aggregated_per_subject$condition, p.adjust.method="holm", paired=TRUE) 
+# anova_rt_posthoc_response_type       <- emmeans(anova_rt, ~ response_type) # NOTE: Results may be misleading due to involvement in interactions 
+# anova_rt_posthoc_response_type       <- pairs(anova_rt_posthoc_response_type)
+# anova_rt_posthoc_interaction         <- emmeans(anova_rt, "word_valence", by = "response_type")
+# anova_rt_posthoc_interaction         <- pairs(anova_rt_posthoc_interaction)
 # 
-# anova_accuarcy_posthoc_response_type <- pairwise.t.test(df_aggregated_per_subject$percent_correct_responses, df_aggregated_per_subject$response_type, p.adjust.method="holm", paired=TRUE)
+# anova_accuracy_posthoc_response_type <- emmeans(anova_accuracy, ~ response_type) # NOTE: Results may be misleading due to involvement in interactions 
+# anova_accuracy_posthoc_response_type <- pairs(anova_accuracy_posthoc_response_type)
+# anova_accuracy_posthoc_interaction   <- emmeans(anova_accuracy, "word_valence", by = "response_type")
+# anova_accuracy_posthoc_interaction   <- pairs(anova_accuracy_posthoc_interaction)
 # 
-# anova_accuracy_posthoc_interaction   <- pairwise.t.test(df_aggregated_per_subject$percent_correct_responses, df_aggregated_per_subject$condition, p.adjust.method="holm",paired=TRUE) 
 # 
-#  kable(anova_rt_posthoc_response_type$p.value, caption = "RT: Post Hoc Test Response Type")  %>%
-#    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
-#    footnote(general = "P value adjusted with Holm method.")
+# kable(anova_rt_posthoc_response_type, caption = "RT: Post Hoc Test Response Type")  %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
+#   footnote(general = "P value adjusted with Tukey method.")
 # 
-#  kable(anova_rt_posthoc_interaction$p.value, caption = "RT: Post Hoc Test Response Type x Word Valence")  %>%
-#    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
-#    footnote(general = "P value adjusted with Holm method.")
+# kable(anova_accuracy_posthoc_response_type, caption = "Accuracy: Post Hoc Test Response Type")  %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
+#   footnote(general = "P value adjusted with Tukey method.")
 # 
-#   kable(anova_accuarcy_posthoc_response_type$p.value, caption = "Accuracy: Post Hoc Test Response Type")  %>%
-#    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
-#    footnote(general = "P value adjusted with Holm method.")
+# kable(anova_rt_posthoc_interaction, caption = "RT: Post Hoc Test Response Type x Word Valence")  %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
+#   footnote(general = "P value adjusted with Tukey method.")
 # 
-#  kable(anova_accuracy_posthoc_interaction$p.value, caption = "Accuracy: Post Hoc Test Response Type x Word Valence")  %>%
-#    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
-#    footnote(general = "P value adjusted with Holm method.")
-
-
-# using emmeans and tukey adjustment for multiple comparisons (default p-value adjustment is "tukey")
-afex_options(emmeans_model = "multivariate") # A caveat regarding the use of emmeans concerns the assumption of sphericity for ANOVAs including within-subjects/repeated-measures factors. The current default for follow-up tests uses a univariate model, which does not adequately control for violations of sphericity. This may result in anti-conservative tests and contrasts somewhat with the default ANOVA table which reports results based on the Greenhousse-Geisser correction. An alternative is to use a multivariate model  which should handle violations of sphericity better.
-
-anova_rt_posthoc_response_type       <- emmeans(anova_rt, ~ response_type) # NOTE: Results may be misleading due to involvement in interactions 
-anova_rt_posthoc_response_type       <- pairs(anova_rt_posthoc_response_type)
-anova_rt_posthoc_interaction         <- emmeans(anova_rt, "word_valence", by = "response_type")
-anova_rt_posthoc_interaction         <- pairs(anova_rt_posthoc_interaction)
-
-anova_accuracy_posthoc_response_type <- emmeans(anova_accuracy, ~ response_type) # NOTE: Results may be misleading due to involvement in interactions 
-anova_accuracy_posthoc_response_type <- pairs(anova_accuracy_posthoc_response_type)
-anova_accuracy_posthoc_interaction   <- emmeans(anova_accuracy, "word_valence", by = "response_type")
-anova_accuracy_posthoc_interaction   <- pairs(anova_accuracy_posthoc_interaction)
-
-
-kable(anova_rt_posthoc_response_type, caption = "RT: Post Hoc Test Response Type")  %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
-  footnote(general = "P value adjusted with Tukey method.")
-
-kable(anova_accuracy_posthoc_response_type, caption = "Accuracy: Post Hoc Test Response Type")  %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
-  footnote(general = "P value adjusted with Tukey method.")
-
-kable(anova_rt_posthoc_interaction, caption = "RT: Post Hoc Test Response Type x Word Valence")  %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
-  footnote(general = "P value adjusted with Tukey method.")
-
-kable(anova_accuracy_posthoc_interaction, caption = "Accuracy: Post Hoc Test Response Type x Valence")  %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
-  footnote(general = "P value adjusted with Tukey method.")
-
+# kable(anova_accuracy_posthoc_interaction, caption = "Accuracy: Post Hoc Test Response Type x Valence")  %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
+#   footnote(general = "P value adjusted with Tukey method.")
 ```
 
+<br>
+<br>
+<br>
+<br>
+<br>
 <br>
 <br>
 <br>
@@ -892,21 +904,90 @@ Normality is not given for the aggregated accuracy data (percent correct in each
 
 
 <br>
+
+#### ANOVA as by Aarts
+
+Aarts et al. (2012) only used 3 levels of the factor response type (FA, FH, SH). Aarts et al. (2012) only used 2 levels of the factor response type (FA, FH). They agued that the word categorization was not influenced by preceding CIs and SHs and thus did not include these factor levels in the ANOVA. To my mind, it makes sense to include all levels. But my power analysis was based on their analysis and for matters of replication it may be reasonable to calculate their model. Here I use their approach (study 2012) to have a direct comparison of results. For the ANOVA on RT and on Accuracy, there is a significant main effect of response type and a significant interaction between response type and word valence. For the ANOVA on Accuracy, there is a significant main effect of valence. Post hoc pairwise *t* tests show that RT for negative and positive words differs significantly after FA, FH and SH and that Accuracy for negative and positive differs significantly after FA, but not after FH or SH. The results are in line with the findings reported by Aarts et al. (2012, 2013). In contrast to the original study we also found that  RT for negative and positive words differs also after FH (was only a trend in original paper) and SH. Furthermore, the main effects for Accuracy were not significant in the original study (response type was a trend, valence n.s.), but these are of no interest anyway, as an interaction is present. 
+
+```{r word ANOVAs Aarts, fig.width=10, fig.height=6}
+options(contrasts=c("contr.sum","contr.poly")) # to adhere to the sum-to-zero convention for effect weights, always do this 
+
+df_aggregated_per_subject_aarts <- df_aggregated_per_subject[df_aggregated_per_subject$response_type == "FA" | df_aggregated_per_subject$response_type == "FH" | df_aggregated_per_subject$response_type == "SH",]
+
+anova_rt_aarts <- aov_ez(id = "subjectID", dv = "rt_inverse", data = df_aggregated_per_subject_aarts, within = c("response_type","word_valence"))
+apa_anova_rt_aarts <- apa_print(anova_rt_aarts)
+
+anova_accuracy_aarts <- aov_ez(id = "subjectID", dv = "percent_correct_responses", data = df_aggregated_per_subject_aarts, within = c("response_type","word_valence"))
+apa_anova_accuracy_aarts <- apa_print(anova_accuracy_aarts)
+
+
+kable(apa_anova_rt_aarts$table, caption = "Reaction Time Word Categorization")  %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")
+
+kable(apa_anova_accuracy_aarts$table, caption = "Accuracy Word Categorization")  %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")
+
+
+# Post Hoc Tests
+anova_rt_posthoc_response_type_aarts         <- pairwise.t.test(df_aggregated_per_subject_aarts$rt, df_aggregated_per_subject_aarts$response_type, p.adjust.method="holm", paired=TRUE)
+
+anova_accuracy_posthoc_response_type_aarts   <- pairwise.t.test(df_aggregated_per_subject_aarts$percent_correct_responses, df_aggregated_per_subject_aarts$response_type, p.adjust.method="holm",paired=TRUE)
+
+anova_rt_posthoc_interaction_aarts           <- pairwise.t.test(df_aggregated_per_subject_aarts$rt, df_aggregated_per_subject_aarts$condition, p.adjust.method="holm", paired=TRUE)
+
+anova_accuracy_posthoc_interaction_aarts     <- pairwise.t.test(df_aggregated_per_subject_aarts$percent_correct_responses, df_aggregated_per_subject_aarts$condition, p.adjust.method="holm",paired=TRUE)
+
+
+ kable(anova_rt_posthoc_response_type_aarts$p.value, caption = "RT: Post Hoc Test Response Type")  %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>% footnote(general = "P value adjusted with Holm method.")
+
+ kable(anova_accuracy_posthoc_response_type_aarts$p.value, caption = "Accuracy: Post Hoc Test Response Type")  %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>% footnote(general = "P value adjusted with Holm method.")
+
+ kable(anova_rt_posthoc_interaction_aarts$p.value, caption = "RT: Post Hoc Test Response Type x Word Valence")  %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>% footnote(general = "P value adjusted with Holm method.")
+
+ kable(anova_accuracy_posthoc_interaction_aarts$p.value, caption = "Accuracy: Post Hoc Test Response Type x Word Valence")  %>%
+   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>% footnote(general = "P value adjusted with Holm method.")
+```
+
+
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 <br>
 <br>
 
-# GLMM Priming & SCR
-
-I used an LMM including the SCR as a predictor for the word rt to assess whether the SCR is related to the priming effect. This would be evident if there is a 3 way interaction between response condition, valence and SCR. It may be a bit uncommon to have an event as predictor that happened/started before the criterion occured (I possibly have to justify it in the paper). But here it would be methodically disadvantageous. 
-Using the SCR as criteroin, I would have to specify the priming on the level of a single trial. Initially, I did this by calculating a difference of the rt in this trial minus the average rt in this condition (depending on previous response type and valence) per subject.
-Using this model,  I found a counterintuitive interaction between SCR, priming effect and word valence (more SCR is related to less RT facilitation for a neg word after a false alarm).  But specifying the priming effect on single-trial level in this way makes not much sense, as of course the time needed to categorize a word is influenced more by word length, frequency, etc. than by priming. By including the SCR as a predictor in the (G)LMM on word rt, I can control for the effect of word characteristics on word rt, because I have it as a random effect. 
-
-
-
-
-<br>
-<br>
-<br>
 
 # Plots
 
@@ -916,16 +997,10 @@ Using this model,  I found a counterintuitive interaction between SCR, priming e
 
 ```{r plots, fig.width=10}
 
-# boxplot
-# boxplot_rt <- ggplot(df_aggregated_per_subject, aes(x=response_type, y=rt, fill=word_valence)) + 
-# geom_boxplot(outlier.shape = NA) +                                
-# geom_point(aes(fill = word_valence), size = 1, shape = 21, position = position_jitterdodge()) 
-
-
-barplot_rt <- ggplot(df_aggregated_over_subjects,aes (x = response_type,y = rt_mean, fill = word_valence)) +
+barplot_rt <- ggplot(df_aggregated_over_subjects_rt,aes (x = response_type,y = word_rt, fill = word_valence)) +
   geom_bar(stat="identity", position=position_dodge()) +                                                       
-  geom_errorbar(aes(ymax = rt_mean + rt_se, ymin = rt_mean - rt_se), position = position_dodge(width=0.95), width=0.1) +    
-  ggtitle("Response Time Word Categorization") +                                                                            
+  geom_errorbar(aes(ymax = word_rt + ci, ymin = word_rt - ci), position = position_dodge(width=0.95), width=0.1) +    
+  ggtitle("RT Word Categorization") +                                                                            
   xlab("Preceding Response Type") + ylab("Response Time (ms)") +                                                                  
   guides(fill=guide_legend(title="Word Valence")) +                                                                         
   theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
@@ -940,11 +1015,11 @@ barplot_rt <- ggplot(df_aggregated_over_subjects,aes (x = response_type,y = rt_m
               annotation=c("***","***","***", "NS"), tip_length=0.02) 
   # +ggsave("plot_rt.png", dpi=2000)
 
-barplot_accuracy <- ggplot(df_aggregated_over_subjects,aes (x = response_type,y = percent_correct_responses_mean, fill = word_valence)) +
+barplot_accuracy <- ggplot(df_aggregated_over_subjects_acc,aes (x = response_type,y = word_accuracy, fill = word_valence)) +
   geom_bar(stat="identity", position=position_dodge()) +                                                       
-  geom_errorbar(aes(ymax = percent_correct_responses_mean + percent_correct_responses_se, ymin = percent_correct_responses_mean - percent_correct_responses_se),    position = position_dodge(width=0.95), width=0.1) +  
+  geom_errorbar(aes(ymax = word_accuracy + ci, ymin = word_accuracy - ci),    position = position_dodge(width=0.95), width=0.1) +  
   ggtitle("Accuracy Word Categorization") +                                                                    
-  xlab("Preceding Response Type") + ylab("Accuracy (%)") +                                                           
+  xlab("Preceding Response Type") + ylab("Hit Rate") +                                                           
   guides(fill=guide_legend(title="Word Valence")) +                                                            
   theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
   theme(axis.text=element_text(size=15)) +
@@ -952,11 +1027,12 @@ barplot_accuracy <- ggplot(df_aggregated_over_subjects,aes (x = response_type,y 
   theme(legend.text=element_text(size=15)) +
   theme(plot.title = element_text(size = 20, hjust = 0.5)) +
   theme(legend.position="bottom") +
-  coord_cartesian(ylim = c(30,120)) +
+  coord_cartesian(ylim = c(0.30,1.20)) +
   scale_fill_manual(values=c("steelblue4", "slategray1"))  +
-  geom_signif(y_position=c(112.5,112.5,112.5,112.5), xmin=c(0.75, 1.75,2.75,3.75), xmax=c(1.25, 2.25,3.25,4.25),
+  geom_signif(y_position=c(1.125,1.125,1.125,1.125), xmin=c(0.75, 1.75,2.75,3.75), xmax=c(1.25, 2.25,3.25,4.25),
               annotation=c("***","NS","NS", "NS"), tip_length=0.02)                                                      
   # +ggsave("plot_acc.png", dpi=2000)
+
 
 
 # save legend
@@ -970,11 +1046,50 @@ barplot_accuracy <- barplot_accuracy + theme(legend.position="none")
 grid.arrange(arrangeGrob(barplot_rt,barplot_accuracy,nrow=1),legend, nrow=2,heights=c(10, 1))
 
 # save image
- priming <- arrangeGrob(barplot_rt,barplot_accuracy,legend,nrow=2,heights=c(10, 1))
- grid.draw(priming) # interactive device
- ggsave("priming.png", priming, width = 36, height = 18, units = "cm")
-```
+# priming <- arrangeGrob(barplot_rt,barplot_accuracy,legend,nrow=2,heights=c(10, 1))
+# grid.draw(priming) # interactive device
+# ggsave("priming.png", priming, width = 36, height = 18, units = "cm")
 
+
+### Further plot possibilities
+# display as line plot
+# barplot_rt <- ggplot(df_aggregated_over_subjects_rt,aes (x = response_type,y = word_rt, group = word_valence)) +
+#   geom_point(size=3, aes(color = word_valence))  +     
+#   geom_line(aes(color = word_valence)) +
+#   geom_errorbar(aes(ymin=word_rt-ci, ymax=word_rt+ci,color = word_valence), width=0.1) +    
+#   ggtitle("Response Time Word Categorization") +                                                                            
+#   xlab("Preceding Response Type") + ylab("Response Time (ms)") +                                                                  
+#   guides(fill=guide_legend(title="Word Valence")) +                                                                         
+#   theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
+#   theme(axis.text=element_text(size=15)) +
+#   theme(legend.title=element_text(size=15)) +
+#   theme(legend.text=element_text(size=15)) +
+#   theme(plot.title = element_text(size = 20, hjust = 0.5)) +
+#   theme(legend.position="bottom") +
+#   coord_cartesian(ylim = c(300,900)) +
+#   scale_color_manual(values=c("steelblue4", "slategray1")) 
+
+
+# plot data whith removing all random effects by using remef
+# library(remef)
+# data4mixedmodels_words$RT_DV <- NA
+# data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,]$RT_DV <- remef(LMM_rt_final, ran="all") # remove all random effects
+# tab_lmmse <- ddply(data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], "condition", summarize, 
+#                    N       = length(RT_DV),
+#                    word_rt = mean(RT_DV),
+#                    sd      = sd(RT_DV),
+#                    se      = sd/sqrt(N),
+#                    ci      = 1.96*se)
+# tab_lmmse$response_type <- factor(substr(tab_lmmse$condition,11,12), levels = c("FA","FH","SH","CI"))
+# tab_lmmse$word_valence  <- factor(substr(tab_lmmse$condition,1,3))
+# ggplot(tab_lmmse,aes (x = response_type,y = word_rt, fill = word_valence)) +
+#   geom_bar(stat="identity", position=position_dodge()) +                                                       
+#   geom_errorbar(aes(ymin=word_rt-se, ymax=word_rt+se), position = position_dodge(width=0.95), width=0.1) +
+#   scale_y_reverse( lim=c(0,-2))
+```
+<br>
+
+Error bars depict 95% CI. Values are adjusted for within-participant designs following Morey (2008). Calculation of error bars was based on the non-aggregated data, as this better reflects the LMM approach. Computing error bars based on the aggregated data per subject yields different results, as in the mean of the group means it would not be considered that subjects have different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable (relies on the same amount of information), which is not true.
 
 <br>
 
@@ -1028,25 +1143,48 @@ grid.arrange(boxplot_priming_rt,boxplot_priming_accuracy,nrow = 1)
 
 <br>
 
-#### Priming Mean and SEM / SD 
+#### Tables Mean and CI
 
 ```{r descriptive}
-descriptive_statistics[,1] <- row.names(descriptive_statistics)
-colnames(descriptive_statistics)[1] <- "descriptive statistic"
 
-descriptive_statistics <- descriptive_statistics %>% 
-  mutate_at(c("rt.neg_after_FA","rt.pos_after_FA","rt_priming_after_FA","rt.neg_after_FH","rt.pos_after_FH","rt_priming_after_FH"), list(~ round(.,0)))
+# this shows the data calculated based on the non aggregated (single trial) data. This corresponds to the LMM approach and my plots.
+table_rt <- df_aggregated_over_subjects_rt[,c("condition","N","word_rt","sd","se","ci")]
+table_rt[,c("word_rt","sd","se","ci")] <- round(table_rt[,c("word_rt","sd","se","ci")], digits = 2)
+table_rt <- t(table_rt)
+rownames(table_rt) <- c("","N","M","SD","SE","95% CI")
+table_rt <- table_rt[,c(2,6,3,7,4,8,1,5)] # reorder columns
 
-descriptive_statistics <- descriptive_statistics %>% 
-  mutate_at(c("percent_correct_responses.neg_after_FA","percent_correct_responses.pos_after_FA","accuracy_priming_after_FA","percent_correct_responses.neg_after_FH","percent_correct_responses.pos_after_FH","accuracy_priming_after_FH"), list(~ round(.,1)))
-
-kable(descriptive_statistics[c(2:4,6),c("descriptive statistic","rt.neg_after_FA","rt.pos_after_FA","rt_priming_after_FA","rt.neg_after_FH","rt.pos_after_FH","rt_priming_after_FH")], caption = 'Reaction Time') %>%
+kable(table_rt, caption = 'Reaction Time') %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 
-kable(descriptive_statistics[c(2:4,6),c("descriptive statistic","percent_correct_responses.neg_after_FA","percent_correct_responses.pos_after_FA","accuracy_priming_after_FA","percent_correct_responses.neg_after_FH","percent_correct_responses.pos_after_FH","accuracy_priming_after_FH")], caption = 'Accuracy') %>%
+table_acc <- df_aggregated_over_subjects_acc[,c("condition","N","word_accuracy","sd","se","ci")]
+table_acc[,c("word_accuracy","sd","se","ci")] <- round(table_acc[,c("word_accuracy","sd","se","ci")], digits = 2)
+table_acc <- t(table_acc)
+rownames(table_acc) <- c("","N","M","SD","SE","95% CI")
+table_acc <- table_acc[,c(2,6,3,7,4,8,1,5)] # reorder columns
+
+kable(table_acc, caption = 'Hit Rate') %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
+
+
+# this would show the data calculated first by aggregating by subject and then over subjects. This corresponds to the ANOVA approach
+# descriptive_statistics[,1] <- row.names(descriptive_statistics)
+# colnames(descriptive_statistics)[1] <- "descriptive statistic"
+# 
+# descriptive_statistics <- descriptive_statistics %>% 
+#   mutate_at(c("rt.neg_after_FA", "rt.pos_after_FA", "rt.neg_after_FH", "rt.pos_after_FH","rt.neg_after_SH", "rt.pos_after_SH", "rt.neg_after_CI", "rt.pos_after_CI", "rt_priming_after_FA", "rt_priming_after_FH"), list(~ round(.,0)))
+# 
+# descriptive_statistics <- descriptive_statistics %>% 
+#   mutate_at(c("percent_correct_responses.neg_after_FA", "percent_correct_responses.pos_after_FA", "percent_correct_responses.neg_after_FH", "percent_correct_responses.pos_after_FH", "percent_correct_responses.neg_after_SH", "percent_correct_responses.pos_after_SH", "percent_correct_responses.neg_after_CI", "percent_correct_responses.pos_after_CI", "accuracy_priming_after_FA", "accuracy_priming_after_FH"), list(~ round(.,1)))
+# 
+# kable(descriptive_statistics[c(2:4,6),c("descriptive statistic", "rt.neg_after_FA", "rt.pos_after_FA", "rt.neg_after_FH", "rt.pos_after_FH", "rt.neg_after_SH", "rt.pos_after_SH", "rt.neg_after_CI", "rt.pos_after_CI", "rt_priming_after_FA", "rt_priming_after_FH")], caption = 'Reaction Time') %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
+# 
+# kable(descriptive_statistics[c(2:4,6),c("descriptive statistic", "percent_correct_responses.neg_after_FA", "percent_correct_responses.pos_after_FA", "percent_correct_responses.neg_after_FH", "percent_correct_responses.pos_after_FH", "percent_correct_responses.neg_after_SH", "percent_correct_responses.pos_after_SH", "percent_correct_responses.neg_after_CI", "percent_correct_responses.pos_after_CI", "accuracy_priming_after_FA", "accuracy_priming_after_FH")], caption = 'Accuracy') %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 ```
 
+Note: The values here are based on the non-aggregated single trial data. This corresponds to the LMM approach and my plots.
 
 <br>
 <br>
