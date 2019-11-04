@@ -7,7 +7,7 @@ output: html_document
 <br>
 <br>
 
-This is an overview to summarize the data on trait variables from the ModERN behavioral study. Correlations with the priming effect and the SCR were calculated. 
+This is an overview to summarize the data on trait variables from the ModERN behavioral study. Correlations with the priming effect, the rating after the task, and the SCR were calculated. 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -44,16 +44,33 @@ for (datafile in datafiles){
   filename <- paste0("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
   load(file = filename)}
 
-# join trait and priming data
+# reading in ratings
+ratings  <- data.frame()  
+logfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
+for (subject in logfiles){                                                                               
+  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 
+  rating <- read.table(subject, skip = 575, fill = TRUE, header = TRUE, sep = ":", stringsAsFactors = FALSE)
+  subjectID <-  factor(as.numeric(substr(subject,14,15)))
+  
+  effort            <- as.numeric(rating[1,1])
+  error_avoidance   <- as.numeric(rating[2,1])
+  error_frustration <- as.numeric(rating[3,1])
+  fatigue           <- as.numeric(rating[4,1])
+ 
+  ratings <- rbind(ratings,data.frame(subjectID,effort,error_avoidance,error_frustration,fatigue))} 
+
+
+# join trait, priming, and rating data
 questionnaires$subjectID <- as.factor(as.numeric(substr(questionnaires$CODE, 14,15))) # congruent type required for joining
 df_wide_scr$subjectID <- as.factor(df_wide_scr$subjectID)
 df_joined <- left_join(df_wide, df_wide_scr, by = "subjectID")
+df_joined <- left_join(df_joined,ratings,by = "subjectID")
 df_joined <- left_join(df_joined, questionnaires, by = "subjectID")
+
 
 # add overall score for priming effect
 df_joined$rt_priming_overall       <- df_joined$rt_priming_after_FA + df_joined$rt_priming_after_FH
 df_joined$accuracy_priming_overall <- df_joined$accuracy_priming_after_FA + df_joined$accuracy_priming_after_FH
-
 ```
 
 <br> 
@@ -89,6 +106,18 @@ hist_scr <- ggplot(gather(df_joined[,c("iscr_gng_resp_sqrt_z_score.FA","iscr_gng
        theme(plot.title = element_text(hjust = 0.5)) 
 
 qqplot_scr <- ggplot(gather(df_joined[,c("iscr_gng_resp_sqrt_z_score.FA","iscr_gng_resp_sqrt_z_score.FH","iscr_gng_resp_sqrt_z_score.SH")], cols, value), aes(sample = value)) +
+       stat_qq(color = "lightcyan3") +
+       facet_grid(.~cols) +
+       labs (x = "Theoretical Quantiles", y ="Sample Quantiles") + 
+       theme(plot.title = element_text(hjust = 0.5))
+
+
+hist_rating <- ggplot(gather(df_joined[,c("effort","error_avoidance","error_frustration","fatigue")], cols, value),aes(x = value)) + 
+       geom_histogram(color="gray33", fill = "lightcyan3", binwidth = 1) + facet_grid(.~cols) +
+       labs (x = "Score", y ="Count") + 
+       theme(plot.title = element_text(hjust = 0.5)) 
+
+qqplot_rating <- ggplot(gather(df_joined[,c("effort","error_avoidance","error_frustration","fatigue")], cols, value), aes(sample = value)) +
        stat_qq(color = "lightcyan3") +
        facet_grid(.~cols) +
        labs (x = "Theoretical Quantiles", y ="Sample Quantiles") + 
@@ -156,11 +185,12 @@ qqplot_traits_5 <- ggplot(gather(df_joined[,c("PSWQ_Total", "TCI_Harm_Avoidance_
  
   grid.arrange(hist_priming,qqplot_priming,
                hist_scr,qqplot_scr,
+               hist_rating,qqplot_rating,
                hist_traits_1,qqplot_traits_1,
                hist_traits_2,qqplot_traits_2,
                hist_traits_3,qqplot_traits_3,
                hist_traits_4,qqplot_traits_4,
-               hist_traits_5,qqplot_traits_5, nrow = 14)
+               hist_traits_5,qqplot_traits_5, nrow = 16)
 ```
 
 
@@ -194,6 +224,9 @@ The Shapiro-Wilk test was used to test normality of the variables. For Pearson c
 
 **The following variables are *not* normally distributed:**
 * SCR_after_FA
+* Effort
+* Error Avoidance
+* Error Frustration
 * BDI_Total
 * BAS_Total
 * BAS_Drive
@@ -207,7 +240,7 @@ The Shapiro-Wilk test was used to test normality of the variables. For Pearson c
 
 ```{r normality traits}
 
-normality <- do.call(rbind, lapply(df_joined[,c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA","accuracy_priming_after_FH", "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")], function(x) shapiro.test(x)["p.value"]))
+normality <- do.call(rbind, lapply(df_joined[,c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA","accuracy_priming_after_FH", "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate", "effort", "error_avoidance", "error_frustration", "fatigue", "BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")], function(x) shapiro.test(x)["p.value"]))
 normality <- unlist(normality[,1])
 normality <- data.frame(round(normality, digits = 2))
 colnames(normality) <- "Shapiro_Wilk_p_value"
@@ -229,13 +262,13 @@ kable(normality, caption = 'Normality of Variables') %>%
 ```{r boxplots, fig.height=12, fig.width=12}
 
 # preparing data for boxplot (wide to long format)
-df4boxplots <-   reshape(data = df_joined[,c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA", "accuracy_priming_after_FH", "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")], 
+df4boxplots <-   reshape(data = df_joined[,c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA", "accuracy_priming_after_FH", "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","effort", "error_avoidance", "error_frustration", "fatigue", "BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")], 
                       direction = "long",
-                      varying = list(c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA", "accuracy_priming_after_FH", "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")),
+                      varying = list(c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA", "accuracy_priming_after_FH", "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","effort", "error_avoidance", "error_frustration", "fatigue", "BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")),
                       v.names = c("score"),
                       idvar = "subject",
                       timevar = "trait",
-                      times = c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA", "accuracy_priming_after_FH",  "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total"))
+                      times = c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA", "accuracy_priming_after_FH",  "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","effort", "error_avoidance", "error_frustration", "fatigue", "BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total"))
 row.names(df4boxplots) <- NULL
 
 
@@ -285,7 +318,7 @@ Scatterplots are helpful to check the assumptions for Pearson correlations.
 ```{r scatterplots, fig.width = 20, fig.height = 80}
 
 # scatterplots priming (all four normally distributed) & traits
-df4scatter <- df_joined[,c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA", "accuracy_priming_after_FH", "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")]
+df4scatter <- df_joined[,c("rt_priming_after_FA", "rt_priming_after_FH", "rt_priming_overall", "accuracy_priming_after_FA", "accuracy_priming_after_FH", "accuracy_priming_overall", "iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate","effort", "error_avoidance", "error_frustration", "fatigue", "BDI_Total", "BIS_Total", "BAS_Total", "BAS_Drive", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PEC", "FMPS_PST", "FMPS_ORG", "FMPS_PER/Total", "NEO_Neuroticism", "NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Pos", "PANAS_Neg", "PSWQ_Total", "STAI_State", "STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Anticipatory_worry", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")]
 
 scatter_RT_priming_FA <- df4scatter %>%
   gather(-rt_priming_after_FA, key = "var", value = "value") %>% 
@@ -351,7 +384,7 @@ grid.arrange(scatter_RT_priming_FA,scatter_RT_priming_FH,scatter_Accuracy_primin
 
 # Correlations Priming, SCR, Traits
 
-For normally distributed trait variables, Pearson correlations were calculated. For non-normally distributed trait variables, Kendall's Tau correlations were calculated. According to literature research, Kendall's Tau should be prefered over Sprearman's Rho. All rt priming effects and accuracy priming effects are normally distributed. The SCR after Hits but not after FAs is normally distributed. To keep it simple here Pearson correlations were calculated for the SCR after FAs with the normally distributed traits. For reasons of simplicity, I assume bivariate normality when both variables are normally distributed. Bivariate normality is only tested for variables showing a significant Pearson correlation that is of interest. 
+For normally distributed trait variables, Pearson correlations were calculated. For non-normally distributed trait variables, Kendall's Tau correlations were calculated. According to literature research, Kendall's Tau should be prefered over Sprearman's Rho. All rt priming effects and accuracy priming effects are normally distributed. The SCR after Hits but not after FAs is normally distributed. To keep it simple, Pearson correlations were calculated for the SCR after FAs with the normally distributed traits. For reasons of simplicity, I assume bivariate normality when both variables are normally distributed. Bivariate normality is only tested for variables showing a significant Pearson correlation that is of interest. 
 
 ```{r correlations}
 
@@ -359,14 +392,14 @@ For normally distributed trait variables, Pearson correlations were calculated. 
 source("P:/Luisa_Balzus/1_PhD_Project/5_ModERN_Vorstudie/10_Single_Trial_Analysis_EEG_SCR_GNG/function_correlation_matrix_with_significance_levels.R")
 
 method <- "pearson"
-correlations_pearson <- correlations_with_significance_level(df_joined[,c("rt_priming_overall", "rt_priming_after_FA", "rt_priming_after_FH", "accuracy_priming_after_FA","accuracy_priming_after_FH", "accuracy_priming_overall","iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate", "BIS_Total", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PST",  "FMPS_PER/Total", "NEO_Neuroticism","PANAS_Pos", "PSWQ_Total","STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")])
+correlations_pearson <- correlations_with_significance_level(df_joined[,c("rt_priming_overall", "rt_priming_after_FA", "rt_priming_after_FH", "accuracy_priming_after_FA","accuracy_priming_after_FH", "accuracy_priming_overall","iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate", "fatigue", "BIS_Total", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PST",  "FMPS_PER/Total", "NEO_Neuroticism","PANAS_Pos", "PSWQ_Total","STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")])
 correlations_pearson           <- correlations_pearson[,c(1:9)]
 correlations_pearson           <- cbind(rownames(correlations_pearson),correlations_pearson)
 rownames(correlations_pearson) <- NULL
 colnames(correlations_pearson)[1] <- "Variable"
 
 method <- "kendall"
-correlations_kendall <- correlations_with_significance_level(df_joined[,c("rt_priming_overall", "rt_priming_after_FA", "rt_priming_after_FH", "accuracy_priming_after_FA","accuracy_priming_after_FH", "accuracy_priming_overall","iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH", "BDI_Total", "BAS_Total", "BAS_Drive","FMPS_PEC", "FMPS_ORG","NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Neg", "STAI_State", "TCI_Anticipatory_worry")])
+correlations_kendall <- correlations_with_significance_level(df_joined[,c("rt_priming_overall", "rt_priming_after_FA", "rt_priming_after_FH", "accuracy_priming_after_FA","accuracy_priming_after_FH", "accuracy_priming_overall","iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH", "effort", "error_avoidance", "error_frustration","BDI_Total", "BAS_Total", "BAS_Drive","FMPS_PEC", "FMPS_ORG","NEO_Conscientiousness", "OCI_Total", "OCI_Washing", "OCI_Checking", "OCI_Ordering", "OCI_Obsessions", "OCI_Hoarding", "OCI_Neutralising", "PANAS_Neg", "STAI_State", "TCI_Anticipatory_worry")])
 correlations_kendall           <- correlations_kendall[c(7:22),c(1:9)]
 correlations_kendall           <- cbind(rownames(correlations_kendall),correlations_kendall)
 rownames(correlations_kendall) <- NULL
@@ -377,7 +410,7 @@ kable(correlations_pearson, caption = "Pearson Correlations for Normally Distrib
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left") 
 
 kable(correlations_kendall, caption = "Kendall's Tau for Normally Distributed Trait Variables") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left") 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 ```
 
 <br>
@@ -398,12 +431,19 @@ kable(correlations_kendall, caption = "Kendall's Tau for Normally Distributed Tr
 
 * Negative correlation between **SCR after FA and BAS Reward Responsiveness** (not significant anymore if outlier Ss 28 with high SCR Score of 1.5 is removed)
 
+* Negative correlation between **Fatigue and Priming Accuracy FH** (seems not really meaningfull to me, may be also driven by outliers)
+
+* Negative correlation between **Error Frustration and SCR after FH** (seems not really meaningfull to me)
+
+* Trend for a positive correlation between **Error Frustration and SCR after FA** (seems not to be strongly driven by outliers, but not trend anymore if mild outlier Ss 28 with high SCR Score of 1.5 is removed)
+
+
 <br>
 <br>
 <br>
 
 # Summary
 
-There is a correlation between priming in terms of accuracy and rt measures. That's a good thing. The SCR is not correlated to the priming effect. There is a negative correlation beteeen SCR after FA and SCR after Hits (for FHs it remains significant even if Kendalls correlation is calculated). This might be interesting, suggesting that those who show stronger physiological response to errors are not more responsive overall, but show specific responsiveness to mistakes? Or is this correlation only a result of the z-standardization? 
+There is a correlation between priming in terms of accuracy and rt measures. That's a good thing. The SCR is not correlated to the priming effect. There is a negative correlation beteeen SCR after FA and SCR after Hits (for FHs it remains significant even if Kendalls correlation is calculated). This might be interesting, suggesting that those who show stronger physiological response to errors are not more responsive overall, but show specific responsiveness to mistakes? Or is this correlation only a result of the z-standardization? Interestingly, SCR after FA showed a trend (p = .08) for a positive correlation with frustration about errors (with pearson correlation it would be p = .04 / when subject 28 who is a mild outlier with a high SCR is removed, p = .06). 
 
 Concerning the other correlations, I am less convinced. The sample size is too small to draw reasonable inferences and the correlations are driven by outliers. Hence, the correlations between traits and priming / error rate and priming cannot be sensibly interpreted. I cannot replicate the negative correlation between priming and STAI trait, which has been reported by Aarts et al. (2012).
