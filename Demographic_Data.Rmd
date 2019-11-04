@@ -43,7 +43,7 @@ subject_data <- read.spss("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Stu
 
 * One further subject (subject 3) had only 2 valid responses to positive words after an error (after an error, this subject classified only 33% of positive words correctly - in comparision to 100% of negative words). However, the criterion used by Aarts (minimum 10 errors) is fulfilled, so the subject does not have to be excluded.
 
-* It remains to be seen, whether subjects have to be excluded as SCR non-responders. 
+* No subjects had to be excluded as SCR non-responders. 
 
 <br>
 <br>
