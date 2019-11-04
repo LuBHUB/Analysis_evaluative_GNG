@@ -17,18 +17,18 @@ knitr::opts_chunk$set(
 
 Detailed information on the preprocessing and analysis decisions can be found in my Endnote entry 2019_08_27.
 
-SC was measured with a direct current using Brain Vision Recorder (Brain Products GmbH, Gilching, Germany). SCRs were sampled at 1000 Hz. SCRs were collected using Ag-AgCl electrodes filled with electrolyte gel and applied to the middle phalanges of the fourth and fifth fingers of the non-dominant (i.e. left for all subjects) hand.
+SC was measured with a direct current using Brain Vision Recorder (Brain Products GmbH, Gilching, Germany). SCRs were sampled at 1000 Hz. SCRs were collected using Ag-AgCl electrodes filled with electrolyte gel and applied to the middle phalanges of the fourth and fifth fingers of the non-dominant (i.e., left for all subjects) hand.
 
-As Figner et al., (2011) recommend that the sampling rate should be no lower than 100-200 Hz (such high sampling rates are not imperative to veridically represent a relatively slow signal like skin conductance, but more complex analysis approaches and smoothing procedures can benefit from higher sampling rates), the data were downsampled to 100 Hz. I used a 1st order butterworth low-pass filter with 5Hz cutoff and smoothed the data with the gaussian method with a window width of 200 ms. Increasing the width of the smoothing window increases the sensitivity and produces more SCRs. Figner et al. (2011) used a simple moving average across 500 ms, Benedek & Kaernbach (2010) as well as many other studies used 200 ms as gaussian window.
+As Figner et al. (2011) recommend that the sampling rate should be no lower than 100-200 Hz (such high sampling rates are not imperative to veridically represent a relatively slow signal like skin conductance, but more complex analysis approaches and smoothing procedures can benefit from higher sampling rates), the data were downsampled to 100 Hz. I used a 1st order butterworth low-pass filter with 5Hz cutoff and smoothed the data with the gaussian method with a window width of 200 ms. Increasing the width of the smoothing window increases the sensitivity and produces more SCRs. Figner et al. (2011) used a simple moving average across 500 ms, Benedek & Kaernbach (2010) as well as many other studies used 200 ms as gaussian window.
 
-The SC data was analysed using Continuous Deconvolution Analysis (CDA) in Ledalab (Benedek & Kaernbach, 2010). Benedek & Kaernbach (2010) clearly recommend the CDA over the DDA, as it is more robust and efficient (the DDA is sensitive to data quality, e.g. artifacts) and allows for a more straightforward scoring of phasic activity. Following the recommendations from Benedek & Kaernbach (2010), the ISCR results will be reported. The ISCR represents the unbiased cumulative phasic activity within a given response period. If response peaks are considered, we would need to define a minimum amplitude to be counted as a response to determine whether a response has occurred (responses below this threshold will be set to zero and are sometimes excluded from the analyses. As a threshold of 0.01 microsiemens is quite common in the literature, I would choose this value. I entered it in the matlab batch, but as I only use ISCR to quantify the SCR, the threshold is irrelevant, because the ISCR does not rely on the amplitude but only on the area under the curve. Other papers relying on the ISCR do not report any threshold. Hence, no SCRs have to be set to 0. The response window was 1 to 4 s after the response to the GNG stimulus, because such a window is commonly used (Boucsein et al., 2012) and is also compatible with the observed response range in my data (based on visual inspection of FA vs Hit condition). 
+The SC data was analyzed using Continuous Deconvolution Analysis (CDA) in Ledalab (Benedek & Kaernbach, 2010). Benedek & Kaernbach (2010) clearly recommend the CDA over the DDA, as it is more robust and efficient (the DDA is sensitive to data quality, e.g. artifacts) and allows for a more straightforward scoring of phasic activity. Following the recommendations from Benedek & Kaernbach (2010), the ISCR results will be reported. The ISCR represents the unbiased cumulative phasic activity within a given response period. If response peaks are considered, we would need to define a minimum amplitude to be counted as a response to determine whether a response has occurred (responses below this threshold will be set to zero and are sometimes excluded from the analyses). As a threshold of 0.01 microsiemens is quite common in the literature, I would choose this value. I entered it in the matlab batch, but as I only use ISCR to quantify the SCR, the threshold is irrelevant, because the ISCR does not rely on the amplitude but only on the area under the curve. Other papers relying on the ISCR do not report any threshold. Hence, no SCRs have to be set to 0. The response window was 1 to 4 s after the response to the GNG stimulus, because such a window is commonly used (Boucsein et al., 2012) and is also compatible with the observed response range in my data (based on visual inspection of FA vs Hit condition). 
 
-Unlike some other authors (e.g. Neiss et al., 2019, who also calculated LMMs), I did not analyze SCRs only from those trials where a person showed a response. I did not exclude zero responses from my analyses, as these represent meaningful events as well. 
+Unlike some other authors (e.g. Neiss et al., 2019, who also calculated LMMs), I did not analyze SCRs only from those trials in which a person showed a response. I did not exclude zero responses from my analyses, as these represent meaningful events as well. 
 Participants lacking measurable SCR on > 75% of all trials were classified as non-responders. All participants were below this threshold so no participants were excluded.
 
 Raw SCR amplitudes were square root transformed to reduce skewness so that the data are suitable for parametric statistical analysis. Subsequently, the data were z-standardized within each subject so that the SCR can be directly and meaningfully compared between individuals. Only for the SCR LMM I used the transformed but unstandardized SCR data because the random effects already account for the individual differences. If I use the z standardized values instead (these have a nice normal distribution, not like the values that were only square root transformed and have a distribution that is cut at 0), the results remain the same. The distribution of the residuals is much better then. But for the reason mentionned above, I report the unstandardized SCR LMM.
 
-I did not include CI in the analyses, because there is no response locked SCR in this condition and unlike in all other conditions there is no motor response (previously I included the stimulus locked SCR in the CI trials as it makes no sense to take response-locked SCR value here, because there is no response and the evaluation trigger is sent late). As the other response types are confounded by the motor response and CI is not, this may explain why the SCR in CI trials is lower than in the other trials. 
+I did not include CI in the analyses, because there is no response-locked SCR in this condition and unlike in all other conditions, there is no motor response. (Previously I included the stimulus-locked SCR in the CI trials as it makes no sense to take response-locked SCR value here, because there is no response and the evaluation trigger is sent late). As the other response types are confounded by the motor response and CI is not, this may explain why the SCR in CI trials is lower than in the other trials. 
 I only included FA, FH, SH trials that had no invalid gng rt or word rt (these trials were consistently excluded for all analyses), were followed by correct word classification and were not preceded or followed by an incorrect response or wrong key in gng or word classification. These criteria were also used for z standardizing the SCR within each subject and for the LMM on priming and scr.
 
 ```{r libraries, include = FALSE}
@@ -51,6 +51,8 @@ library(tidyr)                   # to do plot for all columns of a df
 library(e1071)                   # for functions skewness and kurtosis
 library(car)                     # for qqp function
 library("GeneralizedHyperbolic") # for fitting inverse gaussian distribution
+library(sjPlot)                  # for tab_model
+library(Rmisc)                   # for summarySEwithin
 
 
 # clear environment
@@ -88,20 +90,18 @@ df_aggregated_scr_response_type <- ddply(data4mixedmodels_words_scr[data4mixedmo
                                          event_counts_incl_zero_scr = length(subjectID))
 
 
-# aggregating over subjects per condition (needed for barplots)
-df_aggregated_scr_condition_over_subjects <- df_aggregated_scr_condition %>%
-  group_by(condition) %>%
-    summarise_at(.vars = "iscr_gng_resp_sqrt_z_score", funs(mean,sd,se=sd(.)/sqrt(n())))
 
-df_aggregated_scr_condition_over_subjects$response_type <- factor(substr(df_aggregated_scr_condition_over_subjects$condition, 11, 12), levels=c("FA","FH","SH")) 
-df_aggregated_scr_condition_over_subjects$word_valence  <- factor(substr(df_aggregated_scr_condition_over_subjects$condition, 1, 3))
+# aggregating over subjects per condition and calculate SE/CI corrected for within design (only needed for barplots)
+source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R")
 
-# aggregating over subjects per response type (needed for barplots)
-df_aggregated_scr_resp_type_over_subjects <- df_aggregated_scr_response_type %>%
-  group_by(response_type) %>%
-    summarise_at(.vars = "iscr_gng_resp_sqrt_z_score", funs(mean,sd,se=sd(.)/sqrt(n())))
+df_aggregated_over_subjects <- summarySEwithinO(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], measurevar="iscr_gng_resp_sqrt_z_score", withinvars="condition", idvar="subjectID", conf.interval=.95)
+df_aggregated_over_subjects$response_type <- factor(substr(df_aggregated_over_subjects$condition, 11, 12), levels=c("FA","FH","SH"))
+df_aggregated_over_subjects$word_valence  <- factor(substr(df_aggregated_over_subjects$condition, 1, 3))
 
-df_aggregated_scr_resp_type_over_subjects$response_type <- factor(df_aggregated_scr_resp_type_over_subjects$response_type, levels=c("FA","FH","SH")) 
+df_aggregated_over_subjects_resptype <- summarySEwithinO(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], measurevar="iscr_gng_resp_sqrt_z_score", withinvars="response_type", idvar="subjectID", conf.interval=.95)
+df_aggregated_over_subjects_resptype$response_type <- factor(df_aggregated_over_subjects_resptype$response_type, levels=c("FA","FH","SH"))
+
+
 
 
 # long to wide format and calculate priming effect -> variables in df_wide_scr are identical to those in df4save! I just avoid using df4save for the subsequent analyses... 
@@ -146,9 +146,11 @@ data4mixedmodels_words_scr$iscr_gng_resp_sqrt <- sqrt(data4mixedmodels_words_scr
 
 #### SCR Data
 
-The data are highly skewed. Even the log transformed z standardized values deviate from normality. According to the *boxcox* function, the optimal lambda to transform the raw data to normality would be -3.7. A lambda of -4 corresponds to a transformation of x = y^-4, which here did not produce a normal distribution either (but rather some weird distribution...). Compared to log transformed data (would correspond to lambda = 0), the square root transformed data (would correspond to lambda = 0.5) better approach normal distribution. The results of the ANOVA (including post hoc tests) and the LMM on log and sqrt transformed SCR data are the same. According to papers on SCR analysis, either log or square root transformation may be chosen for transforming SCR data (Dawson et al., 2007; Figner et al., 2011). I will choose square root transformation, as here the data approach normality (see also section Normality of Single Trial SCR Data. 
+The data are highly skewed. Even the log transformed z standardized values deviate from normality. According to the *boxcox* function, the optimal lambda to transform the raw data to normality would be -3.7. A lambda of -4 corresponds to a transformation of x = y^-4, which here did not produce a normal distribution either (but rather some weird distribution...). Compared to log transformed data (would correspond to lambda = 0), the square root transformed data (would correspond to lambda = 0.5) better approach normal distribution. According to papers on SCR analysis, either log or square root transformation may be chosen for transforming SCR data (Dawson et al., 2007; Figner et al., 2011). I will choose square root transformation, as here the data approach normality (see also section Normality of Single Trial SCR Data). 
 
-We have no real theoretical reasons why zero responses should be excluded, so we keep them. Neiss et al. (2009) (also used LMMs) excluded zero responses with the following explanation: *"Within many individuals, the distribution of SCR was essentially bimodal, with responses at zero (no response), and then a range of responses of varying  magnitudes. We thus analyzed SCRs from those pictures where a person showed a response, so  that we model the relation between SCR and subjective arousal rating for pictures to which individuals responded".* I checked in the SCR LMM and the Priming_SCR LMM whether the results change if the zero SCR responses are excluded (and the SCR data distribution is nicer). The zero responses were excluded and then the final models obtained by using the full data set were run again, they were not build again for the reduced dataset without zero responses. In the SCR LMM, the effect FA > FH remains but there is also a significant effect FH > SH (this is just a trend when not excluding zero SCR responses). In the Priming-SCR LMM the trend for a main effect of SCR vanishes (p from .07 to .12) and the effect FH_vs_SH:pos_minus_neg only becomes a trend (p from .05 to .09; possibly due to reduced power). For the nested model, the results do not change at all. So excluding zero responses only has minimal effects on the results and does not affect the results of interest. From this view, it is ok to not exclude them.
+We have no real theoretical reasons why zero responses should be excluded, so we keep them. Neiss et al. (2009) (also used LMMs) excluded zero responses with the following explanation: *"Within many individuals, the distribution of SCR was essentially bimodal, with responses at zero (no response), and then a range of responses of varying  magnitudes. We thus analyzed SCRs from those pictures where a person showed a response, so  that we model the relation between SCR and subjective arousal rating for pictures to which individuals responded".* I checked in the SCR LMM and the Priming_SCR LMM whether the results change if the zero SCR responses are excluded (and the SCR data distribution is nicer). The zero responses were excluded and then the final models obtained by using the full data set were run again, they were not build again for the reduced dataset without zero responses. In the SCR LMM, the effect FA > FH remains but there is also a significant effect FH > SH (this is just a trend when not excluding zero SCR responses). 
+
+In the Priming-SCR LMM the effects FA - FH, FA - FH x Pos - Neg, FA - FH x SCR remain. FH vs SH now becomes a trend (was not a trend before). The trend for a main effect of SCR vanishes (p from .06 to .12) and the effect FH_vs_SH:pos_minus_neg only becomes a trend (p from .04 to .08; possibly due to reduced power). For the nested model, the results do not change at all. So excluding zero responses only has minimal effects on the results and does not affect the results of interest. From this view, it is ok to not exclude them.
 
 ```{r inspect distribution, fig.width=10, fig.height=10}
 
@@ -276,14 +278,14 @@ kable(normality) %>%
 
 #### Summary
 
-* Normal distribution of sampling data can be assumed for square root transformed z-standardized SCR data. 
+Normal distribution of sampling data can be assumed for square root transformed z-standardized SCR data. 
 
 <br>
 
 #### Definition of Non-Responders
 
 
-Non-responder describes an individual who fails to show any or a certain (arbitrary) percentage of non-zero CRs (Lonsdorf et al., 2017). Here, participants lacking measurable SCR on >75% of all trials (or trials of one response condition) were classified as non-responders.All participants' SCRs exceeded this threshold so no participants were excluded.
+Non-responder describes an individual who fails to show any or a certain (arbitrary) percentage of non-zero CRs (Lonsdorf et al., 2017). Here, participants lacking measurable SCR on >75% of all trials (or trials of one response condition) were classified as non-responders. All participants' SCRs exceeded this threshold so no participants were excluded.
 
 ```{r non-responders SCR}
 
@@ -326,7 +328,7 @@ I used a linear mixed model to evaluate whether the SCR differs depending on typ
 
 Most studies I found that used mixed models to analyze SCR data also used an LMMs (Yap et al., 2017; Harnett et al., 2015; Neiss et al., 2009), only one used a GLMM (Prechtl, "Adaptive Music Generation for Computer Games", 2016). The studies using the LMM used the **transformed but not z-standardized SCR as dependent variable**. This makes sense, as a random intercept for subject is included in the model, so z-standardization is not necessary anymore (using random intercept AND standardized data may lead to unterestimation of variance of random intercept). I also calculated a LMM with the z-standardized values. For this model, the LMM assumptions were met. As the results remained the same, I can also use the unstandardized values.
 
-The square root transformed SCR values are not normally distributed. The distribution is a bit awkward, as it is cut at zero and contains many values of zero. We did not want to exclude the zeros, because they actually represent meaningful data. The non-normality of the data is not problematic, because for the LMM only the residuals have to be normally distributed, and this is approximately the case (kurtosis is 1.85, skewness is 0.96). However, the assumption of linearity / homogeneity is not met (due to the fact that the distribution is cut at 0). This seems indeed a bit better when using the square root transformed z standardized values for the LMM, but I still do not want to do that. After all, the results are the same and also the same as in the ANOVA.
+The square root transformed SCR values are not normally distributed. The distribution is a bit awkward, as it is cut at zero and contains many values of zero. We did not want to exclude the zeros, because they actually represent meaningful data. The non-normality of the data is not problematic, because for the LMM only the residuals have to be normally distributed, and this is approximately the case (kurtosis is 1.9, skewness is 0.96). However, the assumption of linearity / homogeneity is not met (due to the fact that the distribution is cut at 0). This seems indeed a bit better when using the square root transformed z standardized values for the LMM, but I still do not want to do that. After all, the results are the same and also the same as in the ANOVA.
 
 The reasons why I do not want to calculate a GLMM for the SCR is that I would need to state the distribution my SCR data follow and spacify a linking function. I am not sure which distribution and linking function this is (as mentioned before, the distribution is strange). Gamma and inverse gaussian are some of the few options that I can use for GLMMs. They may also make sense (inverse Gaussian distribution is appropriate when the variance increases rapidly with the predicted values; gamma distribution is appropriate when the variance increases linearly with the predicted values (Fox, 2008)). Using the gamma distribution with glmer did not work for my data, because one of my estimated coefficients could be negative (see here: https://stats.stackexchange.com/questions/356053/the-identity-link-function-does-not-respect-the-domain-of-the-gamma-family). Using the inverse gaussian distribution with identity link worked (but I still have to add 1 to the SCR data to avoid values of zero). Still, I do not know whether this choice makes sense. I also tested inverse gaussian distribution with inverse square link function (1/mu^2) as done by Prechtl (2016). It has a lower AIC and gives the same result as the identity link, but I am not sure concerning the interpretation. Another reason why I do not prefer a GLMM here is that the assumption of normality of random effects for the GLMM is not met, as are the LMM assumptions. Model comparison with the *anova* function showed no significant difference between the GLMM and the LMM, but a much lower AIC/BIC for the GLMM. 
 
@@ -368,7 +370,7 @@ grid.arrange(scr_raw_cond,scr_sqrt_cond,nrow=1)
 
 #### Define Contrasts
 
-I chose sliding difference (aka "repeated") contrasts, which successively test neighboring factor levels against each other. See more information on that topic in the section "Word Categorization Behavioral Data".
+I chose sliding difference (aka "repeated") contrasts, which successively test neighboring factor levels against each other. See more information on that topic in the section "Word Categorization Data".
 
 ```{r contrasts LMM SCR}
 
@@ -397,8 +399,14 @@ pl <- c(
   "response_type2-1" = "FH - SH", 
   "response_type3-2" = "FA - FH",
   "response_type4-3" = "CI - FA",
+  "iscr_gng_resp_sqrt_z_score" = "SCR",
   "response_type2-1:valence2-1" = "FH - SH x Positive - Negative", 
   "response_type3-2:valence2-1" = "FA - FH x Positive - Negative",
+  "valence2-1:iscr_gng_resp_sqrt_z_score" = "Positive - Negative x SCR",
+  "response_type2-1:iscr_gng_resp_sqrt_z_score" = "FH - SH x SCR", 
+  "response_type3-2:iscr_gng_resp_sqrt_z_score" = "FA - FH x SCR",
+  "response_type2-1:valence2-1:iscr_gng_resp_sqrt_z_score" = "FH - SH x Positive - Negative x SCR", 
+  "response_type3-2:valence2-1:iscr_gng_resp_sqrt_z_score" = "FA - FH x Positive - Negative x SCR",
   "response_typeSH:valence2-1" = "SH: Positive - Negative",
   "response_typeFH:valence2-1" = "FH: Positive - Negative",
   "response_typeFA:valence2-1" = "FA: Positive - Negative",
@@ -408,26 +416,26 @@ pl <- c(
   "response_typeSH:valence2-1:iscr_gng_resp_sqrt_z_score" = "SH: Positive - Negative x SCR",
   "response_typeFH:valence2-1:iscr_gng_resp_sqrt_z_score" = "FH: Positive - Negative x SCR",
   "response_typeFA:valence2-1:iscr_gng_resp_sqrt_z_score" = "FA: Positive - Negative x SCR")
-
 ```
 
 <br>
 
 #### Model Building
 
-See which approach I chose for building the model in the section "Word Categorization Behavioral Data".
+See which approach I chose for building the model in the section "Word Categorization Data".
 
 <br>
 
 #### Run LMM
 
-* For the SCR, the LMM containing the maximal random effects structure and correlation parameters was used. This is also the final model I get when I initially include (1 + FH_minus_SH + FA_minus_FH  | word) as random effect in the maximal model: rePCA shows that for word, all random effects including intercept explain zero variance. 
+For the SCR, the LMM containing the maximal random effects structure and correlation parameters was used. This is also the final model I get when I initially include (1 + FH_minus_SH + FA_minus_FH  | word) as random effect in the maximal model: rePCA shows that for word, all random effects including intercept explain zero variance. 
 
 
 ```{r build LMM SCR, echo = 2}
+
 LMM_scr_no_val_final <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + (1 + FH_minus_SH + FA_minus_FH  | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_no_val_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "SCR [sqrt(microsiemens)]")
+tab_model(LMM_scr_no_val_final,dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 ```
 <br>
 <br>
@@ -440,7 +448,7 @@ The SCR differs significantly between FAs and FHs but not between FHs and SHs (b
 
 #### Check Assumptions LMM
 
-Some assumptions (1 and 2) seem violated here. The plot of the residuals versus the predicted variable looks better when z-standardized and square root transformed SCR data are used in the LMM instead of only square root transformed. But I do not really want to use z-standardization here, as the random effects already account for variability between subjects.For both dependent variables the results are the same and they are also quite consistent with the ANOVA. So it seems ok to use square root transformed SCR data, even though some assumptions might be violated.
+Some assumptions (1 and 2) seem violated here. The plot of the residuals versus the predicted variable looks better when z-standardized and square root transformed SCR data are used in the LMM instead of only square root transformed. But I do not really want to use z-standardization here, as the random effects already account for variability between subjects. For both dependent variables, the results are the same and they are also quite consistent with the ANOVA. So it seems ok to use square root transformed SCR data, even though some assumptions might be violated.
 
 
 **Assumption 1 - Linearity**: dependent variable linearly related to the fixed factors, random factors, and covariates (dv is result of a linear combination of the predictors)
@@ -534,18 +542,13 @@ anova_SCR_posthoc_response_type <- pairwise.t.test(df_aggregated_scr_response_ty
 kable(anova_SCR_posthoc_response_type$p.value, caption = "ANOVA SCR: Post Hoc Test Response Type")  %>%
  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")  %>%
  footnote(general = "P value adjusted with Holm method.")
-
-
-anova_accuracy_posthoc_resp   <- emmeans(anova_SCR, ~ response_type)
-anova_accuracy_posthoc_resp   <- pairs(anova_accuracy_posthoc_resp)
-
 ```
 
 <br>
 
 #### Testing Normality of Residuals
 
-Residuals of the square root transformed SCR are normally distributed in each condition, exept for FA (pos). But even in this condition, the deviation is not severe.
+Residuals of the square root transformed SCR are normally distributed in each condition, except for FA (pos). But even in this condition, the deviation is not severe.
 
 ```{r test normality residuals, fig.width=10, fig.height=8}
 
@@ -595,19 +598,269 @@ grid.arrange(hist_residuals_scr,qqplot_residuals_scr,nrow = 2)
 
 * **Assumption 5 (sphericity) is violated but corrected for **
 
+
+
+<br>
+<br>
+<br>
+
+# Plots
+
+```{r plot, fig.width=10, fig.align='center'}
+
+plot_scr <- ggplot(df_aggregated_over_subjects_resptype,aes (x = response_type,y = iscr_gng_resp_sqrt_z_score)) +
+  geom_bar(stat="identity", position=position_dodge(), fill = "steelblue4") +                                                       
+  geom_errorbar(aes(ymax = iscr_gng_resp_sqrt_z_score + ci, ymin = iscr_gng_resp_sqrt_z_score - ci), position = position_dodge(width=0.95), width=0.1) +    
+  ggtitle("Skin Conductance Response") +                                                                            
+  xlab("Response Type") + ylab("SCR [square root and z transformed (µS)]") +                                                                  
+  guides(fill=guide_legend(title="Word Valence")) +                                                                         
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                
+  theme(axis.text=element_text(size=15)) +
+  theme(legend.title=element_text(size=15)) +
+  theme(legend.text=element_text(size=15)) +
+  theme(plot.title = element_text(size = 20, hjust = 0.5)) +
+  theme(legend.position="bottom") +
+  coord_cartesian(ylim = c(-0.15,0.6)) +
+  geom_signif(y_position=c(0.55,0.55), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),annotation=c("***","NS"), tip_length=0.02)
+ # ggsave("scr.png", plot_scr, width = 18, height = 16, units = "cm")
+
+
+plot_scr_val <- ggplot(df_aggregated_over_subjects,aes (x = response_type,y = iscr_gng_resp_sqrt_z_score, fill = word_valence)) +
+  geom_bar(stat="identity", position=position_dodge()) +                                                       
+  geom_errorbar(aes(ymax = iscr_gng_resp_sqrt_z_score + ci, ymin = iscr_gng_resp_sqrt_z_score - ci), position = position_dodge(width=0.95), width=0.1) +    
+  ggtitle("Skin Conductance Response") +                                                                            
+  xlab("Response Type") + ylab("SCR [square root and z transformed (µS)]") +                                                                  
+  guides(fill=guide_legend(title="Word Valence")) +                                                                         
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                
+  theme(axis.text=element_text(size=15)) +
+  theme(legend.title=element_text(size=15)) +
+  theme(legend.text=element_text(size=15)) +
+  theme(plot.title = element_text(size = 20, hjust = 0.5)) +
+  theme(legend.position="bottom") +
+  scale_fill_manual(values=c("steelblue4", "slategray1")) +
+  coord_cartesian(ylim = c(-0.15,0.6)) +
+  geom_signif(y_position=c(0.55,0.55), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),annotation=c("***","NS"), tip_length=0.02)
+
+grid.arrange(plot_scr,plot_scr_val,nrow=1)
+
+
+# plot SCR per subject
+# ggplot(data=df_aggregated_scr_response_type, aes(x=response_type, y = iscr_gng_resp_sqrt_z_score))+geom_point()+facet_wrap(~subjectID)+theme_bw()+ ggtitle("Skin Conductance Response per Subject") + theme(plot.title = element_text(hjust = 0.5)) + ylab("SCR [square root and z transformed (µS)]")
+```
+<br>
+Error bars depict 95% CI. Values are adjusted for within-participant designs following Morey (2008). Calculation of error bars was based on the non-aggregated data, as this better reflects the LMM approach. Computing error bars based on the aggregated data per subject yields different results, as in the mean of the group means it would not be considered that subjects have a different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable (relies on the same amount of information), which is not true.
+
 <br>
 <br>
 <br>
 
 
+#### Tables Mean and CI
+
+```{r descriptive}
+
+# this shows the data calculated based on the non aggregated (single trial) data. This corresponds to the LMM approach and my plots.
+table_scr <- df_aggregated_over_subjects_resptype[,c("response_type","N","iscr_gng_resp_sqrt_z_score","sd","se","ci")]
+table_scr[,c("iscr_gng_resp_sqrt_z_score","sd","se","ci")] <- round(table_scr[,c("iscr_gng_resp_sqrt_z_score","sd","se","ci")], digits = 2)
+table_scr <- t(table_scr)
+rownames(table_scr) <- c("","N","M","SD","SE","95% CI")
+
+kable(table_scr, caption = 'SCR [square root and z transformed (µS)]') %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
+
+table_scr_val <- df_aggregated_over_subjects[,c("condition","N","iscr_gng_resp_sqrt_z_score","sd","se","ci")]
+table_scr_val[,c("iscr_gng_resp_sqrt_z_score","sd","se","ci")] <- round(table_scr_val[,c("iscr_gng_resp_sqrt_z_score","sd","se","ci")], digits = 2)
+table_scr_val <- t(table_scr_val)
+rownames(table_scr_val) <- c("","N","M","SD","SE","95% CI")
+table_scr_val <- table_scr_val[,c(1,4,2,5,3,6)]
+
+kable(table_scr_val, caption = 'SCR [square root and z transformed (µS)]') %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
+```
+
+Note: The values here are based on the non-aggregated single trial data. This corresponds to the LMM approach and my plots.
+
+<br>
+<br>
+<br>
+
+# Relation Priming - SCR
+
+I used a linear mixed model to evaluate whether there is a relation between word categorization RT (= priming) and SCR.
+
+In order to do that, my first approach was to calculate a LMM including SCR as dependent variable and RT facilitation as predictor. Using this model, I found an interaction between SCR and priming effect (RT facilitation) and word valence (more SCR is related to less RT facilitation for a neg word after a false alarm). But this LMM analysis was very problematic. Defining RT facilitation / priming effect on single trial level is not possible. I used mean RT in that condition minus RT in that trial, but of course this difference is more influenced by word length, frequency, etc. than by priming. 
+
+Hence, I decided to include SCR as a predictor in the LMM predicting word categorization RT. This may be a bit unusal, as the predictor event precedes the criterion, but it solves the problem described. This analysis allowed investigating the relation between SCR and priming while controlling for the variance caused by different words on categorization time.  
+
+The model was constructed like the word categorization LMM but included SCR as continuous predictor in all fixed and random effects. I decided to report two separate models for word rt and word rt with SCR. For the first model, I included CI to show that there is no priming effect after CI. For the second model, I excluded CI, because there is no valid SCR in these trials (this is the only condition not confounded by a motor response) and I want to exclude CI from all SCR analyses. A relation between priming and SCR would be  would be evident if there was a 3 way interaction between response condition, valence, and SCR. 
+
+I calculated a LMM instead of a GLMM, because I also did so in the analysis of word categorization without SCR as predictor. In order to check whehther a GLMM model yielded the same outcomes, I also analyzed the relation between word categorization RT by means on a GLMM. As in the original word categorization mixed model, I chose inverse gaussian distribution and the identity link funktion (recommended by Lo & Andrews, 2015) for the GLMM. The results were quite the same (for more detail, see Summary LMM).
+
+
+**Overview LMM:**
+
+* Response variable: RT (inverse transformed)
+
+* Fixed effects: Response type (FA, FA, SH) and Word Valence (pos, neg)
+    
+* Random effects: Subjects and Words
+
+* Continuous predictor: Square root transformed and z-standardized SCR (response-locked to GNG-response) (it is recommended that continuous predictors shall be scaled)
+
+
+As in all other analyses on SCR data, I only included FA, FH, SH trials that had no invalid gng rt or word rt (these trials were consistently excluded for all analyses), were followed by correct word classification and were not preceded or followed by an incorrect response or wrong key in gng or word classification.
+
+
+
+<br>
+
+#### Check Distribution 
+
+Also in this subset of the data, the transfomed Word RT Inverse is normally distributed, allowing data analysis by means of an LMM (the residuals of this LMM are approximaltely normally distributed as well). 
+
+```{r distribution LMM Priming - SCR, fig.width=10, fig.height=6}
+
+# distribution transformed rt -> normally distributed, also in the different conditions
+par(mfrow = c(1,2))  # use par function in base graphics approach to arrange plots side by side here; grid.arrange only works for ggplot grahpics
+plot(density(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,]$word_rt_inverse), main = "Histogram Word RT Inverse")
+qqp(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,]$word_rt_inverse, "norm", main = "Q-Q Plot Word RT Inverse", ylab = "sample quantiles", id = FALSE)
+par(mfrow = c(1, 1)) # reset "par" parameter
+ggplot(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], aes(x = word_rt_inverse)) + geom_density() + facet_wrap(response_type ~ valence) + ggtitle("Histogram Word RT Inverse in Conditions")
+```
+<br>
+
+#### Define Contrasts
+
+I chose sliding difference (aka "repeated") contrasts, which successively test neighboring factor levels against each other. See more information on that topic in the section "Word Categorization Data".
+
+```{r contrasts LMM Priming - SCR}
+# run constrast code from SCR LMM
+```
+
+<br>
+
+#### Model Building
+
+See which approach I chose for building the model in the section "Word Categorization Data".
+
+<br>
+
+#### Run LMM
+
+For the Priming - SCR LMM, the  maximal random effects were reduced of the random effect explaining zero variance: all interactions response_type x SCR for word and subject and interactions response_type x valence x SCR and valence x SCR for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (including correlations) also converged and yielded the same estimates (for the fuller model, only the trend of main effect SCR was less pronounced). 
+It would be *not* ok to not include SCR in random structure, because this predictor is of major interest and we want to make valid inferences from the  corresponding fixed effect. It is not a covariate for which we do not need to generalize the effect and for which we only want to account for the variance it explains.
+
+```{r build LMM Priming SCR, echo = 2}
+
+LMM_rt_scr_final <- lmer(word_rt_inverse ~ response_type*valence*iscr_gng_resp_sqrt_z_score + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+
+tab_model(LMM_rt_scr_final, order.terms = c(1,7,9,6,3,2,8,11,4,10,5,12), dv.labels = "RT [-1000/RT(ms)]] Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+```
+
+<br>
+
+Akin to the ANOVA omnibus test, it can be tested whether the interaction response type x valence x SCR improves the model fit significantly. It does not. Thus, there is no omnibus interaction effect. The SCR does not modulate the priming effect and there is no relation between priming and SCR. This is also evident when the interaction is resolved in the model nested within each response condition (see below).
+
+<br>
+
+#### Break Down the Interaction
+
+I tested the effect of valence, of scr, and of valence*scr within each response condition by calculating a LMM that is nested in the final model above. 
+
+```{r nested LMM Priming SCR, echo = 2}
+# valence, scr, valence*scr within response condition 
+LMM_rt_scr_nested <- lmer(word_rt_inverse ~ response_type/(valence*iscr_gng_resp_sqrt_z_score) + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score  || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+
+tab_model(LMM_rt_scr_nested, order.terms = c(1,2,3,7,8,9,10,11,12,4,5,6), dv.labels = "RT [-1000/RT(ms)]] Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+```
+
+<br>
+
+#### Summary LMM
+
+There is no relation between priming effect and the SCR (no significant interaction after any response type). Interestingly, there is a significant interaction between FAs and SCR, suggesting that for False Alarms, slower responses to the words are related to a higher skin conductance response. This would mean that more PES is related to more SCR. This was none of my hypotheses but is quite interesting and may be reported as post hoc finding in the paper. 
+The results of the GLMM were quite the same. The only difference is that in the GLMM there is also a significant difference between response types FH_vs_SH and a significant effect of SCR (in the LMM the p value is at .063) in the full model. The nested GLMM does not converge anymore. In the past, it did converge. Recently, I decided to exclude word outlier trials also from the z standardization of the SCR. I rechecked, the convergence problems are not due to this change. I have no idea, what changed this. At least the results of no the non converging nested GLMM are consistent with the nested LMM (only one difference: in the nested GLMM there is now a trend for FH x SCR x valence).  
+
+
+<br>
+
+#### Check Assumptions LMM
+
+**Assumption 1 - Linearity**: dependent variable linearly related to the fixed factors, random factors, and covariates (dv is result of a linear combination of the predictors)
+
+* is ok (see plot of the residuals versus the predicted variable) 
+
+**Assumption 2 - Homogeneity of Variance**: residuals have constant variance (variability of data approximately equal across range of predicted values)
+
+* is ok (see plot of the residuals versus the predicted variable) 
+
+**Assumption 3 - Independence**: not necessary to check, because there is not more than one predictor
+
+**Assumption 4 - Normality of Residuals**: residuals are approximately normally distributed
+
+* is ok (see Q-Q plot of residuals: a bit off at the extremes, but that's often the case; doesn't look too bad; skewness and kurtosis is approx. < 2, which is ok)
+
+```{r test LMM assumptions, fig.width=10, fig.height=4, fig.align='center'} 
+par(mfrow = c(1,2))  # use par function in base graphics approach to arrange plots side by side here; grid.arrange only works for ggplot grahpics
+
+plot(fitted(LMM_rt_scr_final), residuals(LMM_rt_scr_final), xlab = "Fitted Values", ylab = "Residuals", main = "Residuals versus Predicted Variable")  # plot residuals against the fitted values
+abline(h = 0, lty = 2)
+lines(smooth.spline(fitted(LMM_rt_scr_final), residuals(LMM_rt_scr_final)))
+
+qqnorm(resid(LMM_rt_scr_final))
+qqline(resid(LMM_rt_scr_final)) 
+
+par(mfrow = c(1, 1)) # reset "par" parameter
+
+skewness <- round(skewness(resid(LMM_rt_scr_final)),digits = 2) 
+kurtosis <- round(kurtosis(resid(LMM_rt_scr_final)),digits = 2) 
+
+print(paste("Skewness Residuals Distribution:", skewness))
+print(paste("Kurtosis Residuals Distribution:", kurtosis))
+```
+
+
+
+
+<br>
+
+#### Correlation SCR - Priming after FA
+
+By calculating the correlation [see below], I wanted to check whether the unexpected relation found in the original/problematic LMM (more SCR is related to less RT facilitation for a neg word after a false alarm) can be seen on the level of aggregated data as well. 
+The significance of this correlation depends on which trials of a subject are used for the z standardization. Previously, I did the scaling based on all trials. Then, I have an almost sign. correlation between SCR after FA and rt_priming_after_FA (p = 0.073). If the scaling is based only on trials that are used for SCR analysis later, the correlation is not almost significant anymore (p = 0.2). As bivariate normality is almost given (see last line), a Pearson correlation is calculated. As can be seen in the scatterplot, the correlation is not driven by a specific outlier.
+
+```{r corr SCR priming, fig.width = 6, fig.height = 4}
+
+df_wide_scr$subjectID     <- factor(df_wide_scr$subjectID)  # need to have same type for merging
+
+df_wide_scr <- left_join(df_wide_scr,df_wide, by = "subjectID")
+ggplot(df_wide_scr, aes(x = rt_priming_after_FA, y = iscr_gng_resp_sqrt_z_score.FA)) +
+    geom_point() +
+    geom_smooth(method='lm') +
+    ggtitle("Scatterplot SCR after FA and Priming after FA") +
+    theme(plot.title = element_text(hjust = 0.5))
+
+
+cor.test(df_wide_scr$iscr_gng_resp_sqrt_z_score.FA,df_wide_scr$rt_priming_after_FA, paired = TRUE)
+
+shapiro_corr <- unlist(mshapiro.test(t(df_wide_scr[,c("iscr_gng_resp_sqrt_z_score.FA","rt_priming_after_FA")]))["p.value"])
+print(paste("p value of Shapiro Wilk Test for Bivariate Normality:", round(shapiro_corr, digits = 3)))
+
+```
+
+<br>
+<br>
+<br>
 
 # Control Analyses
 
-My task design is not optimal for SCR analyses. The short ISIs are problematic for analyzing the SCR. Many events (word presentation, word categorization, GNG presentation, GNG reaction) overlap with the window of the exported mean SCR amplitude (1-4 sec after the GNG response). SCR studies often use relatively long interstimulus intervals (ISI) of 6 to 12 seconds or more between trials to make sure skin conductance has returned to baseline before a new trial starts. A fast sequence of stimuli inevitably leads to superimposed SCRs which suffer from distorted amplitudes and temporal characteristics (Boucsein et al., 2012, Dawson et al., 2007). Attempts to correct for this and apply SCR measurement to much shorter ISIs (i.e., 2-3s) have relied on mathematical deconvolution models (Alexander et al., 2005; Benedek & Kaernbach, 2010). The CDA approach claims to be able to deal with ITI/ISIs as short as 2 s (Benedek and Kaernbach, 2010). My overlap might be too severe, as the time lag is too short. Furthermore, the intervals between events should be jittered. This is not rue for my interval between gng response and word presentation. 
+My task design is not optimal for SCR analyses. The short ISIs are problematic for analyzing the SCR. Many events (word presentation, word categorization, GNG presentation, GNG reaction) overlap with the window of the exported mean SCR amplitude (1-4 sec after the GNG response). SCR studies often use relatively long interstimulus intervals (ISI) of 6 to 12 seconds or more between trials to make sure skin conductance has returned to baseline before a new trial starts. A fast sequence of stimuli inevitably leads to superimposed SCRs which suffer from distorted amplitudes and temporal characteristics (Boucsein et al., 2012, Dawson et al., 2007). Attempts to correct for this and apply SCR measurement to much shorter ISIs (i.e., 2-3s) have relied on mathematical deconvolution models (Alexander et al., 2005; Benedek & Kaernbach, 2010). The CDA approach claims to be able to deal with ITI/ISIs as short as 2 s (Benedek and Kaernbach, 2010). My overlap might be too severe, as the time lag is too short. Furthermore, the intervals between events should be jittered. This is not true for my interval between gng response and word presentation (is fixed at 300 ms). 
 
 Benedek & Kaernbach (2010) wrote: *If the biasing SCR preceded or followed the elicited SCR by more than about 3 s, the impulses of the phasic driver were fully disjunct and the impulse elicited by the biasing SCR resided outside the response window. Responses to stimuli at an ISI of two seconds can be distinguished on the basis of two distinct peaks; however, the phasic driver responses are not fully distinct. Simulation data demonstrated that the amplitude of an elicited SCR will be affected by a biasing SCR with inter-SCR latencies of less than 3 s due to the overlap of driver impulses. This influence increases gradually with the increasing proximity of the second SCR. For ISIs as low as two seconds, not only do SCRs overlap but also the ranges of expected onset latencies (according to most definitions of response windows). An unambiguous classification of SCRs to either stimulus thus appears impossible due to the variability of the electrodermal response.*
 
-As in our design the ISI duration was short, we tested whether there are any differences in SCR responding for trials in which the gng response was followed by a negative vs a positive word. As we do not observe differences between both valence conditions (see control analyses below), we conclude that SCR responses to the word presentation are not confounding our SCR related to the gng responses. 
+As in our design the ISI duration was short, we tested whether there are any differences in SCR responding for trials in which the gng response was followed by a negative vs. a positive word. As we do not observe differences between both valence conditions (see control analyses below), we conclude that SCR responses to the word presentation are not confounding our SCR related to the gng responses. 
 Furthermore, the additional responses that may elicit confounding SCRs within the time window of interest (1-4 sec after gng response) were kept constant. Only trials that contained a correct word response and were followed and preceded by a correct gng an word response were included in the analysis. According to Benedek & Kaernbach (2010), keeping events constant 3 seconds before / after event of interest is sufficient. So it should suffice to keep the gng and word responses in the previous and preceding trial constant. 
 
 <br>
@@ -615,15 +868,16 @@ Furthermore, the additional responses that may elicit confounding SCRs within th
 #### Influence of Word Valence on SCR
 
 To check whether the SCR is affected by the word following the GNG response, I also conducted a LMM and an ANOVA including the factors response type and valence of the following word (levels neg, pos). 
-For the LMM, the  maximal random effects were reduced of the random effect explaining zero variance “FA - FH” and "Intercept" for word and "FH - SH x pos - neg" for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “FA - FH” and "Intercept" for word and "FH - SH x pos - neg" for subject - also including correlations?) also converged and yielded the same estimates. As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components. 
-The results can be reported as a footnote: There is still a main effect of Response Type. There is no main effect of valence and in interaction of valence and response type. Hence, the SCR is not influenced by valence of following word. The results of the LMM and the ANOVA including response type and valence are mostly consistent (as before FH vs SH is a trend in the LMM, but in the ANOVA it gets significant here).
+For the LMM, the  maximal random effects were reduced of the random effect explaining zero variance “FA - FH” and "Intercept" for word and "FH - SH x pos - neg" for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “FA - FH” and "Intercept" for word and "FH - SH x pos - neg" for subject) also converged and yielded the same estimates. As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components. 
+The results can be reported as a footnote: There is still a main effect of Response Type. There is no main effect of valence or an interaction of valence and response type. Hence, the SCR is not influenced by valence of following word. The results of the LMM and the ANOVA including response type and valence are mostly consistent (as before, FH vs. SH is a trend in the LMM, but in the ANOVA it gets significant here).
 
+<br>
 ```{r test effect of valence on SCR}
 
 # LMM
 LMM_scr_final <- lmer(iscr_gng_resp_sqrt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg || subjectID) + (0 + FH_minus_SH  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE",  order.terms = c(1,2,6,5,4,3), show.r2 = FALSE, show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "SCR [sqrt(microsiemens)] predicted by Response Type and Word Valence")
+tab_model(LMM_scr_final,order.terms = c(1,2,6,5,4,3), dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 
 
 # ANOVA
@@ -687,9 +941,9 @@ kable(t_tests[,c("condition","t(29)","p value")], caption = "t tests count pos n
 
 #### Influence Fix Cross Color on SCR
 
-I cannot evaluate effect of color of fixation cross in a convincing way. For doing this, I would need to include trials with white and red crosses that were only preceded and followed by white crosses. If I did this, only 1205 trials remain for the analysis. There, there indeed is a trend for the effect of color of fixation cross on SCR. The effect actually is significant if I remove the random slope (which should be done, as according to the *anova* function it does not improve the fit). But this analysis is based on a tiny subset of the original data and not representative.
+I cannot evaluate the effect of fixation cross color in a convincing way. For doing this, I would need to include trials with white and red crosses that were only preceded and followed by white crosses. If I did this, only 1205 trials remain for the analysis. In such analysis, there indeed is a trend for the effect of color of fixation cross on SCR. But this analysis is based on a tiny subset of the original data and not representative.
 
-Thus, I also checked whether the color of fixation cross affects the SCR in current trial (independent of color of fix cross in previous or following trial; note that the time window of SCR is much longer than current trial, leading to overlapping effects of subsequent fixation crosses). At least in this analysis, which allowed overlapping effects of fixation crosses of different color, the color of the fixation cross does not affect the SCR in the current trial.
+Thus, I also checked whether the color of fixation cross affects the SCR in current trial (independent of color of fix cross in previous or following trial; note that the time window of SCR is much longer than current trial, leading to overlapping effects of subsequent fixation crosses). In this analysis, which allowed overlapping effects of fixation crosses of different color, the color of the fixation cross does not affect the SCR in the current trial.
 
 
 ```{r effect fixation cross}
@@ -709,7 +963,6 @@ data4mixedmodels_words_scr[1:(nrow(data4mixedmodels_words_scr)+1),]$color_cross[
 # Delete empty rows that were assigned to df now
 data4mixedmodels_words_scr <- data4mixedmodels_words_scr[!is.na(data4mixedmodels_words_scr$subjectID),]
 
-
 # make categorical variables factors
 data4mixedmodels_words_scr$response_type <- factor(data4mixedmodels_words_scr$response_type, levels=c("SH","FH","FA"))
 data4mixedmodels_words_scr$subjectID     <- factor(data4mixedmodels_words_scr$subjectID)
@@ -727,7 +980,6 @@ data4mixedmodels_words_scr[,(ncol(data4mixedmodels_words_scr)+1):(ncol(data4mixe
 names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-2):ncol(data4mixedmodels_words_scr)] <- c("red_minus_white", "FH_minus_SH:red_minus_white", "FA_minus_FH:red_minus_white")
 
 
-
 # LMM only use trials that were preceded and followed by white cross (only 1277 trials are left; or only 1205 if incorrect word responses are also excluded)
   data4mixedmodels_words_scr$followed_or_preceded_by_red_cross <- FALSE
   
@@ -740,243 +992,25 @@ names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-2):ncol(data
     }     
   }
 
-LMM_scr_cross_clean <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1 & data4mixedmodels_words_scr$followed_or_preceded_by_red_cross == FALSE,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+LMM_scr_cross_clean <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + red_minus_white + FH_minus_SH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1 & data4mixedmodels_words_scr$followed_or_preceded_by_red_cross == FALSE,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-LMM_scr_cross_clean_summary <- summary(LMM_scr_cross_clean)
-
-kable(LMM_scr_cross_clean_summary$coefficients, caption = "Overview Fixed Effects LMM SCR - Color Fix Cross") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
-
+tab_model(LMM_scr_cross_clean,dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 
 
 # LMM use all trials
-LMM_scr_cross <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + FA_minus_FH + red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+LMM_scr_cross <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-LMM_scr_cross_summary <- summary(LMM_scr_cross)
-
-kable(LMM_scr_cross_summary$coefficients, caption = "Overview Fixed Effects LMM SCR - Color Fix Cross") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+tab_model(LMM_scr_cross,order.terms = c(1,6,4,3,5,2), dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 ```
 
 <br>
 
 #### Summary Control Analyses
 
-The SCR seems not confounded by the valence of the following word, as there is no difference in SCR depending on word valence (see bar plor and LMM and ANOVA including the factor valence). Presentation of words of different valence after an error does not differentially affect the SCR. In addition, the number of positive and negative words preceding/following FAs, FHs, SHs is equal. Furthermore, it cannot be differentially confounded with prior responses, as only trials were included that were preceded and followed by correct responses to GNG stimuli and words. Thus, it may be possible to use SCR in my analyses, even though it does overlap with other events. 
+The SCR seems not confounded by the valence of the following word, as there is no difference in SCR depending on word valence (see bar plor and LMM and ANOVA including the factor valence). Presentation of words of different valence after an error does not differentially affect the SCR. In addition, the number of positive and negative words following FAs, FHs, SHs is equal. Furthermore, it cannot be differentially confounded with prior responses, as only trials were included that were preceded and followed by correct responses to GNG stimuli and words. Thus, it may be possible to use SCR in my analyses, even though it does overlap with other events. 
 
-<br>
-<br>
-<br>
 
-# Plots
 
-```{r plot, fig.width=10, fig.align='center'}
-ggplot(df_aggregated_scr_condition_over_subjects,aes (x = response_type,y = mean, fill = word_valence)) +
-  geom_bar(stat="identity", position=position_dodge()) +                                                       
-  geom_errorbar(aes(ymax = mean + se, ymin = mean - se), position = position_dodge(width=0.95), width=0.1) +    
-  ggtitle("SCR Depending on Response Type and Following Word Valence") +                                                                            
-  xlab("Previous Response") + ylab("SCR (square root and z transformed)") +                                                                  
-  guides(fill=guide_legend(title="Word Valence")) +                                                                         
-  theme(axis.title = element_text(hjust = 0.5)) +                                                                           
-  theme(plot.title = element_text(hjust = 0.5)) +
-  theme(legend.position="bottom") +
-  scale_fill_manual(values=c("steelblue4", "slategray1")) +
-  geom_signif(y_position=c(0.6,0.6), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),
-              annotation=c("***","NS"), tip_length=0.02) 
-
-# plot SCR per subject
-ggplot(data=df_aggregated_scr_response_type, aes(x=response_type, y = iscr_gng_resp_sqrt_z_score))+geom_point()+facet_wrap(~subjectID)+theme_bw()+ ggtitle("Skin Conductance Response per Subject") + theme(plot.title = element_text(hjust = 0.5)) + ylab("Square Root-Transformed Z-Standardized SCR (?S)")
-
-
-
-plot_scr <- ggplot(df_aggregated_scr_resp_type_over_subjects,aes (x = response_type,y = mean)) +
-  geom_bar(stat="identity", position=position_dodge(), fill = "steelblue4") +                                                       
-  geom_errorbar(aes(ymax = mean + se, ymin = mean - se), position = position_dodge(width=0.95), width=0.1) +    
-  ggtitle("Skin Conductance Response") +                                                                            
-  xlab("Response Type") + ylab("Sqrt-Transformed Z-Standardized SCR (?S)") +                                                                  
-  guides(fill=guide_legend(title="Word Valence")) +                                                                         
-  theme(plot.title = element_text(hjust = 0.5)) +
-  theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                
-  theme(axis.text=element_text(size=15)) +
-  theme(legend.title=element_text(size=15)) +
-  theme(legend.text=element_text(size=15)) +
-  theme(plot.title = element_text(size = 20, hjust = 0.5)) +
-  theme(legend.position="bottom") +
-  coord_cartesian(ylim = c(-0.15,0.6)) +
-  geom_signif(y_position=c(0.55,0.55), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),annotation=c("***","NS"), tip_length=0.02)
-
- # ggsave("scr.png", plot_scr, width = 18, height = 16, units = "cm")
-
-plot_scr
-```
-
-
-<br>
-<br>
-<br>
-
-# Relation Priming - SCR
-
-I used a linear mixed model to evaluate whether there is a relation between word categorization RT (= priming) and SCR.
-
-In order to do that, my first approach was to calculate a LMM including SCR as dependent variable and RT facilitation as predictor. Using this model, I found an interaction between SCR and priming effect (RT facilitation) and word valence (more SCR is related to less RT facilitation after a false alarm). But this LMM analysis was very problematic. Defining RT facilitation / priming effect on single trial level is not possible. I used mean RT in that condition minus RT in that trial, but of course this difference is more influenced by word length, frequency, etc. than by priming. 
-
-Hence, I decided to include SCR as a predictor in the LMM predicting word categorization RT. This may be a but unusal, as the predictor event precedes the criterion, but it solves the problem described. This analysis allowed investigating the relation between SCR and priming while controlling for word characteristics. 
-
-The model was constructed like the word categorization LMM but included SCR as continuous predictor in all fixed and random effects. I decided to report two separate models for word rt and word rt with SCR. For the first model, I included CI to show that there is no priming effect after CI. For the second model, I excluded CI, because there is no valid SCR in these trials (this is the only condition not confounded by a motor response) and I want to exclude CI from all SCR analyses.
-
-I calculated a LMM instead of a GLMM, because I also did so in the analysis of word categorization without SCR as predictor. In order to check whehther a GLMM model yielded the same outcomes, I also analyzed the relation between word categorization RT by means on a GLMM. As in the original word categorization mixed model, I chose inverse gaussian distribution and the identity link funktion (recommended by Lo & Andrews, 2015) for the GLMM. The results were quite the same (for more detail, see Summary LMM).
-
-
-**Overview LMM:**
-
-* Response variable: RT (inverse transformed)
-
-* Fixed effects: Response type (FA, FA, SH) and Word Valence (pos, neg)
-    
-* Random effects: Subjects and Words
-
-* Continuous predictor: Square root transformed and z-standardized SCR (response-locked to GNG-response) (it is recommended that contonuous predictor shall be scaled)
-
-
-As in ll other analyses on SCR data, I only included FA, FH, SH trials that had no invalid gng rt or word rt (these trials were consistently excluded for all analyses), were followed by correct word classification and were not preceded or followed by an incorrect response or wrong key in gng or word classification.
-
-
-
-<br>
-
-#### Check Distribution 
-
-Also in this subset of the data, the transfomed Word RT Inverse is normally distributed, allowing data analysis by means of an LMM (the residuals of this LMM are approximaltely normally distributed as well). 
-
-```{r distribution LMM Priming - SCR, fig.width=10, fig.height=6}
-
-# distribution transformed rt -> normally distributed, also in the different conditions
-par(mfrow = c(1,2))  # use par function in base graphics approach to arrange plots side by side here; grid.arrange only works for ggplot grahpics
-plot(density(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,]$word_rt_inverse), main = "Histogram Word RT Inverse")
-qqp(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,]$word_rt_inverse, "norm", main = "Q-Q Plot Word RT Inverse", ylab = "sample quantiles")
-par(mfrow = c(1, 1)) # reset "par" parameter
-ggplot(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], aes(x = word_rt_inverse)) + geom_density() + facet_wrap(response_type ~ valence) + ggtitle("Histogram Word RT Inverse in Conditions")
-```
-<br>
-
-#### Define Contrasts
-
-I chose sliding difference (aka "repeated") contrasts, which successively test neighboring factor levels against each other. See more information on that topic in the section "Word Categorization Behavioral Data".
-
-```{r contrasts LMM Priming - SCR}
-# run constrast code from SCR LMM
-```
-
-<br>
-
-#### Model Building
-
-See which approach I chose for building the model in the section "Word Categorization Behavioral Data".
-
-<br>
-
-#### Run LMM
-
-For the Priming - SCR LMM, the  maximal random effects were reduced of the random effect explaining zero variance: all interactions response_type x SCR for word and subject and interactions response_type x valence x SCR and valence x SCR for subject; with correlation parameters set to zero. Note that the model using the maximal random structure (including correlations) also converged and yielded the same estimates (for the fuller model, only the trend of main effect SCR was less pronounced). 
-It would be not ok to not include SCR in random structure, because this predictor is of major interest and we want to make valid inferences from the  corresponding fixed effect. It is not a covariate for which we do not need to generalize the effect and for which we only want to account for the variance it explains.
-
-```{r build LMM Priming SCR, echo = 2}
-
-LMM_rt_scr_final <- lmer(word_rt_inverse ~ response_type*valence*iscr_gng_resp_sqrt_z_score + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-
-tab_model(LMM_rt_scr_final,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.r2 = FALSE, order.terms = c(1,2,3,7,8,9,10,11,12,4,5,6), show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "RT [-1000/RT(ms)]] Word Categorization")
-```
-
-<br>
-
-Akin to the ANOVA omnibus test, it can be tested whehter the interaction response type x valence x SCR improves the model fit significantly. It does not. Thus, there is no omnibus interaction effect. The SCR does not modulate the priming effect and there is no relation between priming and SCR. This is also evident when the interaction is resolved in the model nested within each response condition (see below).
-
-<br>
-
-#### Break Down the Interaction
-
-I tested the effect of valence, of scr, and of valence*scr within each response condition by calculating a LMM that is nested in the final model above. 
-
-```{r nested LMM RT, echo = 2}
-
-# valence, scr, valence*scr within response condition 
-LMM_rt_scr_nested <- lmer(word_rt_inverse ~ response_type/(valence*iscr_gng_resp_sqrt_z_score) + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score  || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
-
-tab_model(LMM_rt_scr_nested,pred.labels = pl, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.r2 = FALSE, order.terms = c(1,2,3,7,8,9,10,11,12,4,5,6), show.re.var = FALSE, show.ngroups = FALSE, show.obs = FALSE, show.icc = FALSE, dv.labels = "RT [-1000/RT(ms)]] Word Categorization")
-```
-
-<br>
-
-#### Summary LMM
-
-There is no relation between priming effect and the SCR (no significant interaction after any response type). Interestingly, there is a significant interaction between FAs and SCR, suggesting that for False Alarms, slower responses to the words are related to a higher skin conductance response. This would mean that more PES is related to more SCR. This was none of my hypotheses but is quite interesting and may be reported as post hoc finding in the paper. 
-The results of the GLMM were quite the same. The only difference is that in the GLMM there is also a significant difference between response types FH_vs_SH and a significant effect of SCR (in the LMM the p value is at .067) in the full model. The nested GLMM does not converge anymore. In the past, it did converge. Recently, I decided to exclude word outlier trials also from the z standardization of the SCR. I rechecked, the convergence problems are not due to this change. I have no idea, what changed this. At least the results of no the non converging nested GLMM are consistent with the nested LMM (only one difference: in the nested GLMM there is now a trend for FH x SCR x valence with p = 0.073).  
-
-
-<br>
-
-#### Check Assumptions LMM
-
-Assumption 1: Linearity 
-* Dependent variable linearly related to the fixed factors, random factors, and covariates 
-* Plot of the residuals against the fitted values  shows a random scatter pattern, no nonlinear or curvy pattern -> linearity given
-
-Assumption 2: Homogeneity of Variance 
-* Residuals have constant variance across the range of your predicted values
-* Plot of the residuals against the fitted values shows an even spread around the centered line -> homogeneity of variance given
-    
-Assumption 3: Normality of Residuals 
-* Residuals are approximately normally distributed.
-* Q-Q plot looks fine; a bit off at the extremes, but that's often the case; doesn't look too bad -> normality given
-
-```{r test LMM assumptions, fig.width=10, fig.height=4, fig.align='center'} 
-par(mfrow = c(1,2))  # use par function in base graphics approach to arrange plots side by side here; grid.arrange only works for ggplot grahpics
-
-plot(fitted(LMM_rt_scr_final), residuals(LMM_rt_scr_final), xlab = "Fitted Values", ylab = "Residuals", main = "Residuals versus Predicted Variable")  # plot residuals against the fitted values
-abline(h = 0, lty = 2)
-lines(smooth.spline(fitted(LMM_rt_scr_final), residuals(LMM_rt_scr_final)))
-
-qqnorm(resid(LMM_rt_scr_final))
-qqline(resid(LMM_rt_scr_final)) 
-
-par(mfrow = c(1, 1)) # reset "par" parameter
-
-skewness <- round(skewness(resid(LMM_rt_scr_final)),digits = 2) 
-kurtosis <- round(kurtosis(resid(LMM_rt_scr_final)),digits = 2) 
-
-print(paste("Skewness Residuals Distribution:", skewness))
-print(paste("Kurtosis Residuals Distribution:", kurtosis))
-```
-
-
-
-
-<br>
-
-#### Correlation SCR - Priming after FA
-
-By calculating the correlation [see below], I wanted to check whether the unexpected relation found in the original/problematic LMM (more SCR is related to less RT facilitation after a false alarm) can be seen on the level of aggregated data as well. 
-The significance of this correlation depends on which trials of a subject are used for the z standardization. Previously, I did the scaling based on all trials. Then, I have an almost sign. correlation between SCR after FA and rt_priming_after_FA (p = 0.073). If the scaling is based only on trials that are used for SCR analysis later, the correlation is not almost significant anymore (p = 0.2). As bivariate normality is almost given (see last line), a Pearson correlation is calculated. As can be seen in the scatterplot, the correlation is not driven by a specific outlier.
-
-```{r corr SCR priming, fig.width = 6, fig.height = 4}
-
-df_wide_scr$subjectID     <- factor(df_wide_scr$subjectID)  # need to have same type for merging
-
-df_wide_scr <- left_join(df_wide_scr,df_wide, by = "subjectID")
-ggplot(df_wide_scr, aes(x = rt_priming_after_FA, y = iscr_gng_resp_sqrt_z_score.FA)) +
-    geom_point() +
-    geom_smooth(method='lm') +
-    ggtitle("Scatterplot SCR after FA and Priming after FA") +
-    theme(plot.title = element_text(hjust = 0.5))
-
-
-cor.test(df_wide_scr$iscr_gng_resp_sqrt_z_score.FA,df_wide_scr$rt_priming_after_FA, paired = TRUE)
-
-shapiro_corr <- unlist(mshapiro.test(t(df_wide_scr[,c("iscr_gng_resp_sqrt_z_score.FA","rt_priming_after_FA")]))["p.value"])
-print(paste("p value of Shapiro Wilk Test for Bivariate Normality:", round(shapiro_corr, digits = 3)))
-
-````
 
 <br>
 <br>
@@ -984,6 +1018,6 @@ print(paste("p value of Shapiro Wilk Test for Bivariate Normality:", round(shapi
 
 # Summary
 
-Even though the task design is not optimal to investigate the SCR, the control analyses suggest that valid inferences can be drawn from our analyses as the SCR is not confounded by previous or following events within the response window. Incorrect responses in the GNG task were associated with an increased SCR. 
+Even though the task design is not optimal to investigate the SCR, the control analyses suggest that valid inferences can be drawn from our analyses as the SCR is not confounded by previous or following events within the response window. Incorrect responses in the GNG task were associated with an increased SCR. There was no relation between SCR and priming effect. A nice post hoc finding is, that following incorrect responses, there is a positive relation between word categorization latency (a bit similar to PES) and SCR.
 
 
