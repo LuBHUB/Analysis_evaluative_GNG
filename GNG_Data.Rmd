@@ -114,15 +114,31 @@ The data loss due to outlier exclusion is small.
 
 ```{r excluded outliers}
 
+data4mixedmodels$gng_invalid_rt_fast <- FALSE
+data4mixedmodels[data4mixedmodels$gng_invalid_rt == TRUE & data4mixedmodels$gng_rt < 100,]$gng_invalid_rt_fast <- TRUE
+
+data4mixedmodels$gng_invalid_rt_slow <- FALSE
+data4mixedmodels[data4mixedmodels$gng_invalid_rt == TRUE & data4mixedmodels$gng_rt > 700,]$gng_invalid_rt_slow <- TRUE
+
+data4mixedmodels$gng_misses <- FALSE
+data4mixedmodels[data4mixedmodels$gng_resp == 47,]$gng_misses <- TRUE
+
+data4mixedmodels$gng_wrong_key <- FALSE
+data4mixedmodels[data4mixedmodels$gng_resp == 48 | data4mixedmodels$gng_resp == 49,]$gng_wrong_key <- TRUE
+
 # use same trials as in data4mixedmodels_words but not exclude word outliers here
-df_outlier_gng <- ddply(data4mixedmodels[data4mixedmodels$gng_resp <= 44 & data4mixedmodels$outlier_words == FALSE,], 
+df_outlier_gng <- ddply(data4mixedmodels, 
                           .(subjectID), 
                           summarise,
-                          percent_gng_outliers = sum(gng_invalid_rt)/length(subjectID)*100)
+                          percent_gng_outliers_fast    = sum(gng_invalid_rt_fast)/length(subjectID)*100,
+                          percent_gng_outliers_slow    = sum(gng_invalid_rt_slow)/length(subjectID)*100,
+                          percent_gng_outliers_overall = sum(gng_invalid_rt)/length(subjectID)*100,
+                          percent_gng_misses           = sum(gng_misses)/length(subjectID)*100,
+                          percent_gng_wrong_key        = sum(gng_wrong_key)/length(subjectID)*100)
 
-outlier_gng <- round(stat.desc(df_outlier_gng[,2],basic=F), digits = 2)
+outlier_gng <- round(stat.desc(df_outlier_gng[,c(2:6)],basic=F), digits = 2)
 
-kable(outlier_gng[2:3], caption = "RT GNG Outlier (%)") %>%
+kable(outlier_gng, caption = "GNG excluded trials (%)") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
 ```
 
