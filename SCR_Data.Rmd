@@ -21,7 +21,7 @@ SC was measured with a direct current using Brain Vision Recorder (Brain Product
 
 As Figner et al. (2011) recommend that the sampling rate should be no lower than 100-200 Hz (such high sampling rates are not imperative to veridically represent a relatively slow signal like skin conductance, but more complex analysis approaches and smoothing procedures can benefit from higher sampling rates), the data were downsampled to 100 Hz. I used a 1st order butterworth low-pass filter with 5Hz cutoff and smoothed the data with the gaussian method with a window width of 200 ms. Increasing the width of the smoothing window increases the sensitivity and produces more SCRs. Figner et al. (2011) used a simple moving average across 500 ms, Benedek & Kaernbach (2010) as well as many other studies used 200 ms as gaussian window.
 
-The SC data was analyzed using Continuous Deconvolution Analysis (CDA) in Ledalab (Benedek & Kaernbach, 2010). Benedek & Kaernbach (2010) clearly recommend the CDA over the DDA, as it is more robust and efficient (the DDA is sensitive to data quality, e.g. artifacts) and allows for a more straightforward scoring of phasic activity. Following the recommendations from Benedek & Kaernbach (2010), the ISCR results will be reported. The ISCR represents the unbiased cumulative phasic activity within a given response period. If response peaks are considered, we would need to define a minimum amplitude to be counted as a response to determine whether a response has occurred (responses below this threshold will be set to zero and are sometimes excluded from the analyses). As a threshold of 0.01 microsiemens is quite common in the literature, I would choose this value. I entered it in the matlab batch, but as I only use ISCR to quantify the SCR, the threshold is irrelevant, because the ISCR does not rely on the amplitude but only on the area under the curve. Other papers relying on the ISCR do not report any threshold. Hence, no SCRs have to be set to 0. The response window was 1 to 4 s after the response to the GNG stimulus, because such a window is commonly used (Boucsein et al., 2012) and is also compatible with the observed response range in my data (based on visual inspection of FA vs Hit condition). 
+The SC data was analyzed using Continuous Decomposition Analysis (CDA) in Ledalab (Benedek & Kaernbach, 2010). Benedek & Kaernbach (2010) clearly recommend the CDA over the DDA, as it is more robust and efficient (the DDA is sensitive to data quality, e.g. artifacts) and allows for a more straightforward scoring of phasic activity. Following the recommendations from Benedek & Kaernbach (2010), the ISCR results will be reported. The ISCR represents the unbiased cumulative phasic activity within a given response period. If response peaks are considered, we would need to define a minimum amplitude to be counted as a response to determine whether a response has occurred (responses below this threshold will be set to zero and are sometimes excluded from the analyses). As a threshold of 0.01 microsiemens is quite common in the literature, I would choose this value. I entered it in the matlab batch, but as I only use ISCR to quantify the SCR, the threshold is irrelevant, because the ISCR does not rely on the amplitude but only on the area under the curve. Other papers relying on the ISCR do not report any threshold. Hence, no SCRs have to be set to 0. The response window was 1 to 4 s after the response to the GNG stimulus, because such a window is commonly used (Boucsein et al., 2012) and is also compatible with the observed response range in my data (based on visual inspection of FA vs Hit condition). 
 
 Unlike some other authors (e.g. Neiss et al., 2019, who also calculated LMMs), I did not analyze SCRs only from those trials in which a person showed a response. I did not exclude zero responses from my analyses, as these represent meaningful events as well. 
 Participants lacking measurable SCR on > 75% of all trials were classified as non-responders. All participants were below this threshold so no participants were excluded.
@@ -285,36 +285,44 @@ Normal distribution of sampling data can be assumed for square root transformed 
 #### Definition of Non-Responders
 
 
-Non-responder describes an individual who fails to show any or a certain (arbitrary) percentage of non-zero CRs (Lonsdorf et al., 2017). Here, participants lacking measurable SCR on >75% of all trials (or trials of one response condition) were classified as non-responders. All participants' SCRs exceeded this threshold so no participants were excluded.
+Non-responder describes an individual who fails to show any or a certain (arbitrary) percentage of non-zero CRs (Lonsdorf et al., 2017). Here, participants lacking measurable SCR on >75% of all trials (or trials of one response condition) were classified as non-responders. All participants' SCRs exceeded this threshold so no participants were excluded. The proportion of zero responses was calculated based on all trials (also including CI and word outliers, as also recommended by JK).
 
 ```{r non-responders SCR}
+df_aggregated_scr_response_type_incl_zero_resp <- ddply(data4mixedmodels[!is.na(data4mixedmodels$iscr_gng_resp),], 
+                                                        .(subjectID, response_type), 
+                                                        summarise,
+                                                        event_counts_incl_zero_scr = length(subjectID))
 
-df_aggregated_scr_response_type_excl_zero_resp <- ddply(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1 & data4mixedmodels_words_scr$iscr_gng_resp > 0,], 
+df_aggregated_scr_response_type_excl_zero_resp <- ddply(data4mixedmodels[!is.na(data4mixedmodels$iscr_gng_resp) & data4mixedmodels$iscr_gng_resp > 0,], 
                                                         .(subjectID, response_type), 
                                                         summarise,
                                                         event_counts_excl_zero_scr = length(subjectID))
 
-df_non_responder_per_response_type <- left_join(df_aggregated_scr_response_type,df_aggregated_scr_response_type_excl_zero_resp, by = c("subjectID","response_type"))
+df_non_responder_per_response_type <- left_join(df_aggregated_scr_response_type_incl_zero_resp,df_aggregated_scr_response_type_excl_zero_resp, by = c("subjectID","response_type"))
 
-df_non_responder_per_response_type$proportion_zero_responses <- round(100 - (df_non_responder_per_response_type$event_counts_excl_zero_scr / df_non_responder_per_response_type$event_counts_incl_zero_scr * 100),digits = 1)
-
+df_non_responder_per_response_type$proportion_zero_responses <- round(100 - (df_non_responder_per_response_type$event_counts_excl_zero_scr / df_non_responder_per_response_type$event_counts_incl_zero_scr * 100),digits = 2)
 
 df_non_responder_overall <-  ddply(df_non_responder_per_response_type,.(subjectID), summarise,
                                    number_all_events_incl_zero_scr = sum(event_counts_incl_zero_scr),
                                    number_all_events_excl_zero_scr = sum(event_counts_excl_zero_scr))    
 
-df_non_responder_overall$proportion_zero_responses_overall    <- round(100 - (df_non_responder_overall$number_all_events_excl_zero_scr / df_non_responder_overall$number_all_events_incl_zero_scr * 100),digits = 1)
+df_non_responder_overall$proportion_zero_responses_overall    <- round(100 - (df_non_responder_overall$number_all_events_excl_zero_scr / df_non_responder_overall$number_all_events_incl_zero_scr * 100),digits = 2)
 
 df_non_responder_per_response_type <- df_non_responder_per_response_type[order(df_non_responder_per_response_type$response_type),]
-df_non_responder_per_response_type <- df_non_responder_per_response_type["proportion_zero_responses"]
-df_non_responder_per_response_type <- cbind(df_non_responder_per_response_type[1:30,],df_non_responder_per_response_type[31:60,],df_non_responder_per_response_type[61:90,])
-colnames(df_non_responder_per_response_type) <- c("proportion_zero_responses_FA","proportion_zero_responses_FH","proportion_zero_responses_SH")
+df_non_responder_per_response_type <- cbind(
+df_non_responder_per_response_type[df_non_responder_per_response_type$response_type == "FA","proportion_zero_responses"], df_non_responder_per_response_type[df_non_responder_per_response_type$response_type == "FH","proportion_zero_responses"], df_non_responder_per_response_type[df_non_responder_per_response_type$response_type == "SH","proportion_zero_responses"], df_non_responder_per_response_type[df_non_responder_per_response_type$response_type == "CI","proportion_zero_responses"])
+
+colnames(df_non_responder_per_response_type) <- c("proportion_zero_responses_FA", "proportion_zero_responses_FH", "proportion_zero_responses_SH","proportion_zero_responses_CI")
 
 df_non_responder <- cbind(df_non_responder_overall[,c("subjectID","proportion_zero_responses_overall")],df_non_responder_per_response_type)
 rownames(df_non_responder) <- NULL
 
+df_non_responder_summary <- stat.desc(df_non_responder[,c(2:6)])[c(4,5,9,13),]
 
-kable(df_non_responder) %>%
+kable(df_non_responder, caption = "Zero Responses per Subject") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
+
+kable(round(df_non_responder_summary, digits = 2), caption = "Summary Zero Responses") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
 ```
 
