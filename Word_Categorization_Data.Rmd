@@ -148,19 +148,28 @@ descriptive_statistics <- stat.desc(df_wide,basic=F)
 For the word categorization, RTs 3 Median Absolute Deviations above/below the median of each condition for each subject were excluded.
 For the GNG response, RTs < 100 ms and RTs > 700 ms were excluded.
 This procedure is similar to the one used by Aarts (2.5 SD for word categorization and <100/>500 ms for GNG response.)
-The data loss due to outlier exclusion is reasonable.
+The data loss due to outlier exclusion is small.
 <br>
 
 ```{r excluded outliers}
-# use same trials as in data4mixedmodels_words but not exclude word outliers here
-df_outlier <- ddply(data4mixedmodels[data4mixedmodels$gng_resp <= 46 & data4mixedmodels$gng_invalid_rt == FALSE & data4mixedmodels$word_resp <= 54,], 
+# use all trials here, as recommended by JK
+data4mixedmodels$outlier_words_pos <- FALSE
+data4mixedmodels[data4mixedmodels$outlier_words == TRUE & data4mixedmodels$valence == "pos",]$outlier_words_pos <- TRUE
+
+data4mixedmodels$outlier_words_neg <- FALSE
+data4mixedmodels[data4mixedmodels$outlier_words == TRUE & data4mixedmodels$valence == "neg",]$outlier_words_neg <- TRUE
+
+
+df_outlier <- ddply(data4mixedmodels, 
                           .(subjectID), 
                           summarise,
-                          percent_word_outliers = sum(outlier_words)/length(subjectID)*100)
+                          percent_word_outliers_pos = sum(outlier_words_pos)/length(subjectID)*100,
+                          percent_word_outliers_neg = sum(outlier_words_neg)/length(subjectID)*100,
+                          percent_word_outliers_overall = sum(outlier_words)/length(subjectID)*100)
 
-outlier <- round(stat.desc(df_outlier[,2],basic=F), digits = 2)
+outlier <- round(stat.desc(df_outlier[,c(2:4)]), digits = 2)
 
-kable(outlier[2:3], caption = "RT Word Outlier (%)") %>%
+kable(outlier[c(4,5,9,13),], caption = "RT Word Outlier (%)") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
 ```
 
