@@ -94,4 +94,7 @@ kable(subject_data[,c("CODE","Alter","Geschlecht","Muttersprache","Haendigkeit",
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 
 age <- round(stat.desc(subject_data$Alter,basic=F),digits = 2)
+
+kable(age[c("mean","std.dev")], caption = "Summary Age") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "left")
 ````
