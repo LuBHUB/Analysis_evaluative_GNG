@@ -144,7 +144,22 @@ data4mixedmodels_words_scr$iscr_gng_resp_sqrt <- sqrt(data4mixedmodels_words_scr
 
 <br>
 
-#### SCR Data
+#### Visualize SCR per Subject
+
+<br>
+
+```{r plot SCR per subject, fig.width=10, fig.height=8}
+
+per_subj_scr <- ggplot(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], aes(x=response_type, y=iscr_gng_resp_sqrt)) + geom_point(position="jitter") + ggtitle("SCR per Subject") + theme(plot.title = element_text(hjust = 0.5)) + ylab("SCR [square root transformed (µS)]") + facet_wrap( ~ subjectID, nrow=5)
+per_subj_scr
+
+per_subj_scr_aggregated <-  ggplot(data=df_aggregated_scr_response_type, aes(x=response_type, y = iscr_gng_resp_sqrt_z_score))+geom_point()+facet_wrap(~subjectID)+theme_bw()+ ggtitle("Aggregated SCR per Subject") + theme(plot.title = element_text(hjust = 0.5)) + ylab("SCR [square root and z transformed (µS)]")
+per_subj_scr_aggregated
+```
+
+<br>
+
+#### Distribution SCR Data
 
 The data are highly skewed. Even the log transformed z standardized values deviate from normality. According to the *boxcox* function, the optimal lambda to transform the raw data to normality would be -3.7. A lambda of -4 corresponds to a transformation of x = y^-4, which here did not produce a normal distribution either (but rather some weird distribution...). Compared to log transformed data (would correspond to lambda = 0), the square root transformed data (would correspond to lambda = 0.5) better approach normal distribution. According to papers on SCR analysis, either log or square root transformation may be chosen for transforming SCR data (Dawson et al., 2007; Figner et al., 2011). I will choose square root transformation, as here the data approach normality (see also section Normality of Single Trial SCR Data). 
 
@@ -652,10 +667,6 @@ plot_scr_val <- ggplot(df_aggregated_over_subjects,aes (x = response_type,y = is
   geom_signif(y_position=c(0.55,0.55), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),annotation=c("***","NS"), tip_length=0.02)
 
 grid.arrange(plot_scr,plot_scr_val,nrow=1)
-
-
-# plot SCR per subject
-# ggplot(data=df_aggregated_scr_response_type, aes(x=response_type, y = iscr_gng_resp_sqrt_z_score))+geom_point()+facet_wrap(~subjectID)+theme_bw()+ ggtitle("Skin Conductance Response per Subject") + theme(plot.title = element_text(hjust = 0.5)) + ylab("SCR [square root and z transformed (µS)]")
 ```
 <br>
 Error bars depict 95% CI. Values are adjusted for within-participant designs following Morey (2008). Calculation of error bars was based on the non-aggregated data, as this better reflects the LMM approach. Computing error bars based on the aggregated data per subject yields different results, as in the mean of the group means it would not be considered that subjects have a different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable (relies on the same amount of information), which is not true.
