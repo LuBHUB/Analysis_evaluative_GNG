@@ -152,7 +152,19 @@ kable(outlier_gng, caption = "GNG excluded trials (%)") %>%
 
 <br>
 
-#### RT and Proportion Response Types
+#### Visualize RT per Subject
+
+<br>
+
+```{r plot gng RT per subject, fig.width=10, fig.height=8}
+
+per_subj_gng <- ggplot(data4mixedmodels_gng, aes(x=response_type, y=gng_rt)) + geom_point(position="jitter") + ggtitle("GNG RT per Subject") + theme(plot.title = element_text(hjust = 0.5)) + facet_wrap( ~ subjectID, nrow=5)
+per_subj_gng
+```
+
+<br>
+
+#### Distribution & Prop. Resp. Types
 
 I decided to transform the GNG RT data, because they deviate from normal distribution. See more information on this in the section "Word Classification Behavioral Data". According to the *boxcox* function, the optimal lambda for normalizing the GNG RTs is - 0.59. As this is not far from -1, I chose the inverse/reciprocal transformation (-1000/RT) here as well (for the word RT this was the best option). Here, with transformation with value^-0.5^ (corresponds to lambda -0.5) or with log transformation (corresponds to lambda 0), the data (and the residuals of the RT conditions) deviate even more from normal distribution. Using different transformations for word and GNG response may be also a bit confusing for the readership and the GNG behavioral results are actually not really relevant. After transformation, RTs (except for FH) are still not normally distributed. But for the ANOVA / LMM, the residuals of each conditions shall be normally distributed (which they are not). At least, the residuals of the transformed RTs deviate less from the normal distribution than the raw rts. 
 The proportion of response types (and the residuals) are normally distributed in each condition (see below). Normality of data and residuals in each condition was tested with the Shapiro-Wilk test. The results are only reported for the residuals here.
