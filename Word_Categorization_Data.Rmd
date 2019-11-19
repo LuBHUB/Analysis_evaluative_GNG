@@ -182,7 +182,24 @@ kable(outlier[c(4,5,9,13),], caption = "RT Word Outlier (%)") %>%
 
 <br>
 
-#### RT & Accuracy
+#### Visualize RT per Subject & Word
+
+<br>
+
+```{r plot word RT per subject and word, fig.width=10, fig.height=8}
+
+per_subj <- ggplot(data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], aes(x=response_type, y=word_rt)) + geom_point(position="jitter", aes(colour = valence)) + 
+ggtitle("Word Categorization RT per Subject") + theme(plot.title = element_text(hjust = 0.5), legend.position="bottom") + facet_wrap( ~ subjectID, nrow=5)
+per_subj
+
+per_word <- ggplot(data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], aes(x=response_type, y=word_rt)) + geom_point(position="jitter") + 
+  ggtitle("Word Categorization RT per Word") + theme(plot.title = element_text(hjust = 0.5)) + facet_wrap( ~ word, nrow=10)
+per_word
+```
+
+<br>
+
+#### Distribution RT & Accuracy
 
 I decided to transform the RT data, because they severely deviate from normal distribution. **Normal distribution of the residuals in the different conditions is a prerequisite for ANOVAs and LMMs** and violation has been found to have an effect on the probability of Type I error and the power. According to method papers, inverse transformation is better than the widely used log transformation to achieve normality and increase power. Checking my data with a *boxcox* function, the lambda (-0.83, so close to -1) also suggests that inverse transformation (1/RT) is the best option for my data. I also tested the log transformation. Visually, this leads to a comparable normalization of the data. I still chose the inverse transformation, as here the skewness is a bit smaller and the inverse transformation is assumed to yield better power. Based on the paper "A linear mixed model analysis of masked repetition priming" by Kliegl (2010), I used the reciprocal version of inverse transformation (-1/RT), as this transformation affords an interpretation of effects in terms of rate or speed rather than time. I  multiplied reciprocal scores by minus 1 to maintain the direction of effects compatible to the raw values, effectively converting speed into “rate of slowing”. Instead of -1/RT, I calculated -1000/RT, to avoid having very small decimal numbers. I multiplied the inversely transformed RTs by -1000 so that coefficients will have the same sign as for models fitted to the untransformed latencies, at the same time avoiding very small values and too restricted range for the dependent variable (from Baayen 2010 Analyzing Reaction Times).
 
