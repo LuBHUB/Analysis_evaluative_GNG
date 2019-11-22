@@ -2,7 +2,8 @@
 title: "GNG Data"
 author: "Luisa Balzus"
 date: "2 August 2019"
-output: html_document
+output:
+  html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -569,7 +570,6 @@ grid.arrange(hist_residuals_gng_rt_inverse,qqplot_residuals_gng_rt_inverse,hist_
 barplot_rt <- ggplot(df_aggregated_over_subjects_gng_rt,aes (x = response_type,y = gng_rt)) +
   geom_bar(stat="identity", position=position_dodge(), fill = "wheat2", width = 0.7) +                                                       
   geom_errorbar(aes(ymax = gng_rt + ci, ymin = gng_rt - ci), position = position_dodge(width=0.95), width=0.1) +    
-  ggtitle("Response Time") +                                                                            
   xlab("Response Type") + ylab("Response Time (ms)") +                                                                  
   theme(plot.title = element_text(hjust = 0.5)) +
   theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
@@ -583,7 +583,6 @@ barplot_rt <- ggplot(df_aggregated_over_subjects_gng_rt,aes (x = response_type,y
 barplot_cond <- ggplot(df_aggregated_over_subjects_gng_prop,aes (x = response_type,y = proportion)) +
   geom_bar(stat="identity", position=position_dodge(), fill = "wheat2") +                                                       
   geom_errorbar(aes(ymax = proportion + ci, ymin = proportion - ci), position = position_dodge(width=0.95), width=0.1) +  
-  ggtitle("Proportion of Response Type") +                                                                            
   xlab("Response Type") + ylab("Proportion of Response Type (%)") +                                                                  
   theme(plot.title = element_text(hjust = 0.5)) +
   theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
@@ -595,7 +594,7 @@ barplot_cond <- ggplot(df_aggregated_over_subjects_gng_prop,aes (x = response_ty
   geom_signif(y_position=c(49,53,57), xmin=c(1.02, 2.02,1.02), xmax=c(2.98, 3.98,3.98),annotation=c("***","NS","***"), tip_length=0.02) 
 
 
-grid.arrange(barplot_rt,barplot_cond,nrow=1)
+grid.arrange(barplot_rt,barplot_cond,nrow=1,top = textGrob('Behavioral Performance Go/No-Go Task', gp = gpar(fontsize = 20)))
 
 # save image
 # gng <- arrangeGrob(barplot_rt,barplot_cond,nrow=1)
@@ -607,8 +606,6 @@ grid.arrange(barplot_rt,barplot_cond,nrow=1)
 
 Error bars depict 95% CI. Values are adjusted for within-participant designs following Morey (2008). Calculation of error bars for the RT was based on the non-aggregated data, as this better reflects the LMM approach. Computing error bars based on the aggregated data per subject yields different results, as in the mean of the group means it would not be considered that subjects have different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable / relies on the same amount of information, which is not true. For the Proportion of Response Type, I can only calculate error bars based on the data already aggregated per subject. Attaching proportion for response type to each trial in each subject makes no sense, as then I duplicate the data and artificially set the variance within one subject to 0.
 
-<br>
-<br>
 <br>
 
 
@@ -636,6 +633,46 @@ kable(table_prop, caption = 'Proportion of Response Types') %>%
 ```
 
 Note: The RT values here are based on the non-aggregated single trial data. This corresponds to the LMM approach and my plots. The Proportion of response types is based on the data first aggregated per subject and then over subjects.
+
+<br>
+
+#### Estimated Marignal Mean Plot
+
+I obtained estimated marginal means (aka least square means or adjusted means) using the emmeans package. I can plot the back-transformed estimated marginal means for all conditions and the CIs. For inverse transformation, there is no convenient way for also back-transforming contrast estimates (and difference CIs) for the LMM table (for log transformation it would be possible). Hence, I will report the transformed values. In the plot of the estimated marginal means, the CIs of significantly differing conditions overlap considerably. 
+
+Some information on CIs: Overlapping confidence intervals say nothing about statistical significance. The inverse — non-overlapping confidence intervals — implies statistical significance. If the 95% CI of the difference contains 0, then there is no difference between conditions. When using a repeated measures or a paired group design, do not compare the CIs of the group means because there will be no meaningful interpretation. Instead, use a CI around the mean difference. Only for independent sample means: p values can be estimated from the graphs of the confidence intervals. If the CIs overlap by about 1/4, half the average margin of error, then p ≈ .05. When they are just touching, then p ≈ .01.  
+
+```{r estimated mean plots, fig.width=5, fig.height=4, fig.align='center'}
+# # I saved computed estimated marginal means because the computation takes very long
+# emm_options(pbkrtest.limit = 11028)
+# emm_options(lmerTest.limit = 11028)
+# 
+# # If I want to back transforn the inverse transformation, I can only do 1/RT
+# tran <- make.tran("boxcox",-1)
+# LMM4plot_gng <- with(tran,
+#                      lmer(linkfun(gng_rt) ~ response_type + (1 + SH_minus_FA + FA_minus_FH  | subjectID), data=data4mixedmodels_gng, REML = TRUE, control =
+#                           lmerControl(optimizer="bobyqa")))
+# 
+# start_time = Sys.time()
+# Estimated_Means_GNG_RT = as.data.frame(emmeans(LMM4plot_gng, ~ response_type, type = "response"))
+# end_time = Sys.time()
+# end_time - start_time # Time difference of 9 mins
+# Estimated_Means_GNG_RT$response_type <- factor(Estimated_Means_GNG_RT$response_type, levels = c("FA","FH","SH"))
+# setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
+# save(Estimated_Means_GNG_RT,file="Estimated_Means_GNG_RT.rda")
+
+load(file = "Estimated_Means_GNG_RT.rda")
+
+plot_est_means_rt <- ggplot(Estimated_Means_GNG_RT,aes (x = response_type,y = response)) +
+  geom_bar(stat="identity", position=position_dodge(0.9), size=1, width=0.8, color='black') +                                                       
+  geom_errorbar(aes(ymax = upper.CL, ymin = lower.CL), position = position_dodge(width=0.9), width=0.2) +    
+  xlab("Response Type") + ylab("Estimates Marginal Means RT (ms)") +                                                                  
+  theme_bw(base_size = 20) +theme(legend.position = 'top',panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.title = element_text(size = 15, hjust = 0.5)) +                                                   
+  scale_fill_manual(values=c("grey", "white")) 
+plot_est_means_rt
+```
+
 
 <br>
 <br>
