@@ -636,11 +636,7 @@ Note: The RT values here are based on the non-aggregated single trial data. This
 
 <br>
 
-#### Estimated Marignal Mean Plot
-
-I obtained estimated marginal means (aka least square means or adjusted means) using the emmeans package. I can plot the back-transformed estimated marginal means for all conditions and the CIs. For inverse transformation, there is no convenient way for also back-transforming contrast estimates (and difference CIs) for the LMM table (for log transformation it would be possible). Hence, I will report the transformed values. In the plot of the estimated marginal means, the CIs of significantly differing conditions overlap considerably. 
-
-Some information on CIs: Overlapping confidence intervals say nothing about statistical significance. The inverse — non-overlapping confidence intervals — implies statistical significance. If the 95% CI of the difference contains 0, then there is no difference between conditions. When using a repeated measures or a paired group design, do not compare the CIs of the group means because there will be no meaningful interpretation. Instead, use a CI around the mean difference. Only for independent sample means: p values can be estimated from the graphs of the confidence intervals. If the CIs overlap by about 1/4, half the average margin of error, then p ≈ .05. When they are just touching, then p ≈ .01.  
+#### Estimated Marignal Means Plot
 
 ```{r estimated mean plots, fig.width=5, fig.height=4, fig.align='center'}
 # # I saved computed estimated marginal means because the computation takes very long
