@@ -2,7 +2,8 @@
 title: "Word Categorization Data"
 author: "Luisa Balzus"
 date: "18 Juli 2019"
-output: html_document
+output:
+  html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -340,7 +341,7 @@ Trials with invalid RT to GNG stimulus or word were excluded from all analyses. 
 
 <br>
 
-#### GNG RT or Error Rate as Covariate?
+#### GNG RT / Error Rate as Covar.?
 
 The response types differ in terms of RT: FA = FH, but FA and FH < SH. Hence, including **GNG RT** as a covariate might be a good idea. But several things are problematic when including GNG RT as covariate. The most important one:
 
@@ -1021,12 +1022,12 @@ anova_accuracy_posthoc_interaction_aarts     <- pairwise.t.test(df_aggregated_pe
 
 #### Bar Plots
 
-```{r plots, fig.width=10}
+```{r bar plots, fig.width=10}
 
 barplot_rt <- ggplot(df_aggregated_over_subjects_rt,aes (x = response_type,y = word_rt, fill = word_valence)) +
   geom_bar(stat="identity", position=position_dodge()) +                                                       
   geom_errorbar(aes(ymax = word_rt + ci, ymin = word_rt - ci), position = position_dodge(width=0.95), width=0.1) +    
-  ggtitle("RT Word Categorization") +                                                                            
+ # ggtitle("RT Word Categorization") +                                                                            
   xlab("Preceding Response Type") + ylab("Response Time (ms)") +                                                                  
   guides(fill=guide_legend(title="Word Valence")) +                                                                         
   theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
@@ -1044,7 +1045,7 @@ barplot_rt <- ggplot(df_aggregated_over_subjects_rt,aes (x = response_type,y = w
 barplot_accuracy <- ggplot(df_aggregated_over_subjects_acc,aes (x = response_type,y = word_accuracy, fill = word_valence)) +
   geom_bar(stat="identity", position=position_dodge()) +                                                       
   geom_errorbar(aes(ymax = word_accuracy + ci, ymin = word_accuracy - ci),    position = position_dodge(width=0.95), width=0.1) +  
-  ggtitle("Accuracy Word Categorization") +                                                                    
+ # ggtitle("Accuracy Word Categorization") +                                                                    
   xlab("Preceding Response Type") + ylab("Hit Rate") +                                                           
   guides(fill=guide_legend(title="Word Valence")) +                                                            
   theme(axis.title = element_text(size = 18, hjust = 0.5)) +                                                   # center title
@@ -1069,10 +1070,10 @@ barplot_rt <- barplot_rt + theme(legend.position="none")
 barplot_accuracy <- barplot_accuracy + theme(legend.position="none") 
 
 
-grid.arrange(arrangeGrob(barplot_rt,barplot_accuracy,nrow=1),legend, nrow=2,heights=c(10, 1))
+grid.arrange(legend, nrow=2,arrangeGrob(barplot_rt,barplot_accuracy,nrow=1),heights=c(1, 10),top = textGrob('Behavioral Performance Word Categorization', gp = gpar(fontsize = 20)))
 
 # save image
-# priming <- arrangeGrob(barplot_rt,barplot_accuracy,legend,nrow=2,heights=c(10, 1))
+# priming <- grid.arrange(legend, nrow=2,arrangeGrob(barplot_rt,barplot_accuracy,nrow=1),heights=c(1, 10),top = textGrob('Behavioral Performance Word Categorization', gp = gpar(fontsize = 20)))
 # grid.draw(priming) # interactive device
 # ggsave("priming.png", priming, width = 36, height = 18, units = "cm")
 
@@ -1115,7 +1116,7 @@ grid.arrange(arrangeGrob(barplot_rt,barplot_accuracy,nrow=1),legend, nrow=2,heig
 ```
 <br>
 
-Error bars depict 95% CI. Values are adjusted for within-participant designs following Morey (2008). Calculation of error bars was based on the non-aggregated data, as this better reflects the LMM approach. Computing error bars based on the aggregated data per subject yields different results, as in the mean of the group means it would not be considered that subjects have different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable (relies on the same amount of information), which is not true.
+Illustration of behavioral performance (raw data) in the word categorization depending on word valence and preceding response type. Error bars depict 95% CI. Values are adjusted for within-participant designs following Morey (2008). Calculation of error bars was based on the non-aggregated data, as this better reflects the LMM approach. Computing error bars based on the aggregated data per subject yields different results, as in the mean of the group means it would not be considered that subjects have different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable (relies on the same amount of information), which is not true.
 
 <br>
 
@@ -1212,6 +1213,84 @@ kable(table_acc, caption = 'Hit Rate') %>%
 
 Note: The values here are based on the non-aggregated single trial data. This corresponds to the LMM approach and my plots.
 
+<br>
+
+#### Estimated Marignal Means Plots
+
+I obtained estimated marginal means (aka least square means or adjusted means) using the emmeans package. I can plot the back-transformed estimated marginal means for all conditions and the CIs. For inverse transformation, there is no convenient way for also back-transforming contrast estimates (and difference CIs) for the LMM table (log and logit transforms are exceptional cases in that there is a valid way to back-transform contrasts: https://github.com/rvlenth/emmeans/blob/master/R/contrast.R). Hence, I will report the transformed values. In the plot of the estimated marginal means, the CIs of significantly differing conditions overlap considerably. 
+
+Some information on CIs: Overlapping confidence intervals say nothing about statistical significance. The inverse — non-overlapping confidence intervals — implies statistical significance. If the 95% CI of the difference contains 0, then there is no difference between conditions. When using a repeated measures or a paired group design, do not compare the CIs of the group means because there will be no meaningful interpretation. Instead, use a CI around the mean difference. Only for independent sample means: p values can be estimated from the graphs of the confidence intervals. If the CIs overlap by about 1/4, half the average margin of error, then p ≈ .05. When they are just touching, then p ≈ .01.  
+
+```{r estimated mean plots, fig.width=10}
+
+# RT
+# # I saved computed estimated marginal means because the computation takes very long
+# emm_options(pbkrtest.limit = 13092)
+# emm_options(lmerTest.limit = 13092)
+# 
+# # If I want to back transforn the inverse transformation, I can only do 1/RT
+# tran <- make.tran("boxcox",-1)
+# LMM4plot <- with(tran,
+#                  lmer(linkfun(word_rt) ~ response_type*valence +(1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa")))
+# 
+# start_time = Sys.time()
+# Estimated_Means_Priming_RT = as.data.frame(emmeans(LMM4plot, ~ response_type*valence, type = "response"))
+# end_time = Sys.time()
+# end_time - start_time # Time difference of 39 mins
+# Estimated_Means_Priming_RT$response_type <- factor(Estimated_Means_Priming_RT$response_type, levels = c("FA","FH","SH","CI"))
+# 
+# setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
+# save(Estimated_Means_Priming_RT,file="Estimated_Means_Priming_RT.rda")
+# 
+# # # get back-transformed estimated marginal means (long computation time)
+# # emmeans(LMM4plot, pairwise ~ response_type, type = "response")
+# # emmeans(LMM4plot, pairwise ~ valence, type = "response")
+# # emmeans(LMM4plot, pairwise ~ response_type*valence, type = "response")
+# # 
+# # # alternative plots of estimated marginal means
+# # plot_est_means2 <- emmeans(LMM4plot, ~ response_type/valence, type = "response")
+# # plot_est_means2 <- plot(plot_est_means2, by = "response_type")
+# # plot_est_means2
+# # 
+# # plot_est_means3 <- emmip(LMM4plot, ~ valence | response_type, type = "response", CIs = TRUE) 
+# # plot_est_means3
+
+load(file = "Estimated_Means_Priming_RT.rda")
+
+plot_est_means_rt <- ggplot(emm2,aes (x = response_type,y = response, fill = valence)) +
+  geom_bar(stat="identity", position=position_dodge(0.9), size=1, width=0.8, color='black') +                                                       
+  geom_errorbar(aes(ymax = upper.CL, ymin = lower.CL), position = position_dodge(width=0.9), width=0.2) +    
+  xlab("Preceding Response Type") + ylab("Estimates Marginal Means RT (ms)") +                                                                  
+  guides(fill=guide_legend(title="Word Valence")) +
+  theme_bw(base_size = 20) +theme(legend.position = 'top',panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.title = element_text(size = 15, hjust = 0.5)) +                                                   
+  coord_cartesian(ylim = c(400,800)) +
+  scale_fill_manual(values=c("grey", "white")) 
+
+
+
+# Accuracy
+Estimated_Means_Priming_Acc = as.data.frame(emmeans(GLMM_acc_final, ~ response_type*valence, type = "response"))
+Estimated_Means_Priming_Acc$response_type <- factor(Estimated_Means_Priming_Acc$response_type, levels = c("FA","FH","SH","CI"))
+
+plot_est_means_acc <- ggplot(Estimated_Means_Priming_Acc,aes (x = response_type,y = prob, fill = valence)) +
+  geom_bar(stat="identity", position=position_dodge(0.9), size=1, width=0.8, color='black') +                                                       
+  geom_errorbar(aes(ymax = asymp.UCL, ymin = asymp.LCL), position = position_dodge(width=0.9), width=0.2) +    
+  xlab("Preceding Response Type") + ylab("Estimates Marginal Means Hit Probability") +                                                                  
+  guides(fill=guide_legend(title="Word Valence")) +
+  theme_bw(base_size = 20) +theme(legend.position = 'top',panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.title = element_text(size = 15, hjust = 0.5)) +                                                   
+  scale_fill_manual(values=c("grey", "white")) 
+
+  # save legend
+  legend <- get_legend(plot_est_means_rt) 
+  
+  # remove legends from plots
+  plot_est_means_rt  <- plot_est_means_rt + theme(legend.position="none") 
+  plot_est_means_acc <- plot_est_means_acc + theme(legend.position="none") 
+  
+  grid.arrange(legend, nrow=2,arrangeGrob(plot_est_means_rt,plot_est_means_acc,nrow=1),heights=c(1, 10))
+```
 <br>
 <br>
 <br>
