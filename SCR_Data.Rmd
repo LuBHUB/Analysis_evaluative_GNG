@@ -456,7 +456,7 @@ For the SCR, the LMM containing the maximal random effects structure and correla
 
 ```{r build LMM SCR, echo = 2}
 
-LMM_scr_no_val_final <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + (1 + FH_minus_SH + FA_minus_FH  | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+LMM_scr_no_val_final <- lmer(sqrt(iscr_gng_resp) ~ response_type + (1 + FH_minus_SH + FA_minus_FH  | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
 tab_model(LMM_scr_no_val_final,dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
 ```
@@ -672,9 +672,6 @@ grid.arrange(plot_scr,plot_scr_val,nrow=1)
 Error bars depict 95% CI. Values are adjusted for within-participant designs following Morey (2008). Calculation of error bars was based on the non-aggregated data, as this better reflects the LMM approach. Computing error bars based on the aggregated data per subject yields different results, as in the mean of the group means it would not be considered that subjects have a different number of events per condition; this more resembles the ANOVA approach, because it assumes that each subject mean is equally reliable (relies on the same amount of information), which is not true.
 
 <br>
-<br>
-<br>
-
 
 #### Tables Mean and CI
 
@@ -700,6 +697,26 @@ kable(table_scr_val, caption = 'SCR [square root and z transformed (µS)]') %>%
 ```
 
 Note: The values here are based on the non-aggregated single trial data. This corresponds to the LMM approach and my plots.
+
+<br>
+
+#### Estimated Marignal Means Plot
+
+```{r estimated mean plots, fig.width=5, fig.height=4, fig.align='center'}
+
+Estimated_Means_SCR = as.data.frame(emmeans(LMM_scr_no_val_final, ~ response_type, type = "response"))
+Estimated_Means_SCR$response_type <- factor(Estimated_Means_SCR$response_type, levels = c("FA","FH","SH"))
+
+plot_est_means_scr <- ggplot(Estimated_Means_SCR,aes (x = response_type,y = response)) +
+  geom_bar(stat="identity", position=position_dodge(0.9), size=1, width=0.8, color='black') +                                                       
+  geom_errorbar(aes(ymax = asymp.UCL, ymin = asymp.LCL), position = position_dodge(width=0.9), width=0.2) +    
+  xlab("Response Type") + ylab("Estimates Means SCR [sqrt (µS)]") +                                                                  
+  theme_bw(base_size = 20) +theme(legend.position = 'top',panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.title = element_text(size = 15, hjust = 0.5)) +                                                   
+  scale_fill_manual(values=c("grey", "white")) 
+plot_est_means_scr
+```
+
 
 <br>
 <br>
