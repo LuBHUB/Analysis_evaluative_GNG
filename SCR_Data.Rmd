@@ -968,7 +968,7 @@ The results can be reported as a footnote: There is still a main effect of Respo
 # LMM
 LMM_scr_final <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg || subjectID) + (0 + FH_minus_SH  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_final,order.terms = c(1,2,6,5,4,3), dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
+tab_model(LMM_scr_final,order.terms = c(1,2,6,5,4,3), dv.labels = "SCR [square root transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 
 
 # ANOVA
@@ -1085,13 +1085,13 @@ names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-2):ncol(data
 
 LMM_scr_cross_clean <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + red_minus_white + FH_minus_SH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1 & data4mixedmodels_words_scr$followed_or_preceded_by_red_cross == FALSE,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_cross_clean,dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
+tab_model(LMM_scr_cross_clean,dv.labels = "SCR [square root z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 
 
 # LMM use all trials
 LMM_scr_cross <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_cross,order.terms = c(1,6,4,3,5,2), dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
+tab_model(LMM_scr_cross,order.terms = c(1,6,4,3,5,2), dv.labels = "SCR [square root transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 ```
 
 <br>
