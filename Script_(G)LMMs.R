@@ -548,18 +548,21 @@ print(VarCorr(GLMM_rt_max),comp="Variance")
 # I increased number of evaluations to achieve convergence
 
 # start with zero-correlation parameter model by using ||
-GLMM_rt_red1 <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-summary(GLMM_rt_red1)                        # model failed to converge 
+GLMM_rt_red1 <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e6)))
+summary(GLMM_rt_red1)                        # model failed to converge (but this is a false positive; I can trust in the estimations)
+didLmerConverge((GLMM_rt_red1))              # The relative maximum gradient of 0.000569 is less than our 0.001 criterion. You can safely ignore any warnings about a claimed convergence failure.
 summary(rePCA(GLMM_rt_red1))                 # all items explained variance
 print(VarCorr(GLMM_rt_red1),comp="Variance") 
 
 
-# reduce random structure to achieve identified model; remove random slope that explains the least variance. It is random slope for response type for words 
-GLMM_rt_red2 <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-summary(GLMM_rt_red2)            # model converged -> is identified
-
 
 # ### now that we have an identified model, test non-significant variance components using likelihood ratio tests (starting with component explaning least variance) - Schad recommends drop 1 strategy, but he would rather only do rePCA
+
+# previously I reduce random structure to achieve identified model (I did not know I can safely ignore the warning here); remove random slope that explains the least variance. It is random slope for response type for words 
+# GLMM_rt_red2 <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+# summary(GLMM_rt_red2)            # model converged -> is identified
+# But: If I use this reduced model as final model, I get problems with the corresponding nested model, which would not converge anymore
+# 
 # 
 # # test whether random slope for valence for subjects improves fit
 # GLMM_rt_red3 <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e8)))
@@ -610,27 +613,21 @@ summary(GLMM_rt_red2)            # model converged -> is identified
 
 ###### STEP 8: PRESENT FINAL MODEL (BY USING REML ESTIMATIONS FOR LMMS) 
 
-GLMM_rt_final <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-summary(GLMM_rt_final)           # model does converge, no singular fit -> model is identified
+GLMM_rt_final <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e6)))
+summary(GLMM_rt_final)           # model failed to converge (but this is a false positive; I can trust in the estimations)
 
+didLmerConverge(GLMM_rt_final)
+# The relative maximum gradient of 0.000569 is less than our 0.001 criterion. You can safely ignore any warnings about a claimed convergence failure.
 
 
 ###### STEP 9: BREAK DOWN INTERAKTIONS BY USING NESTED MODEL 
 
 # valence within response condition
-GLMM_rt_nested <- glmer(word_rt ~ response_type/valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-summary(GLMM_rt_nested)           # model failed to converge, also with even more evaluations; this is a real convergence failure and results are not ok (priming after FA is NS)
+GLMM_rt_nested <- glmer(word_rt ~ response_type/valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e6)))
+summary(GLMM_rt_nested)           # model failed to converge (but this is a false positive; I can trust in the estimations)
 # difflsmeans does not work for glmm
 
-
-### use full model and nested model that will converge (remove for subjects random slope of valence and of response type)
-GLMM_rt_final_converge <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-summary(GLMM_rt_final_converge)           # model does converge, no singular fit -> model is identified
-
-GLMM_rt_nested_converge <- glmer(word_rt ~ response_type/valence + (1 + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-summary(GLMM_rt_nested_converge)           # model failed to converge (but this is a false positive; I can trust in the estimations)
-
-didLmerConverge(GLMM_rt_nested_converge)
+didLmerConverge(GLMM_rt_nested)
 # The relative maximum gradient of 0.000865 is less than our 0.001 criterion. You can safely ignore any warnings about a claimed convergence failure.
 
 
