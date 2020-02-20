@@ -74,6 +74,7 @@ for (datafile in datafiles){
 # I can easily go back to scaling based on all trials; just change it in single trial script; the results are comparable, only the correlation between SCR and Priming after FA gets almost sign. then (p = 0.054)
 data4mixedmodels_words_scr <- data4mixedmodels[data4mixedmodels$outlier_words == FALSE & data4mixedmodels$gng_resp <= 44 & data4mixedmodels$gng_invalid_rt == FALSE & data4mixedmodels$word_resp <= 54 & data4mixedmodels$followed_or_preceded_by_FA_or_wrong_key == FALSE & !is.na(data4mixedmodels$iscr_gng_resp),]
 # 7139 (if incorrect words are excluded) of 15480 trials left
+data4mixedmodels_words_scr$response_type <- factor(data4mixedmodels_words_scr$response_type, levels = c("SH","FH","FA","CI"))
 
 
 # aggregating within subjects per condition (needed for ANOVAs)
@@ -95,11 +96,11 @@ df_aggregated_scr_response_type <- ddply(data4mixedmodels_words_scr[data4mixedmo
 source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R")
 
 df_aggregated_over_subjects <- summarySEwithinO(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], measurevar="iscr_gng_resp_sqrt_z_score", withinvars="condition", idvar="subjectID", conf.interval=.95)
-df_aggregated_over_subjects$response_type <- factor(substr(df_aggregated_over_subjects$condition, 11, 12), levels=c("FA","FH","SH"))
+df_aggregated_over_subjects$response_type <- factor(substr(df_aggregated_over_subjects$condition, 11, 12), levels=c("SH","FH","FA"))
 df_aggregated_over_subjects$word_valence  <- factor(substr(df_aggregated_over_subjects$condition, 1, 3))
 
 df_aggregated_over_subjects_resptype <- summarySEwithinO(data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], measurevar="iscr_gng_resp_sqrt_z_score", withinvars="response_type", idvar="subjectID", conf.interval=.95)
-df_aggregated_over_subjects_resptype$response_type <- factor(df_aggregated_over_subjects_resptype$response_type, levels=c("FA","FH","SH"))
+df_aggregated_over_subjects_resptype$response_type <- factor(df_aggregated_over_subjects_resptype$response_type, levels=c("SH","FH","FA"))
 
 
 
@@ -256,7 +257,7 @@ The Shapiro-Wilk test is used to test normality of the aggregated data. The aggr
 
 ```{r test distribution SCR aggregated, fig.width=10, fig.height=6}
 
-normality <- do.call(rbind, lapply(df_wide_scr[,c("iscr_gng_resp_sqrt_z_score.FA","iscr_gng_resp_sqrt_z_score.FH","iscr_gng_resp_sqrt_z_score.SH","iscr_gng_resp_sqrt_z_score.neg_after_FA","iscr_gng_resp_sqrt_z_score.pos_after_FA","iscr_gng_resp_sqrt_z_score.neg_after_FH","iscr_gng_resp_sqrt_z_score.pos_after_FH","iscr_gng_resp_sqrt_z_score.neg_after_SH","iscr_gng_resp_sqrt_z_score.pos_after_SH")], function(x) shapiro.test(x)["p.value"]))
+normality <- do.call(rbind, lapply(df_wide_scr[,c("iscr_gng_resp_sqrt_z_score.SH","iscr_gng_resp_sqrt_z_score.FA","iscr_gng_resp_sqrt_z_score.FH","iscr_gng_resp_sqrt_z_score.neg_after_SH","iscr_gng_resp_sqrt_z_score.pos_after_SH","iscr_gng_resp_sqrt_z_score.neg_after_FA","iscr_gng_resp_sqrt_z_score.pos_after_FA","iscr_gng_resp_sqrt_z_score.neg_after_FH","iscr_gng_resp_sqrt_z_score.pos_after_FH")], function(x) shapiro.test(x)["p.value"]))
 
 
 normality             <- unlist(normality[,1])
@@ -327,7 +328,7 @@ df_non_responder_per_response_type <- df_non_responder_per_response_type[order(d
 df_non_responder_per_response_type <- cbind(
 df_non_responder_per_response_type[df_non_responder_per_response_type$response_type == "FA","proportion_zero_responses"], df_non_responder_per_response_type[df_non_responder_per_response_type$response_type == "FH","proportion_zero_responses"], df_non_responder_per_response_type[df_non_responder_per_response_type$response_type == "SH","proportion_zero_responses"], df_non_responder_per_response_type[df_non_responder_per_response_type$response_type == "CI","proportion_zero_responses"])
 
-colnames(df_non_responder_per_response_type) <- c("proportion_zero_responses_FA", "proportion_zero_responses_FH", "proportion_zero_responses_SH","proportion_zero_responses_CI")
+colnames(df_non_responder_per_response_type) <- c("proportion_zero_responses_SH", "proportion_zero_responses_FH", "proportion_zero_responses_FA","proportion_zero_responses_CI")
 
 df_non_responder <- cbind(df_non_responder_overall[,c("subjectID","proportion_zero_responses_overall")],df_non_responder_per_response_type)
 rownames(df_non_responder) <- NULL
@@ -421,7 +422,6 @@ pl <- c(
   "valence2-1" = "Positive - Negative",
   "response_type2-1" = "FH - SH", 
   "response_type3-2" = "FA - FH",
-  "response_type4-3" = "CI - FA",
   "iscr_gng_resp_sqrt_z_score" = "SCR",
   "response_type2-1:valence2-1" = "FH - SH x Positive - Negative", 
   "response_type3-2:valence2-1" = "FA - FH x Positive - Negative",
@@ -438,7 +438,17 @@ pl <- c(
   "response_typeFA:iscr_gng_resp_sqrt_z_score" = "FA: SCR", 
   "response_typeSH:valence2-1:iscr_gng_resp_sqrt_z_score" = "SH: Positive - Negative x SCR",
   "response_typeFH:valence2-1:iscr_gng_resp_sqrt_z_score" = "FH: Positive - Negative x SCR",
-  "response_typeFA:valence2-1:iscr_gng_resp_sqrt_z_score" = "FA: Positive - Negative x SCR")
+  "response_typeFA:valence2-1:iscr_gng_resp_sqrt_z_score" = "FA: Positive - Negative x SCR",
+  "pos_minus_neg" = "Positive - Negative",
+  "FH_minus_SH" = "FH - SH", 
+  "FA_minus_FH" = "FA - FH",
+  "FH_minus_SH:pos_minus_neg" = "FH - SH x Positive - Negative", 
+  "FA_minus_FH:pos_minus_neg" = "FA - FH x Positive - Negative",
+  "pos_minus_neg:iscr_gng_resp_sqrt_z_score" = "Positive - Negative x SCR",
+  "FH_minus_SH:iscr_gng_resp_sqrt_z_score" = "FH - SH x SCR", 
+  "FA_minus_FH:iscr_gng_resp_sqrt_z_score" = "FA - FH x SCR",
+  "FH_minus_SH:pos_minus_neg:iscr_gng_resp_sqrt_z_score" = "FH - SH x Positive - Negative x SCR", 
+  "FA_minus_FH:pos_minus_neg:iscr_gng_resp_sqrt_z_score" = "FA - FH x Positive - Negative x SCR")
 ```
 
 <br>
@@ -456,16 +466,46 @@ For the SCR, the LMM containing the maximal random effects structure and correla
 
 ```{r build LMM SCR, echo = 2}
 
-LMM_scr_no_val_final <- lmer(sqrt(iscr_gng_resp) ~ response_type + (1 + FH_minus_SH + FA_minus_FH  | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+LMM_scr_no_val_final <- lmer(sqrt(iscr_gng_resp) ~ FH_minus_SH + FA_minus_FH + (1 + FH_minus_SH + FA_minus_FH  | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_no_val_final,dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+tab_model(LMM_scr_no_val_final,dv.labels = "SCR [square root transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 ```
 <br>
 <br>
 
+<br>
+
+To test all three levels of	the factor response type against each other, we ran models with two different factor-level orders (i.e., FH, FA, SH and FA, FH, SH). 
+
+```{r LMM SCR 2, echo = 13, fig.width=10, fig.height=6}
+
+# make categorical variables factors
+data4mixedmodels_words_scr$response_type <- factor(data4mixedmodels_words_scr$response_type, levels=c("SH","FA","FH")) 
+
+# define contrasts
+contrasts(data4mixedmodels_words_scr$response_type) <- contr.sdif(3)
+
+# add contrast as numerical covariate via model matrix (in order to enter contrasts individually in model and hence to use ||)
+mm_c    <- model.matrix( ~ response_type, data4mixedmodels_words_scr) # stick in model matrix 3 columns
+data4mixedmodels_words_scr[,((ncol(data4mixedmodels_words_scr)+1):(ncol(data4mixedmodels_words_scr)+2))] <- mm_c[,c(2,3)]
+names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-1):ncol(data4mixedmodels_words_scr)] <- c("FA_minus_SH", "FH_minus_FA")
+
+LMM_scr_no_val_final2 <- lmer(sqrt(iscr_gng_resp) ~ FA_minus_SH + FH_minus_FA + (1 + FA_minus_SH + FH_minus_FA  | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+
+tab_model(LMM_scr_no_val_final2,dv.labels = "SCR [square root transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
+
+# undo change in order of factor levels and delete columns in df
+data4mixedmodels_words_scr$response_type <- factor(data4mixedmodels_words_scr$response_type, levels=c("SH", "FH", "FA")) 
+contrasts(data4mixedmodels_words_scr$response_type) <- contr.sdif(3)
+data4mixedmodels_words_scr <- data4mixedmodels_words_scr %>%
+                                  dplyr::select(-FA_minus_SH,-FH_minus_FA)
+```
+
+<br>
+
 #### Summary LMM
 
-The SCR differs significantly between FAs and FHs but not between FHs and SHs (but there is a trend). These results are  consistent with the ANOVA post-hoc tests. Important note: the trend was not present (neither for LMM not for ANOVA) when I did not exclude the word outliers for these analyses. In the GLMM, which shows mostly consistent results, FH vs SH is not significant or a trend even after exclusion of trials with word outlier.
+The SCR differs significantly between FAs and FHs/SHs but not between FHs and SHs (but there is a trend). These results are  consistent with the ANOVA post-hoc tests. Important note: the trend was not present (neither for LMM not for ANOVA) when I did not exclude the word outliers for these analyses. In the GLMM, which shows mostly consistent results, FH vs SH is not significant or a trend even after exclusion of trials with word outlier.
 
 <br>
 
@@ -645,7 +685,7 @@ plot_scr <- ggplot(df_aggregated_over_subjects_resptype,aes (x = response_type,y
   theme(plot.title = element_text(size = 20, hjust = 0.5)) +
   theme(legend.position="bottom") +
   coord_cartesian(ylim = c(-0.15,0.6)) +
-  geom_signif(y_position=c(0.55,0.55), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),annotation=c("***","NS"), tip_length=0.02)
+  geom_signif(y_position=c(0.55,0.55), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),annotation=c("NS","***"), tip_length=0.02)
  # ggsave("scr.png", plot_scr, width = 18, height = 16, units = "cm")
 
 
@@ -664,7 +704,7 @@ plot_scr_val <- ggplot(df_aggregated_over_subjects,aes (x = response_type,y = is
   theme(legend.position="bottom") +
   scale_fill_manual(values=c("steelblue4", "slategray1")) +
   coord_cartesian(ylim = c(-0.15,0.6)) +
-  geom_signif(y_position=c(0.55,0.55), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),annotation=c("***","NS"), tip_length=0.02)
+  geom_signif(y_position=c(0.55,0.55), xmin=c(1.02, 2.02), xmax=c(1.98, 2.98),annotation=c("NS","***"), tip_length=0.02)
 
 grid.arrange(plot_scr,plot_scr_val,nrow=1)
 ```
@@ -673,7 +713,7 @@ Error bars depict 95% CI. Values are adjusted for within-participant designs fol
 
 <br>
 
-#### Tables Mean and CI
+#### Tables Mean and CI/SE
 
 ```{r descriptive}
 
@@ -683,14 +723,14 @@ table_scr[,c("iscr_gng_resp_sqrt_z_score","sd","se","ci")] <- round(table_scr[,c
 table_scr <- t(table_scr)
 rownames(table_scr) <- c("","N","M","SD","SE","95% CI")
 
-kable(table_scr, caption = 'SCR [square root and z transformed (µS)]') %>% 
+kable(table_scr[,c(3,2,1)], caption = 'SCR [square root and z transformed (µS)]') %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 
 table_scr_val <- df_aggregated_over_subjects[,c("condition","N","iscr_gng_resp_sqrt_z_score","sd","se","ci")]
 table_scr_val[,c("iscr_gng_resp_sqrt_z_score","sd","se","ci")] <- round(table_scr_val[,c("iscr_gng_resp_sqrt_z_score","sd","se","ci")], digits = 2)
 table_scr_val <- t(table_scr_val)
 rownames(table_scr_val) <- c("","N","M","SD","SE","95% CI")
-table_scr_val <- table_scr_val[,c(1,4,2,5,3,6)]
+table_scr_val <- table_scr_val[,c(3,6,2,5,1,4)]
 
 kable(table_scr_val, caption = 'SCR [square root and z transformed (µS)]') %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
@@ -700,21 +740,36 @@ Note: The values here are based on the non-aggregated single trial data. This co
 
 <br>
 
-#### Estimated Marignal Means Plot
+#### Estimated Marginal Means Plot/Tab
+
+Error bars depict 95% CI.
 
 ```{r estimated mean plots, fig.width=5, fig.height=4, fig.align='center'}
 
+emm_options(pbkrtest.limit = 7139)
+# recalculate model, as needed for emmeans
+LMM_scr_no_val_final <- lmer(sqrt(iscr_gng_resp) ~ response_type + (1 + FH_minus_SH + FA_minus_FH  | subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+
 Estimated_Means_SCR = as.data.frame(emmeans(LMM_scr_no_val_final, ~ response_type, type = "response"))
-Estimated_Means_SCR$response_type <- factor(Estimated_Means_SCR$response_type, levels = c("FA","FH","SH"))
+Estimated_Means_SCR$response_type <- factor(Estimated_Means_SCR$response_type, levels = c("SH","FH","FA"))
 
 plot_est_means_scr <- ggplot(Estimated_Means_SCR,aes (x = response_type,y = response)) +
-  geom_bar(stat="identity", position=position_dodge(0.9), size=1, width=0.8, color='black') +                                                       
-  geom_errorbar(aes(ymax = asymp.UCL, ymin = asymp.LCL), position = position_dodge(width=0.9), width=0.2) +    
-  xlab("Response Type") + ylab("Estimates Means SCR [sqrt (µS)]") +                                                                  
-  theme_bw(base_size = 20) +theme(legend.position = 'top',panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title = element_text(size = 15, hjust = 0.5)) +                                                   
-  scale_fill_manual(values=c("grey", "white")) 
+  geom_bar(stat="identity", position=position_dodge()) +       
+  geom_errorbar(aes(ymax = upper.CL, ymin =lower.CL), position = position_dodge(width=0.9), width=0.2,size=0.3) +    
+  theme_apa(base_size = 14) + # from papaja package 
+  scale_y_continuous(expand = c(0, 0)) +        # neat axes ends
+  labs(x="Response Type", y="Predicted SCR (µS)") +
+  coord_cartesian(ylim = c(0,0.4)) +
+  scale_fill_grey(start = 0.40, end = 0.6) +
+  geom_signif(y_position=c(0.38,0.35), xmin=c(1,2), xmax=c(3,3),
+              annotation=c("***","**"), tip_length=0.01) 
+                                            
 plot_est_means_scr
+ggsave("figure_scr.jpg",width = 13, height = 9, units = "cm", dpi=500)
+
+
+kable(cbind(Estimated_Means_SCR[,1],round(Estimated_Means_SCR[,c(2:6)], digits = 2)), col.names = c("response type", "Mean", "SE", "df", "asymp.LCL", "asymp.UCL"), caption = 'Estimated Marginal Means SCR') %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 ```
 
 
@@ -739,14 +794,14 @@ I calculated a LMM instead of a GLMM, because I also did so in the analysis of w
 
 * Response variable: RT (inverse transformed)
 
-* Fixed effects: Response type (FA, FA, SH) and Word Valence (pos, neg)
+* Fixed effects: Response type (SH, FH, FA) and Word Valence (pos, neg)
     
 * Random effects: Subjects and Words
 
 * Continuous predictor: Square root transformed and z-standardized SCR (response-locked to GNG-response) (it is recommended that continuous predictors shall be scaled)
 
 
-As in all other analyses on SCR data, I only included FA, FH, SH trials that had no invalid gng rt or word rt (these trials were consistently excluded for all analyses), were followed by correct word classification and were not preceded or followed by an incorrect response or wrong key in gng or word classification.
+As in all other analyses on SCR data, I only included SH, FH, FA trials that had no invalid gng rt or word rt (these trials were consistently excluded for all analyses), were followed by correct word classification and were not preceded or followed by an incorrect response or wrong key in gng or word classification.
 
 
 
@@ -790,9 +845,9 @@ It would be *not* ok to not include SCR in random structure, because this predic
 
 ```{r build LMM Priming SCR, echo = 2}
 
-LMM_rt_scr_final <- lmer(word_rt_inverse ~ response_type*valence*iscr_gng_resp_sqrt_z_score + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+LMM_rt_scr_final <- lmer(word_rt_inverse ~ FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score + FH_minus_SH:iscr_gng_resp_sqrt_z_score + FA_minus_FH:iscr_gng_resp_sqrt_z_score + pos_minus_neg:iscr_gng_resp_sqrt_z_score + FH_minus_SH:pos_minus_neg:iscr_gng_resp_sqrt_z_score + FA_minus_FH:pos_minus_neg:iscr_gng_resp_sqrt_z_score + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_rt_scr_final, order.terms = c(1,7,9,6,3,2,8,11,4,10,5,12), dv.labels = "RT [-1000/RT(ms)]] Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+tab_model(LMM_rt_scr_final, order.terms = c(1,2,3,4,6,7,5,10,8,9,11,12), dv.labels = "RT [-1000/RT(ms)]] Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 ```
 
 <br>
@@ -809,7 +864,7 @@ I tested the effect of valence, of scr, and of valence*scr within each response 
 # valence, scr, valence*scr within response condition 
 LMM_rt_scr_nested <- lmer(word_rt_inverse ~ response_type/(valence*iscr_gng_resp_sqrt_z_score) + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + iscr_gng_resp_sqrt_z_score  || subjectID) + (1 + FH_minus_SH + FA_minus_FH + iscr_gng_resp_sqrt_z_score  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_rt_scr_nested, order.terms = c(1,2,3,7,8,9,10,11,12,4,5,6), dv.labels = "RT [-1000/RT(ms)]] Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+tab_model(LMM_rt_scr_nested, order.terms = c(1,2,3,4,5,6,7,8,9,10,11,12), dv.labels = "RT [-1000/RT(ms)]] Word Categorization", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 ```
 
 <br>
@@ -911,9 +966,9 @@ The results can be reported as a footnote: There is still a main effect of Respo
 ```{r test effect of valence on SCR}
 
 # LMM
-LMM_scr_final <- lmer(iscr_gng_resp_sqrt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg || subjectID) + (0 + FH_minus_SH  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+LMM_scr_final <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + (1 + FH_minus_SH + FA_minus_FH + pos_minus_neg + FH_minus_SH:pos_minus_neg || subjectID) + (0 + FH_minus_SH  || word), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_final,order.terms = c(1,2,6,5,4,3), dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+tab_model(LMM_scr_final,order.terms = c(1,2,6,5,4,3), dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 
 
 # ANOVA
@@ -1030,13 +1085,13 @@ names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-2):ncol(data
 
 LMM_scr_cross_clean <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + red_minus_white + FH_minus_SH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1 & data4mixedmodels_words_scr$followed_or_preceded_by_red_cross == FALSE,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_cross_clean,dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+tab_model(LMM_scr_cross_clean,dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 
 
 # LMM use all trials
 LMM_scr_cross <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_cross,order.terms = c(1,6,4,3,5,2), dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+tab_model(LMM_scr_cross,order.terms = c(1,6,4,3,5,2), dv.labels = "SCR [square root and z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 ```
 
 <br>
