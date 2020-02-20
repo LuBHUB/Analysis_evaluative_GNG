@@ -488,7 +488,7 @@ pl <- c(
 For the Word Categorization RT, the  maximal random effects were reduced of the random effect explaining zero variance “CI - FA” for word; with correlation parameters set to zero. Note that the model using the maximal random structure (i.e., including “CI - FA”) also converged and yielded the same estimates. As long as the maximal model were to yield the same estimates as a justifiably reduced parsimonious model, there actually would be no need for model reduction (Matuschek 2017). For sake of simple explainability of the model selection, I decided to maintain the procedure to remove zero variance components. 
 
 
-	* **GENERAL REMARK: the tab_model function gives this nicely formatted table. But: It uses Wald approximation for calculating dfs and *p* values. This is not the recommended method. So, either add p.val = "kr" to receive Kenward-Roger approximation (most recommended but takes ages) or take *p* values based on Satterthwaite approximation (also ok) from summary(model) command**
+	* **GENERAL REMARK: the tab_model function gives this nicely formatted table. But: It uses Wald approximation for calculating dfs and *p* values. This is not the recommended method. So, either add p.val = "kr" to receive Kenward-Roger approximation (most recommended but takes ages) or take *p* values based on Satterthwaite approximation (also ok) from summary(model) command. To get correct values for marginal and conditional R², all fixed effects have to be entered as separate contrasts. I did not manage to do this for the nested models. Reported R² is derived from the full models (values for the nested models is different).**
 
 
 ```{r build LMM RT, echo = 2}
