@@ -71,18 +71,18 @@ all_events_for_proportion                   <- ddply(df_aggregated_per_subject_g
 df_aggregated_per_subject_gng               <- left_join(df_aggregated_per_subject_gng,all_events_for_proportion)
 df_aggregated_per_subject_gng$proportion    <- df_aggregated_per_subject_gng$event_counts/df_aggregated_per_subject_gng$number_all_events*100
 df_aggregated_per_subject_gng$subjectID     <- factor(df_aggregated_per_subject_gng$subjectID)
-df_aggregated_per_subject_gng$response_type <- factor(df_aggregated_per_subject_gng$response_type, levels=c("FA","FH","SH","CI")) 
+df_aggregated_per_subject_gng$response_type <- factor(df_aggregated_per_subject_gng$response_type, levels=c("SH","FH","FA","CI")) 
     
 
 
 # aggregating over subjects per condition and calculate SE/CI corrected for within design (only needed for barplots)
 source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R")
 df_aggregated_over_subjects_gng_rt <- summarySEwithinO(data4mixedmodels_gng, measurevar="gng_rt", withinvars="response_type", idvar="subjectID", conf.interval=.95)
-df_aggregated_over_subjects_gng_rt$response_type <- factor(df_aggregated_over_subjects_gng_rt$response_type, levels=c("FA","FH","SH")) 
+df_aggregated_over_subjects_gng_rt$response_type <- factor(df_aggregated_over_subjects_gng_rt$response_type, levels=c("SH","FH","FA")) 
 
 # for proportion of response_types, I can only apply function to the data already aggregated per subject (attaching proportion for response type to each trial in each subject makes no sense, as then I duplicate the data and artificially set the variance within one subject to 0)
 df_aggregated_over_subjects_gng_prop <- summarySEwithinO(df_aggregated_per_subject_gng, measurevar="proportion", withinvars="response_type", idvar="subjectID", conf.interval=.95)
-df_aggregated_over_subjects_gng_prop$response_type <- factor(df_aggregated_over_subjects_gng_prop$response_type, levels=c("FA","FH","SH","CI")) 
+df_aggregated_over_subjects_gng_prop$response_type <- factor(df_aggregated_over_subjects_gng_prop$response_type, levels=c("SH","FH","FA","CI")) 
 
 
 
@@ -95,7 +95,7 @@ df_wide_gng <-   reshape(data = df_aggregated_per_subject_gng,
                          drop = c("event_counts","number_all_events")) # variables to drop before reshaping
 
 # reorder columns
-df_wide_gng <- df_wide_gng[,c("subjectID","rt.FA","rt.FH","rt.SH","rt_inverse.FA","rt_inverse.FH","rt_inverse.SH","proportion.FA","proportion.FH","proportion.SH","proportion.CI")]
+df_wide_gng <- df_wide_gng[,c("subjectID","rt.SH","rt.FH","rt.FA","rt_inverse.SH","rt_inverse.FH","rt_inverse.FA","proportion.SH","proportion.FH","proportion.FA","proportion.CI")]
 
 
 # get descriptive statistics
@@ -159,6 +159,8 @@ kable(outlier_gng, caption = "GNG excluded trials (%)") %>%
 
 ```{r plot gng RT per subject, fig.width=10, fig.height=8}
 
+data4mixedmodels_gng$response_type <- factor(data4mixedmodels_gng$response_type, levels = c("SH","FH","FA"))
+
 per_subj_gng <- ggplot(data4mixedmodels_gng, aes(x=response_type, y=gng_rt)) + geom_point(position="jitter") + ggtitle("GNG RT per Subject") + theme(plot.title = element_text(hjust = 0.5)) + facet_wrap( ~ subjectID, nrow=5)
 per_subj_gng
 ```
@@ -203,17 +205,17 @@ qqplot_gng_rt_inverse = ggplot(data4mixedmodels_gng, aes(sample=gng_rt_inverse))
   theme(plot.title = element_text(hjust = 0.5))
 
 # proportion of response types
-hist_proportion_FA = ggplot(df_wide_gng, aes(x=proportion.FA)) +
+hist_proportion_SH = ggplot(df_wide_gng, aes(x=proportion.SH)) +
   geom_histogram(aes(y = ..density..),color="gray33", fill = "lightgoldenrod", binwidth = 2, size = 1) +
-  stat_function(fun=dnorm, args=list(mean=mean(df_wide_gng$proportion.FA,na.rm = TRUE), sd=sd(df_wide_gng$proportion.FA,na.rm = TRUE)), color="black", size = 0.5) +
-  geom_vline(aes(xintercept=mean(proportion.FA)), color="black", linetype="dashed", size= 1) +
-  labs (title = "Histogram GNG proportion FA", x = "GNG proportion FA", y ="Density") + 
+  stat_function(fun=dnorm, args=list(mean=mean(df_wide_gng$proportion.SH,na.rm = TRUE), sd=sd(df_wide_gng$proportion.SH,na.rm = TRUE)), color="black", size = 0.5) +
+  geom_vline(aes(xintercept=mean(proportion.SH)), color="black", linetype="dashed", size= 1) +
+  labs (title = "Histogram GNG proportion SH", x = "GNG proportion SH", y ="Density") + 
   theme(plot.title = element_text(hjust = 0.5))
 
-qqplot_proportion_FA = ggplot(df_wide_gng, aes(sample=proportion.FA)) +
+qqplot_proportion_SH = ggplot(df_wide_gng, aes(sample=proportion.SH)) +
   stat_qq(color = "lightgoldenrod") +
   stat_qq_line() +
-  labs (title = "Q-Q-Plot GNG proportion FA", x = "Theoretical Quantiles", y ="Sample Quantiles") + 
+  labs (title = "Q-Q-Plot GNG proportion SH", x = "Theoretical Quantiles", y ="Sample Quantiles") + 
   theme(plot.title = element_text(hjust = 0.5))
 
 hist_proportion_FH = ggplot(df_wide_gng, aes(x=proportion.FH)) +
@@ -229,17 +231,17 @@ qqplot_proportion_FH = ggplot(df_wide_gng, aes(sample=proportion.FH)) +
   labs (title = "Q-Q-Plot GNG proportion FH", x = "Theoretical Quantiles", y ="Sample Quantiles") + 
   theme(plot.title = element_text(hjust = 0.5))
 
-hist_proportion_SH = ggplot(df_wide_gng, aes(x=proportion.SH)) +
+hist_proportion_FA = ggplot(df_wide_gng, aes(x=proportion.FA)) +
   geom_histogram(aes(y = ..density..),color="gray33", fill = "lightgoldenrod", binwidth = 2, size = 1) +
-  stat_function(fun=dnorm, args=list(mean=mean(df_wide_gng$proportion.SH,na.rm = TRUE), sd=sd(df_wide_gng$proportion.SH,na.rm = TRUE)), color="black", size = 0.5) +
-  geom_vline(aes(xintercept=mean(proportion.SH)), color="black", linetype="dashed", size= 1) +
-  labs (title = "Histogram GNG proportion SH", x = "GNG proportion SH", y ="Density") + 
+  stat_function(fun=dnorm, args=list(mean=mean(df_wide_gng$proportion.FA,na.rm = TRUE), sd=sd(df_wide_gng$proportion.FA,na.rm = TRUE)), color="black", size = 0.5) +
+  geom_vline(aes(xintercept=mean(proportion.FA)), color="black", linetype="dashed", size= 1) +
+  labs (title = "Histogram GNG proportion FA", x = "GNG proportion FA", y ="Density") + 
   theme(plot.title = element_text(hjust = 0.5))
 
-qqplot_proportion_SH = ggplot(df_wide_gng, aes(sample=proportion.SH)) +
+qqplot_proportion_FA = ggplot(df_wide_gng, aes(sample=proportion.FA)) +
   stat_qq(color = "lightgoldenrod") +
   stat_qq_line() +
-  labs (title = "Q-Q-Plot GNG proportion SH", x = "Theoretical Quantiles", y ="Sample Quantiles") + 
+  labs (title = "Q-Q-Plot GNG proportion FA", x = "Theoretical Quantiles", y ="Sample Quantiles") + 
   theme(plot.title = element_text(hjust = 0.5))
 
 
@@ -259,9 +261,9 @@ qqplot_proportion_CI = ggplot(df_wide_gng, aes(sample=proportion.CI)) +
 
 grid.arrange(hist_gng_rt,qqplot_gng_rt,
              hist_gng_rt_inverse,qqplot_gng_rt_inverse,
-             hist_proportion_FA,qqplot_proportion_FA,
-             hist_proportion_FH,qqplot_proportion_FH,
              hist_proportion_SH,qqplot_proportion_SH,
+             hist_proportion_FH,qqplot_proportion_FH,
+             hist_proportion_FA,qqplot_proportion_FA,
              hist_proportion_CI,qqplot_proportion_CI,nrow = 6)
 ```
 
@@ -279,13 +281,13 @@ I used a linear mixed model to evaluate whether the response time to the Go-stim
 
 * Response variable: RT (inverse transformed)
 
-* Fixed effects: Response type (FA, FA, SH)
+* Fixed effects: Response type (SH, FH, FA)
     
 * Random effects: Subjects
 
-Trials with invalid RT to GNG stimulus or word were excluded from all analyses. FHs, SHs and FAs in the GNG task were included here. Trials with misses or responses with wrong keys in the GNG task were not included. 
+Trials with invalid RT to GNG stimulus or word were excluded from all analyses. SHs, FHs and FAs in the GNG task were included here. Trials with misses or responses with wrong keys in the GNG task were not included. 
 
-GNG RT is not normally distributed. Distribution fits inverse gaussian distribution (see below). Hence, in line with the recommendation by Lo & Andrews (2015), I also calculated a GLMM with inverse gaussian distribution and identity link funktion. The results are in line with the LMM and the ANOVA results: there is a main effect of response type. Response times for FH and FA do not differ, responses for SH are slower than responses for FA. Responses of FH and SH were not compared because these differ by definition and the number of contrasts is limited (levels of factor - 1).
+GNG RT is not normally distributed. Distribution fits inverse gaussian distribution (see below). Hence, in line with the recommendation by Lo & Andrews (2015), I also calculated a GLMM with inverse gaussian distribution and identity link funktion. The results are in line with the LMM and the ANOVA results: there is a main effect of response type. Response times for FH and FA do not differ, responses for SH are slower than responses for FA. Initially, responses of FH and SH were not compared because these differ by definition and the number of contrasts is limited (levels of factor - 1). Below, I did compare all levels by changing the order of the factor levels.
 
 <br>
 
@@ -307,12 +309,12 @@ ggplot(data4mixedmodels_gng, aes(x = gng_rt_inverse)) + geom_density() + facet_w
 
 #### Define Contrasts
 
-I chose sliding difference contrasts, which successively test neighboring factor levels against each other. The resulting estimates can be interpreted as the difference between subsequent factor levels. The advantage of this contrast is that the fixed effect intercept (group-level mean) is estimated as the grand average across all conditions, rather than the mean of a baseline condition, as for example for the default treatment contrast, which can cause troubles when using multiple predictors or interactions. Sliding constrasts are centered, meaning that the intercept reflects the grand mean. This is really important if the factors have more than 2 levels and when interactions between levels are tested. Compared to treatment contrasts, sliding contrasts allow better interpretation of interactions. For these contrasts, the predictor variables actually measure their main effects, i.e., their effects AVERAGED across the conditions of the other factor. I decided to compare FA with FH and SH (we can only compare n-1 factor levels in each model). Comparison FH and SH makes not much sense, because these differ per definition. 
+I chose sliding difference contrasts, which successively test neighboring factor levels against each other. The resulting estimates can be interpreted as the difference between subsequent factor levels. The advantage of this contrast is that the fixed effect intercept (group-level mean) is estimated as the grand average across all conditions, rather than the mean of a baseline condition, as for example for the default treatment contrast, which can cause troubles when using multiple predictors or interactions. Sliding constrasts are centered, meaning that the intercept reflects the grand mean. This is really important if the factors have more than 2 levels and when interactions between levels are tested. Compared to treatment contrasts, sliding contrasts allow better interpretation of interactions. For these contrasts, the predictor variables actually measure their main effects, i.e., their effects AVERAGED across the conditions of the other factor. Initially, I decided to compare FA with FH and SH (we can only compare n-1 factor levels in each model). Comparison FH and SH makes not much sense, because these differ per definition. Later, I decided to actually compare all levels, by changing the order of the factor levels.
 
 ```{r contrasts LMM RT, fig.width=10, fig.height=6}
 
 # make categorical variables factors
-data4mixedmodels_gng$response_type <- factor(data4mixedmodels_gng$response_type, levels=c("FH","FA","SH")) 
+data4mixedmodels_gng$response_type <- factor(data4mixedmodels_gng$response_type, levels=c("SH", "FH", "FA")) 
 data4mixedmodels_gng$subjectID     <- factor(data4mixedmodels_gng$subjectID)
 
 # define contrasts
@@ -321,13 +323,7 @@ contrasts(data4mixedmodels_gng$response_type) <- contr.sdif(3)
 # add contrast as numerical covariate via model matrix (in order to enter contrasts individually in model and hence to use ||)
 mm_c    <- model.matrix( ~ response_type, data4mixedmodels_gng) # stick in model matrix 3 columns
 data4mixedmodels_gng[,((ncol(data4mixedmodels_gng)+1):(ncol(data4mixedmodels_gng)+3))] <- mm_c
-names(data4mixedmodels_gng)[(ncol(data4mixedmodels_gng)-2):ncol(data4mixedmodels_gng)] <- c("Grand Mean", "FA_minus_FH","SH_minus_FA")
-
-# prepare labels for tables
-pl <- c(
-  "(Intercept)" = "Intercept",
-  "response_type2-1" = "FH - SH", 
-  "response_type3-2" = "FA - FH")
+names(data4mixedmodels_gng)[(ncol(data4mixedmodels_gng)-2):ncol(data4mixedmodels_gng)] <- c("Grand Mean", "FH_minus_SH","FA_minus_FH")
 ```
 
 <br>
@@ -345,14 +341,39 @@ See which approach I chose for building the model in the section "Word Categoriz
 For the GNG RT, the LMM containing the maximal random effects structure and correlation parameters was used.
 
 ```{r run LMM RT, echo = 1} 
-LMM_rt_gng_final <- lmer(gng_rt_inverse ~ SH_minus_FA + FA_minus_FH + (1 + SH_minus_FA + FA_minus_FH  | subjectID), data=data4mixedmodels_gng, REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+LMM_rt_gng_final <- lmer(gng_rt_inverse ~ FH_minus_SH + FA_minus_FH + (1 + FH_minus_SH + FA_minus_FH  | subjectID), data=data4mixedmodels_gng, REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_rt_gng_final,dv.labels = "GNG RT", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = FALSE)
+tab_model(LMM_rt_gng_final,dv.labels = "GNG RT", wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 ```
 
 <br>
 
-The results are: SH > FA, FH = FA. This is in line with the results obtained by the ANOVA post hoc tests. In these, FH vs SH was also tested. They differ significantly.
+To test all three levels of	the factor response type against each other, we ran models with two different factor-level orders (i.e., FH, FA, SH and FA, FH, SH). The result is: FH < SH.
+
+```{r LMM RT 2, echo = 13, fig.width=10, fig.height=6}
+
+# make categorical variables factors
+data4mixedmodels_gng$response_type <- factor(data4mixedmodels_gng$response_type, levels=c("SH","FA","FH")) 
+
+# define contrasts
+contrasts(data4mixedmodels_gng$response_type) <- contr.sdif(3)
+
+# add contrast as numerical covariate via model matrix (in order to enter contrasts individually in model and hence to use ||)
+mm_c    <- model.matrix( ~ response_type, data4mixedmodels_gng) # stick in model matrix 3 columns
+data4mixedmodels_gng[,((ncol(data4mixedmodels_gng)+1):(ncol(data4mixedmodels_gng)+3))] <- mm_c
+names(data4mixedmodels_gng)[(ncol(data4mixedmodels_gng)-2):ncol(data4mixedmodels_gng)] <- c("Grand Mean", "FA_minus_SH","FH_minus_FA")
+
+LMM_rt_gng_final2 <- lmer(gng_rt_inverse ~ FA_minus_SH + FH_minus_FA + (1 + FA_minus_SH + FH_minus_FA  | subjectID), data=data4mixedmodels_gng, REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+
+tab_model(LMM_rt_gng_final2,dv.labels = "GNG RT", wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
+
+
+# undo change in order of factor levels
+data4mixedmodels_gng$response_type <- factor(data4mixedmodels_gng$response_type, levels=c("SH", "FH", "FA")) 
+```
+
+
+The results are: SH > FA/FH, FH = FA. This is in line with the results obtained by the ANOVA post hoc tests. 
 
 <br>
 
@@ -398,7 +419,8 @@ print(paste("Kurtosis Residuals Distribution:", kurtosis))
 # Comparison with ANOVAs
 
 <br>
-I calculated univariate one-way repeated measures ANOVAs, for the transformed RT inverse (to violate the assumption of normality of residuals a bit less) containing the within-subjects factor response type (levels FA, FH, SH) and for proportion of response type with the within-subjects factor response type (levels FA, FH, SH, CI). For RT, I also computed an ANOVA with untransformed RTs. The results are qualitatively the same and not reported here.
+
+I calculated univariate one-way repeated measures ANOVAs, for the transformed RT inverse (to violate the assumption of normality of residuals a bit less) containing the within-subjects factor response type (levels SH, FH, FA) and for proportion of response type with the within-subjects factor response type (levels SH, FH, FA, CI). For RT, I also computed an ANOVA with untransformed RTs. The results are qualitatively the same and not reported here.
 
 
 ```{r word ANOVAs}
@@ -424,6 +446,7 @@ apa_anova_proportion <- apa_print(anova_proportion)
 
 kable(apa_anova_proportion$table, caption = "GNG Proportion of Response Types")  %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")
+
 ```
 
 
@@ -454,17 +477,63 @@ anova_rt_posthoc_response_type <- pairwise.t.test(df_aggregated_per_subject_gng[
 
 anova_proportion_posthoc_response_type <- pairwise.t.test(df_aggregated_per_subject_gng$proportion,df_aggregated_per_subject_gng$response_type, p.adjust.method="holm",paired=TRUE)
 
-kable(anova_rt_posthoc_response_type$p.value, caption = "RT: Post Hoc Test Response Type")  %>%
+kable(round(anova_rt_posthoc_response_type$p.value,digits=3), caption = "RT: p-values")  %>%
  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")  %>%
  footnote(general = "P value adjusted with Holm method.")
 
-kable(anova_proportion_posthoc_response_type$p.value, caption = "Proportion of Response Types: Post Hoc Test Response Type")  %>%
+kable(round(anova_proportion_posthoc_response_type$p.value,digits=3), caption = "Proportion: p-values")  %>%
  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")  %>%
  footnote(general = "P value adjusted with Holm method.")
+
+
+# Get t and p values for proportion
+source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/pairwise.t.test.with.t.and.df.R")
+result <- pairwise.t.test.with.t.and.df(df_aggregated_per_subject_gng$proportion,df_aggregated_per_subject_gng$response_type, p.adjust.method="holm",paired=TRUE)
+
+t_values <- round(result[[5]],digits = 2)
+dfs      <- round(result[[6]],digits = 2)
+
+kable(cbind(t_values,dfs), caption = "Proportion: t-values and dfs")   %>%
+ add_header_above(c(" ", "t-values" = 3, "dfs" = 3)) %>%
+ kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "right")
+```
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+
+#### Effect Sizes
+
+```{r GNG ANOVAs effect sizes, message=FALSE, fig.width=10}
+
+### calculate effect size for proportion post hoc tests
+library("rstatix")
+
+eff_sizes_RT <- df_aggregated_per_subject_gng  %>% cohens_d(rt_inverse ~ response_type, paired = TRUE)
+eff_sizes_RT$effsize <- round(eff_sizes_RT$effsize,digits = 2)
+
+kable(eff_sizes_RT[,c(2:7)], caption = "Effect Sizes for GNG RT")  %>%
+ kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_left")
+
+eff_sizes_proportion <- df_aggregated_per_subject_gng  %>% cohens_d(proportion ~ response_type, paired = TRUE)
+eff_sizes_proportion$effsize <- round(eff_sizes_proportion$effsize,digits = 2)
+
+kable(eff_sizes_proportion[,c(2:7)], caption = "Effect Sizes for Proportion of Response Types")  %>%
+ kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = F, position = "float_right")
 ```
 
 
 
+<br>
 <br>
 <br>
 <br>
@@ -577,7 +646,7 @@ barplot_rt <- ggplot(df_aggregated_over_subjects_gng_rt,aes (x = response_type,y
   theme(legend.title=element_text(size=15)) +
   theme(legend.text=element_text(size=15)) +
   theme(plot.title = element_text(size = 20, hjust = 0.5)) +
-  geom_signif(y_position=c(360,380), xmin=c(1, 1), xmax=c(2,3),annotation=c("NS","***"), tip_length=0.02) 
+  geom_signif(y_position=c(360,360,380), xmin=c(1.02,2.02,1.02), xmax=c(1.98, 2.98,2.98),annotation=c("***","NS","***"), tip_length=0.02) 
  
 
 barplot_cond <- ggplot(df_aggregated_over_subjects_gng_prop,aes (x = response_type,y = proportion)) +
@@ -609,17 +678,18 @@ Error bars depict 95% CI. Values are adjusted for within-participant designs fol
 <br>
 
 
-#### Tables Mean and CI
+#### Tables Mean and CI/SE
 
 ```{r descriptive}
 
 # this shows the data calculated based on the non aggregated (single trial) data. This corresponds to the LMM approach and my plots.
+df_aggregated_over_subjects_gng_rt$response_type <- factor(df_aggregated_over_subjects_gng_rt$response_type, levels=c("SH","FH","FA","CI")) 
 table_rt <- df_aggregated_over_subjects_gng_rt[,c("response_type","N","gng_rt","sd","se","ci")]
 table_rt[,c("gng_rt","sd","se","ci")] <- round(table_rt[,c("gng_rt","sd","se","ci")], digits = 2)
 table_rt <- t(table_rt)
 rownames(table_rt) <- c("","N","M","SD","SE","95% CI")
 
-kable(table_rt, caption = 'Reaction Time') %>% 
+kable(table_rt[,c(3,2,1)], caption = 'Reaction Time') %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 
 table_prop <- df_aggregated_over_subjects_gng_prop[,c("response_type","N","proportion","sd","se","ci")]
@@ -628,7 +698,7 @@ table_prop <- t(table_prop)
 rownames(table_prop) <- c("","N","M","SD","SE","95% CI")
 table_prop <- table_prop[,c(2,3,4,1)]
 
-kable(table_prop, caption = 'Proportion of Response Types') %>% 
+kable(table_prop[,c(3,2,1,4)], caption = 'Proportion of Response Types') %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 ```
 
@@ -636,7 +706,9 @@ Note: The RT values here are based on the non-aggregated single trial data. This
 
 <br>
 
-#### Estimated Marignal Means Plot
+#### Estimated Marginal Means Plot/Table
+
+Error bars depict 95% CI.
 
 ```{r estimated mean plots, fig.width=5, fig.height=4, fig.align='center'}
 # # I saved computed estimated marginal means because the computation takes very long
@@ -659,14 +731,21 @@ Note: The RT values here are based on the non-aggregated single trial data. This
 
 load(file = "Estimated_Means_GNG_RT.rda")
 
+# reorder factor levels 
+Estimated_Means_GNG_RT$response_type <- factor(Estimated_Means_GNG_RT$response_type, levels = c("SH", "FH", "FA"))
+
 plot_est_means_rt <- ggplot(Estimated_Means_GNG_RT,aes (x = response_type,y = response)) +
-  geom_bar(stat="identity", position=position_dodge(0.9), size=1, width=0.8, color='black') +                                                       
+  geom_bar(stat="identity", position=position_dodge(0.9), size=1, width=0.8, color='black') +                                       
   geom_errorbar(aes(ymax = upper.CL, ymin = lower.CL), position = position_dodge(width=0.9), width=0.2) +    
-  xlab("Response Type") + ylab("Estimates Marginal Means RT (ms)") +                                                                  
+  xlab("Response Type") + ylab("Estimates Marginal Means RT (ms)") +                                                                
   theme_bw(base_size = 20) +theme(legend.position = 'top',panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(axis.title = element_text(size = 15, hjust = 0.5)) +                                                   
   scale_fill_manual(values=c("grey", "white")) 
 plot_est_means_rt
+
+
+kable(cbind(Estimated_Means_GNG_RT[c(3,1,2),1],round(Estimated_Means_GNG_RT[c(3,1,2),c(2:6)], digits = 2)), col.names = c("response type", "Mean", "SE", "df", "lower CI", "upper CI"), caption = 'Estimated Marginal Means GNG RT') %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), font_size = 10, full_width = T, position = "left")
 ```
 
 
