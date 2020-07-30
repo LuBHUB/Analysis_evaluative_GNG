@@ -293,7 +293,8 @@ print(VarCorr(LMM_rt_red2),comp="Variance")
 ### now that we have an identified model, test non-significant variance components using likelihood ratio tests (starting with component explaning least variance) - Schad recommends drop 1 strategy, but he would rather only do rePCA
 # 
 # # test whether random slope reaction_type for word improves fit (explains least variance)
-# LMM_rt_red3 <- lmer(word_rt_inverse ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg  || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+#LMM_rt_red2 <- lmer(word_rt_inverse ~ FH_minus_SH + FA_minus_F(1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH || word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
+#LMM_rt_red3 <- lmer(word_rt_inverse ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 | word), data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], REML = FALSE, control=lmerControl(optimizer="bobyqa"))
 # summary(LMM_rt_red3)           # model does converge, no singular fit -> model is identified
 # anova(LMM_rt_red2,LMM_rt_red3) # no sign. difference, random slope reaction_type for word does not improve fit -> model 3 wins
 # 
