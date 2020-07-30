@@ -150,6 +150,27 @@ For the word categorization, RTs 3 Median Absolute Deviations above/below the me
 For the GNG response, RTs < 100 ms and RTs > 700 ms were excluded.
 This procedure is similar to the one used by Aarts (2.5 SD for word categorization and <100/>500 ms for GNG response.)
 The data loss due to outlier exclusion is small.
+
+NOTE: The used approach for outlier denifition may not be the best strategy, for 3 reasons:
+
+1. For defining the outlier threshold (MAD) I here excluded word responses after invalid gng RT
+<br> 
+  * this could be criticized, but is not so problematic that I need to change it now after all analysis were reported (we could argue that after GNG invalid RTs the word response is also not normal) -> do not change this anymore, as this would change all outputs
+<br> 
+2. The incorrectly categorized words are automatically defined as non-outliers (not sure whether this is good or not)
+<br> 
+  * this is not problematic for all (RT) analyses, as I exclude these trials for these analyses anyway 
+<br> 
+  * but I do NOT exclude incorrect words for Accuracy analysis (GLMM) - so it may DO a bit of a difference there, right? But I still think that defining outliers among incorrect responses isn't really necessary either, as these responses are already incorrect, no matter what their RT is
+<br> 
+  * for calculation of proportion word outliers it might actually be good, because there I want to see how many among the correctly categorized words were outliers, right?
+<br> 
+3. I here apply the threshold (MAD) calculated for words after SHs also to the category words after Miss_or_False_Key 
+<br> 
+  * this is not problematic, as I exclude these trials for all analyses
+<br> 
+  * for calculation of proportion word outliers it might actually be good, because in the Miss_or_Wrong_Key category there are not enough events to calculate a reliable threshold, but in the SH there are enough events, as this is the biggest category
+   
 <br>
 
 ```{r excluded outliers}
@@ -1447,33 +1468,37 @@ emm2$response_type <- factor(emm2$response_type, levels=c("SH","FH","FA","IR"))
 emm2$valence       <- factor(emm2$valence, levels=c("pos","neg"))
 
 plot_est_means_rt <- ggplot(emm2,aes (x = response_type,y = response, fill = valence)) +
-  geom_bar(stat="identity", position=position_dodge()) +                                                    
+  geom_bar(stat="identity", position=position_dodge(),colour="black", size=0.25) +
   geom_errorbar(aes(ymax = upper.CL, ymin = lower.CL), position = position_dodge(width=0.9), width=0.2,size=0.3) +    
-  theme_apa(base_size = 14) + # from papaja package 
+  theme_apa(base_size = 11) + # from papaja package 
   coord_cartesian(ylim = c(400,800)) +
   scale_y_continuous(expand = c(0, 0)) +        # neat axes ends
   labs(x="Preceding Response Type", y="Predicted RT (ms)") +
-  scale_fill_grey(start = 0.40, end = 0.6, name = "Word Valence", labels = c("Pos", "Neg")) +
-  theme(legend.position = 'top') +
-  geom_signif(y_position=c(783,783,783), xmin=c(0.75, 1.75,2.75), xmax=c(1.25, 2.25,3.25),
-              annotation=c("**","***","***"), tip_length=0.01) 
+# scale_fill_grey(start = 0.60, end = 0.4, name = "Word Valence", labels = c("Pos", "Neg")) +     # greyscales
+  scale_fill_manual(values=c("#8ea6b4", "#465369"), name = "Word Valence", labels = c("Pos", "Neg")) +
+  theme(legend.position = 'top', axis.ticks.x=element_blank(), axis.title.y = element_text(vjust=-0.5)) +       # remove tick marks on x axis and bring y axis title closer to the plot
+  geom_signif(y_position=c(785,785,785), xmin=c(0.75, 1.75,2.75), xmax=c(1.25, 2.25,3.25),
+              annotation=c("**","***","***"), tip_length=0.01, vjust = 0.5, textsize = 4, size = 0.3)  
 
 # Accuracy
 load(file = "Estimated_Means_Priming_Acc.rda")
 Estimated_Means_Priming_Acc$response_type <- revalue(Estimated_Means_Priming_Acc$response_type, c("CI"="IR")) # change level CI to IR
-Estimated_Means_Priming_Acc$response_type <- factor(Estimated_Means_Priming_Acc$response_type, levels = c("FA","FH","SH","IR"))
+Estimated_Means_Priming_Acc$response_type <- factor(Estimated_Means_Priming_Acc$response_type, levels = c("SH","FH","FA","IR"))
 Estimated_Means_Priming_Acc$valence       <- factor(Estimated_Means_Priming_Acc$valence, levels=c("pos","neg"))
 Estimated_Means_Priming_Acc[,c(3,4,6,7)]  <- Estimated_Means_Priming_Acc[,c(3,4,6,7)]*100   # calculate probability in %
 
 plot_est_means_acc <- ggplot(Estimated_Means_Priming_Acc,aes (x = response_type,y = prob, fill = valence)) +
-  geom_bar(stat="identity", position=position_dodge()) +                                                       
-  geom_errorbar(aes(ymax = asymp.UCL, ymin = asymp.LCL), position = position_dodge(width=0.9), width=0.2,size=0.3) +   theme_apa(base_size = 14) + # from papaja package 
+  geom_bar(stat="identity", position=position_dodge(),colour="black", size = 0.25) +                                         
+  geom_errorbar(aes(ymax = asymp.UCL, ymin = asymp.LCL), position = position_dodge(width=0.9), width=0.2,size=0.3) +      
+  theme_apa(base_size = 11) + # from papaja package 
   coord_cartesian(ylim = c(50,100)) +
   scale_y_continuous(expand = c(0, 0)) +        # neat axes ends
   labs(x="Preceding Response Type", y="Predicted Accuracy (%)") +
-  scale_fill_grey(start = 0.40, end = 0.6) +
-    geom_signif(y_position=c(98), xmin=c(2.775), xmax=c(3.225),
-              annotation=c("***"), tip_length=0.01)   
+# scale_fill_grey(start = 0.60, end = 0.4) +    # greyscales
+  scale_fill_manual(values=c("#8ea6b4", "#465369"), name = "Word Valence", labels = c("Pos", "Neg")) +
+  theme(axis.ticks.x=element_blank(), axis.title.y = element_text(vjust=-0.5)) +       # remove tick marks on x axis and bring y axis title closer to the plot
+  geom_signif(y_position=c(98.2), xmin=c(2.775), xmax=c(3.225),
+              annotation=c("***"), tip_length=0.01, vjust = 0.5, textsize = 4, size = 0.3)  
 
                                                
   # save legend
@@ -1490,11 +1515,11 @@ library("cowplot")
 figure_priming_behav <- ggdraw() +
   draw_plot(plot_est_means_rt, x =  0, y = .2, width =.5, height = 0.7) +
   draw_plot(plot_est_means_acc,x = .5, y = .2, width =.5, height = 0.7) +
-  draw_plot(legend, x =  0.25, y = 0.15, width =.5, height = 0) +
+  draw_plot(legend, x =  0.25, y = 0.1, width =.5, height = 0) +
   draw_plot_label(c("A", "B"), c(0, 0.5), c(1, 1), size = 15)
 
 figure_priming_behav
-ggsave("figure_priming_behav.jpg",dpi=500)
+ggsave("figure_priming_behav.tiff",width = 16, height = 10 , units = "cm", dpi=600)
 
 
   kable(cbind(emm2[c(1,5,2,6,3,7,4,8),c(1:2)],round(emm2[c(1,5,2,6,3,7,4,8),c(3:7)], digits = 2)), col.names = c("response type", "valence", "Mean", "SE", "df", "lower CI", "upper CI"), caption = 'Estimated Marginal Means RT') %>% 
