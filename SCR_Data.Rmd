@@ -31,6 +31,8 @@ Raw SCR amplitudes were square root transformed to reduce skewness so that the d
 I did not include CI in the analyses, because there is no response-locked SCR in this condition and unlike in all other conditions, there is no motor response. (Previously I included the stimulus-locked SCR in the CI trials as it makes no sense to take response-locked SCR value here, because there is no response and the evaluation trigger is sent late). As the other response types are confounded by the motor response and CI is not, this may explain why the SCR in CI trials is lower than in the other trials. 
 I only included FA, FH, SH trials that had no invalid gng rt or word rt (these trials were consistently excluded for all analyses), were followed by correct word classification and were not preceded or followed by an incorrect response or wrong key in gng or word classification. These criteria were also used for z standardizing the SCR within each subject and for the LMM on priming and scr.
 
+*NOTE: The z-standardization of the SCR (variable iscr_gng_resp_sqrt_z_score) is based on only trials that also enter the analyses, not on all trials. This means, that e.g. word and gng outliers, trials with miss or wrong key in word/gng response, incorrect word responses, and trials followed_or_preceded_by_FA_or_wrong_key were not included when scaling the SCR. I once tried basing it on all trials. The only things that change are the values of the SCR ANOVAs and Raw-Barplots based on this variable. The results of the LMM on the Relation Priming - SCR remain the same, only some decimals are slightly different. I thus decided to stick with the scaling based on only the trials that enter the analysis, because distribution of the variable is then a it nicer (when basing it on all trials, I again get a peak at the value of 0) and basing the scaling on all trials does not reflect the true value better. For the manuscript, I calculate the variable iscr_gng_resp_sqrt_z_score first when calculating the LMM Priming - SCR, to avoid having the variable containing many NAs in the Data I publish.*
+
 ```{r libraries, include = FALSE}
 library(pastecs)                 # for descriptive stats
 library(ggplot2)                 # for plots
@@ -754,18 +756,19 @@ Estimated_Means_SCR = as.data.frame(emmeans(LMM_scr_no_val_final, ~ response_typ
 Estimated_Means_SCR$response_type <- factor(Estimated_Means_SCR$response_type, levels = c("SH","FH","FA"))
 
 plot_est_means_scr <- ggplot(Estimated_Means_SCR,aes (x = response_type,y = response)) +
-  geom_bar(stat="identity", position=position_dodge()) +       
+  geom_bar(stat="identity", position=position_dodge(),colour="black", size=0.25, fill="#8ea6b4") +       
   geom_errorbar(aes(ymax = upper.CL, ymin =lower.CL), position = position_dodge(width=0.9), width=0.2,size=0.3) +    
-  theme_apa(base_size = 14) + # from papaja package 
+  theme_apa(base_size = 11) + # from papaja package 
   scale_y_continuous(expand = c(0, 0)) +        # neat axes ends
   labs(x="Response Type", y="Predicted SCR (µS)") +
   coord_cartesian(ylim = c(0,0.4)) +
-  scale_fill_grey(start = 0.40, end = 0.6) +
+ # scale_fill_grey(start = 0.40, end = 0.6) + # greyscales 
+  theme(axis.ticks.x=element_blank()) +       # remove tick marks on x axis
   geom_signif(y_position=c(0.38,0.35), xmin=c(1,2), xmax=c(3,3),
-              annotation=c("***","**"), tip_length=0.01) 
+              annotation=c("***","**"), tip_length=0.01, vjust = 0.5, textsize = 4, size = 0.3) 
                                             
 plot_est_means_scr
-ggsave("figure_scr.jpg",width = 13, height = 9, units = "cm", dpi=500)
+ggsave("figure_scr.tiff",width = 10, height = 7, units = "cm", dpi=600)
 
 
 kable(cbind(Estimated_Means_SCR[,1],round(Estimated_Means_SCR[,c(2:6)], digits = 2)), col.names = c("response type", "Mean", "SE", "df", "asymp.LCL", "asymp.UCL"), caption = 'Estimated Marginal Means SCR') %>% 
@@ -920,7 +923,7 @@ print(paste("Kurtosis Residuals Distribution:", kurtosis))
 #### Correlation SCR - Priming after FA
 
 By calculating the correlation [see below], I wanted to check whether the unexpected relation found in the original/problematic LMM (more SCR is related to less RT facilitation for a neg word after a false alarm) can be seen on the level of aggregated data as well. 
-The significance of this correlation depends on which trials of a subject are used for the z standardization. Previously, I did the scaling based on all trials. Then, I have an almost sign. correlation between SCR after FA and rt_priming_after_FA (p = 0.073). If the scaling is based only on trials that are used for SCR analysis later, the correlation is not almost significant anymore (p = 0.2). As bivariate normality is almost given (see last line), a Pearson correlation is calculated. As can be seen in the scatterplot, the correlation is not driven by a specific outlier.
+As bivariate normality is almost given (see last line), a Pearson correlation is calculated. 
 
 ```{r corr SCR priming, fig.width = 6, fig.height = 4}
 
@@ -1038,14 +1041,14 @@ Thus, I also checked whether the color of fixation cross affects the SCR in curr
 
 
 ```{r effect fixation cross}
-data4mixedmodels_words_scr$color_cross <- NA   
+data4mixedmodels_words_scr$color_cross <- NA
 
 # First trial of each block starts with  white fixcross
-data4mixedmodels_words_scr[data4mixedmodels_words_scr$trial == 1 | data4mixedmodels_words_scr$trial == 29 | data4mixedmodels_words_scr$trial == 101 | data4mixedmodels_words_scr$trial == 173 | data4mixedmodels_words_scr$trial == 201 | data4mixedmodels_words_scr$trial == 273 | data4mixedmodels_words_scr$trial == 345 | data4mixedmodels_words_scr$trial == 373 | data4mixedmodels_words_scr$trial == 445,]$color_cross <- 0 
+data4mixedmodels_words_scr[data4mixedmodels_words_scr$trial == 1 | data4mixedmodels_words_scr$trial == 29 | data4mixedmodels_words_scr$trial == 101 | data4mixedmodels_words_scr$trial == 173 | data4mixedmodels_words_scr$trial == 201 | data4mixedmodels_words_scr$trial == 273 | data4mixedmodels_words_scr$trial == 345 | data4mixedmodels_words_scr$trial == 373 | data4mixedmodels_words_scr$trial == 445,]$color_cross <- 0
 
 # Which rows satisfy the criteria? which rows are fast hits?
-indices_FH    <- which(data4mixedmodels_words_scr$gng_resp == 41)  
-indices_SH_FA <- which(data4mixedmodels_words_scr$gng_resp > 41)  # specify second condition 
+indices_FH    <- which(data4mixedmodels_words_scr$gng_resp == 41)
+indices_SH_FA <- which(data4mixedmodels_words_scr$gng_resp > 41)  # specify second condition
 
 # Assign 0 to each row following FH except very last row
 data4mixedmodels_words_scr[1:(nrow(data4mixedmodels_words_scr)+1),]$color_cross[indices_FH+1] <- 0     # white cross in FH trials (CI not included here)
@@ -1066,21 +1069,21 @@ contrasts(data4mixedmodels_words_scr$color_cross)   <- contr.sdif(2)
 # add contrast as numerical covariate via model matrix (in order to enter contrasts individually in model and hence to use ||)
 mm_c2    <- model.matrix( ~ response_type*color_cross, data4mixedmodels_words_scr) # stick in model matrix 6 columns
 
-# attach to dataframe 
+# attach to dataframe
 data4mixedmodels_words_scr[,(ncol(data4mixedmodels_words_scr)+1):(ncol(data4mixedmodels_words_scr)+3)] <- mm_c2[,c(4:6)]
 names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-2):ncol(data4mixedmodels_words_scr)] <- c("red_minus_white", "FH_minus_SH:red_minus_white", "FA_minus_FH:red_minus_white")
 
 
 # LMM only use trials that were preceded and followed by white cross (only 1277 trials are left; or only 1205 if incorrect word responses are also excluded)
   data4mixedmodels_words_scr$followed_or_preceded_by_red_cross <- FALSE
-  
+
   for (i in 2:(nrow(data4mixedmodels_words_scr)-1)) {
     current_row <- data4mixedmodels_words_scr[i,]
     next_row <- data4mixedmodels_words_scr[(i+1),]
     previous_row <- data4mixedmodels_words_scr[(i-1),]
-    if ((next_row$color_cross == 1  | previous_row$color_cross == 1)) {            
+    if ((next_row$color_cross == 1  | previous_row$color_cross == 1)) {
       data4mixedmodels_words_scr[i,]$followed_or_preceded_by_red_cross <- TRUE
-    }     
+    }
   }
 
 LMM_scr_cross_clean <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + red_minus_white + FH_minus_SH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1 & data4mixedmodels_words_scr$followed_or_preceded_by_red_cross == FALSE,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
