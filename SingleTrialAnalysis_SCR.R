@@ -168,8 +168,9 @@
   
   
   
-  ####################   define word conditions  ####################
-  
+  ####################   define word outliers   ####################   
+
+  # make subset of data to define the outlier threshold (MAD) separately for all categories
   # FA = False Alarm; FH = Fast Hit; CI = Correctly Inhibited; SH = Slow Hit; subsetting only required for outlier detection
   neg_after_FA <- subset(single_trial_data, valence == "neg" & response_type == "FA" & word_resp == 51 & gng_invalid_rt == FALSE)
   pos_after_FA <- subset(single_trial_data, valence == "pos" & response_type == "FA" & word_resp == 52 & gng_invalid_rt == FALSE)
@@ -180,11 +181,6 @@
   neg_after_SH <- subset(single_trial_data, valence == "neg" & response_type == "SH" & word_resp == 51 & gng_invalid_rt == FALSE)
   pos_after_SH <- subset(single_trial_data, valence == "pos" & response_type == "SH" & word_resp == 52 & gng_invalid_rt == FALSE)
   
-  
-  
-  
-  
-  ####################   define word outliers   #################### 
   
   # assign TRUE to rt_values deviating more than 3 median absolute deviations (MAD; value of 3 is quite conservative and leads to exclusion of fewer events)
   single_trial_data <- mutate(single_trial_data,
@@ -211,6 +207,33 @@
   
   count_outlier_words_FA_FH     <- length(single_trial_data$outlier_words[single_trial_data$outlier_words == TRUE & (single_trial_data$response_type == "FA" | single_trial_data$response_type == "FH" )])  # count number of outliers
   percent_outlier_words_overall <- ((length(single_trial_data$outlier_words[single_trial_data$outlier_words == TRUE & (single_trial_data$response_type == "FA" | single_trial_data$response_type == "FH" | single_trial_data$response_type == "SH" | single_trial_data$response_type == "CI" )]))/516)*100
+  
+  
+  # NOTE: this whole approach for outlier denifition may not be the best strategy, for 3 reasons:
+  #   - for defining the outlier threshold (MAD) I here excluded word responses after invalid gng RT; this could be criticized, but is not so problematic that I need to change it now after all analysis were reported (we could argue that after GNG invalid RTs the word response is also not normal) -> do not change this anymore, as this would change all outputs
+  #   - the incorrectly categorized words are automatically defined as non-outliers (not sure whether this is good or not) 
+  #       - this is not problematic for all (RT) analyses, as I exclude these trials for these analyses anyway 
+  #       - but I do NOT exclude incorrect words for Accuracy analysis (GLMM) - so it may DO a bit of a difference there, right? But I still think that defining outliers among incorrect responses isn't really necessary either, as these responses are already incorrect, no matter what their RT is
+  #       - for calculation of proportion word outliers it might actually be good, because there I want to see how many among the correctly categorized words were outliers, right?
+  #   - I here apply the threshold (MAD) calculated for words after SHs also to the category words after Miss_or_False_Key 
+  #       - this is not problematic, as I exclude these trials for all analyses
+  #       - for calculation of proportion word outliers it might actually be good, because in the Miss_or_Wrong_Key category there are not enough events to calculate a reliable threshold, but in the SH there are enough events, as this is the biggest category
+   
+  # a better approach would be: 
+  #     single_trial_data <- single_trial_data %>% group_by(subjectID,condition,word_accuracy) %>% mutate(outlier_words = ifelse(abs(word_rt - median(word_rt))/mad(word_rt)>3, TRUE, FALSE))
+  
+  # I did not apply this new approach here retrospectively, because I want the analysis outputs remain unchanged, but excluding gng_invalid_rt trials with the new approach to define the same outliers as with the old approach causes problems 
+  #     1) to get the same outlier thresholds (MADs) with this approach as with the old approach, I would need to exclude the gng_invalid_rt trials before marking the outliers and then merge the overall table with the table including the outlier definition 
+  #         - the good news is that then, among the correctly categorized words after valid GNG responses, the outliers are defined correctly both in this approach and in the newer one (see below) -> this is all what matters for all subsequent analyses
+  #         - but: I would not get an outlier decision for the gng_invalid rt trials (would enter NA there) because I excluded these before identifying word outliers, which would be a disadvantage when calculating the proportion of word outliers (and the NAs may seem weird when publishing the data)
+  #     2) with this approach, I would also get NAs for all specific categories with only one event (combination subject+condition+word_accuracy, e.g. incorrect classified neg word after Miss_or_False_Key in Subject 3)
+
+  # the two methods come to different outlier decisions for words after Miss_or_False_Key gng responses and for incorrectly categorized words (due to reasons stated above) 
+  #   - this makes no difference for my analyses, as I exclude these events threre anyway (at least for RT analyses, not for Accuracy analysis)
+  #   - but it makes a difference for the calculation of proportion of word outliers
+  #   - additionally, I would get NAs in the outlier column when using the new approach but try to use the old outlier threshold (calculated excluding gng_invalid_rt trials) which might be a disadvantage when publishing the data
+
+  # CONCLUSION: so I go with the old approach for publishing the code and for my next project, I will use the new approach (but be aware that than outliers are defined among incorrect responses as well - not sure whether this is good or not; and after Miss_or_Wrong_Key there may be some NAs)
   
   
   
@@ -318,23 +341,28 @@
 
 
   ####################   log/square root transform and z-standardize scr     ####################
-  
+
+ # previously, I did the scaling based on all trials. but then I have an almost sign. correlation between SCR after FA and rt_priming_after_FA (p = 0.054 for log transformed data / P = 0.073 for square root transformed data)
  # single_trial_data$iscr_gng_resp_log_z_score      <- scale((log(single_trial_data$iscr_gng_resp + 1)), center = TRUE, scale = TRUE)
  # single_trial_data$iscr_gng_resp_sqrt_z_score     <- scale((sqrt(single_trial_data$iscr_gng_resp)), center = TRUE, scale = TRUE)
-  
+
   
  # scaling based only on trials that are used for SCR analysis later; if I change exclusion criteria there, I also have to change them here as well
- # previously, I did the scaling based on all trials. but then I have an almost sign. correlation between SCR after FA and rt_priming_after_FA (p = 0.054 for log transformed data / P = 0.073 for square root transformed data)
- 
   single_trial_data$iscr_gng_resp_log_z_score  <- NA 
   single_trial_data$iscr_gng_resp_sqrt_z_score <- NA 
  
   single_trial_data[single_trial_data$gng_resp <= 44  & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$word_resp <= 52 & single_trial_data$outlier_words == FALSE & single_trial_data$followed_or_preceded_by_FA_or_wrong_key == FALSE,]$iscr_gng_resp_log_z_score    <-  scale((log(single_trial_data[single_trial_data$gng_resp <= 44  & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$word_resp <= 52 & single_trial_data$outlier_words == FALSE & single_trial_data$followed_or_preceded_by_FA_or_wrong_key == FALSE,]$iscr_gng_resp + 1)), center = TRUE, scale = TRUE)
   single_trial_data[single_trial_data$gng_resp <= 44  & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$word_resp <= 52 & single_trial_data$outlier_words == FALSE & single_trial_data$followed_or_preceded_by_FA_or_wrong_key == FALSE,]$iscr_gng_resp_sqrt_z_score   <- scale((sqrt(single_trial_data[single_trial_data$gng_resp <= 44  & single_trial_data$gng_invalid_rt == FALSE & single_trial_data$word_resp <= 52 & single_trial_data$outlier_words == FALSE & single_trial_data$followed_or_preceded_by_FA_or_wrong_key == FALSE,]$iscr_gng_resp)), center = TRUE, scale = TRUE)
   
- # single_trial_data$iscr_gng_resp_log_z_score    <-  scale((log(single_trial_data$iscr_gng_resp + 1)), center = TRUE, scale = TRUE)
- # single_trial_data$iscr_gng_resp_sqrt_z_score   <- scale((sqrt(single_trial_data$iscr_gng_resp)), center = TRUE, scale = TRUE)
-  
+  # NOTE: The z-standardization of the SCR (variable iscr_gng_resp_sqrt_z_score) is based on only trials that also enter the analyses, 
+  # not on all trials. This means, that e.g. word and gng outliers, trials with miss or wrong key in word/gng response, incorrect word responses, 
+  # and trials followed_or_preceded_by_FA_or_wrong_key were not included when scaling the SCR. I once tried basing it on all trials. The only things 
+  # that change are the values of the SCR ANOVAs and Raw-Barplots based on this variable. The results of the LMM on the Relation Priming - SCR remain 
+  # the same, only some decimals are slightly different. I thus decided to stick with the scaling based on only the trials that enter the analysis, 
+  # because distribution of the variable is then a it nicer (when basing it on all trials, I again get a peak at the value of 0) and basing the scaling 
+  # on all trials does not reflect the true value better. For the manuscript, I calculate the variable iscr_gng_resp_sqrt_z_score first when calculating 
+  # the LMM Priming - SCR, to avoid having the variable containing many NAs in the Data I publish.*
+    
   
   
   #################### for SCR Analyses, check whether number of correctly classified pos / neg words after FA are equal ####################
