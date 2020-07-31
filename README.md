@@ -1,41 +1,53 @@
 # [Title]	
 
-### [Authors, Year]						
+[Authors, Year]						
 
 ## Data and Code Used for Statistical Analyses
 
-
 ### The Task 
 
-- task comprised a speeded go/no-go task with an embedded word categorization task
+- task comprised a speeded go/no-go task with an embedded word categorization task<br><br>
 - go/no-go task
 	- a white arrow pointing either upward or downward either turned 
 	- (a) green and kept its initial orientation (two-thirds of the trials; go trials)
 	- (b) turquoise and kept its orientation (one-sixth of the trials; no-go trials), or 
-	- (c) green but reversed its orientation (one-sixth of the trials; no-go trials) <br>
+	- (c) green but reversed its orientation (one-sixth of the trials; no-go trials)<br><br>
 - four response types in the go/no-go task were differentiated: 
 	- SH: slow hits (i.e., correct responses in go trials above the individual RT limit)
 	- FH: fast hits (i.e., correct responses in go trials below the RT limit)
 	- FA: false alarms (i.e., erroneous responses in no-go trials)
-	- IR: correctly inhibited responses (i.e., successful response inhibitions in no-go trials)<br>
+	- IR: correctly inhibited responses (i.e., successful response inhibitions in no-go trials)<br><br>
 - word categorization task
-	- after each go/no-go trial, an affective word was presented, which the participants were asked to categorize as either positive or negative<br>
+	- after each go/no-go trial, an affective word was presented, which the participants were asked to categorize as either positive or negative<br><br>
 - during the task, the skin conductance response (SCR) was recorded 
-	- for statistical analyses, the integrated SCR (ISCR; Benedek & Kaernbach, 2010) was extracted within a time window from 1-4 s after the participant's response in the go/no-go task
-
-
+	- for statistical analyses, the integrated SCR (ISCR; Benedek & Kaernbach, 2010) was extracted within a time window from 1-4 s after the participant's response in the go/no-go task<br><br>
 
 ### The Design
 
-- 4 x 2 design: go/no-go response type (SH, FH, FA, IR) and word valence (positive, negative) as within-participants factors
-
-
+- 4 x 2 design: go/no-go response type (SH, FH, FA, IR) and word valence (positive, negative) as within-participants factors<br><br>
 
 ### The Data Set ("Single_Trial_Data.rda")
 
 - 15480 observations, 16 variables (30 participants, 516 trials per participant)
 
-
+| VARIABLE          	| DESCRIPTION                        	| VALUES                                                                                                                                                                 	|
+|-------------------	|------------------------------------	|------------------------------------------------------------------------------------------------------------------------------------------------------------------------	|
+| subject_id        	| Participant identifier             	| 1–30                                                                                                                                                                   	|
+| trial             	| Trial number within the task       	| 1–516 per participant                                                                                                                                                  	|
+| block             	| Experimental block                 	| 1–9 per participant                                                                                                                                                    	|
+| gng_response_type 	| Response type in the go/no-go task 	| SH = slow hit <br> FH = fast hit <br>  FA = false alarm <br> IR = inhibited response <br> miss = missing response in go trial <br> miss = missing response in go trial 	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|
+|                   	|                                    	|                                                                                                                                                                        	|                                                                                                                                                                  	|
 _____________________________________________________________________________________________________________________________________________________________
 
 VARIABLE			DESCRIPTION							VALUES
