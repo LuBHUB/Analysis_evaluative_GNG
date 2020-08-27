@@ -71,6 +71,28 @@ for (datafile in datafiles){
   load(file = filename)}
 
 
+#### Create variable with color of fixation cross (needed for control analysis) -> has to be done before cleaning data!!!
+data4mixedmodels$color_cross <- NA
+
+# Which rows satisfy the criteria? which rows are fast hits?
+indices_FH    <- which(data4mixedmodels$gng_resp == 41)
+indices_SH_FA <- which(data4mixedmodels$gng_resp > 41)  # specify second condition
+
+# Assign 0 to each row following FH except very last row
+data4mixedmodels[1:(nrow(data4mixedmodels)+1),]$color_cross[indices_FH+1] <- 0     # white cross in FH trials (CI not included here)
+data4mixedmodels[1:(nrow(data4mixedmodels)+1),]$color_cross[indices_SH_FA+1] <- 1  # red cross in FA / SH trials
+
+# Delete empty rows that were assigned to df now
+data4mixedmodels <- data4mixedmodels[!is.na(data4mixedmodels$subjectID),]
+
+# First trial of each block starts with  white fixcross
+data4mixedmodels[data4mixedmodels$trial == 1 | data4mixedmodels$trial == 29 | data4mixedmodels$trial == 101 | 
+                   data4mixedmodels$trial == 173 | data4mixedmodels$trial == 201 | data4mixedmodels$trial == 273 | 
+                   data4mixedmodels$trial == 345 | data4mixedmodels$trial == 373 | data4mixedmodels$trial == 445,]$color_cross <- 0
+
+###
+
+
 # get cleaned single-trial data (here I exclude GNG but not word outliers) 
 # if I change criteria here, I also have to change them in Single Trial Script for Scaling and counting events!!
 # I can easily go back to scaling based on all trials; just change it in single trial script; the results are comparable, only the correlation between SCR and Priming after FA gets almost sign. then (p = 0.054)
@@ -1041,21 +1063,6 @@ Thus, I also checked whether the color of fixation cross affects the SCR in curr
 
 
 ```{r effect fixation cross}
-data4mixedmodels_words_scr$color_cross <- NA
-
-# First trial of each block starts with  white fixcross
-data4mixedmodels_words_scr[data4mixedmodels_words_scr$trial == 1 | data4mixedmodels_words_scr$trial == 29 | data4mixedmodels_words_scr$trial == 101 | data4mixedmodels_words_scr$trial == 173 | data4mixedmodels_words_scr$trial == 201 | data4mixedmodels_words_scr$trial == 273 | data4mixedmodels_words_scr$trial == 345 | data4mixedmodels_words_scr$trial == 373 | data4mixedmodels_words_scr$trial == 445,]$color_cross <- 0
-
-# Which rows satisfy the criteria? which rows are fast hits?
-indices_FH    <- which(data4mixedmodels_words_scr$gng_resp == 41)
-indices_SH_FA <- which(data4mixedmodels_words_scr$gng_resp > 41)  # specify second condition
-
-# Assign 0 to each row following FH except very last row
-data4mixedmodels_words_scr[1:(nrow(data4mixedmodels_words_scr)+1),]$color_cross[indices_FH+1] <- 0     # white cross in FH trials (CI not included here)
-data4mixedmodels_words_scr[1:(nrow(data4mixedmodels_words_scr)+1),]$color_cross[indices_SH_FA+1] <- 1  # red cross in FA / SH trials
-
-# Delete empty rows that were assigned to df now
-data4mixedmodels_words_scr <- data4mixedmodels_words_scr[!is.na(data4mixedmodels_words_scr$subjectID),]
 
 # make categorical variables factors
 data4mixedmodels_words_scr$response_type <- factor(data4mixedmodels_words_scr$response_type, levels=c("SH","FH","FA"))
@@ -1070,8 +1077,8 @@ contrasts(data4mixedmodels_words_scr$color_cross)   <- contr.sdif(2)
 mm_c2    <- model.matrix( ~ response_type*color_cross, data4mixedmodels_words_scr) # stick in model matrix 6 columns
 
 # attach to dataframe
-data4mixedmodels_words_scr[,(ncol(data4mixedmodels_words_scr)+1):(ncol(data4mixedmodels_words_scr)+3)] <- mm_c2[,c(4:6)]
-names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-2):ncol(data4mixedmodels_words_scr)] <- c("red_minus_white", "FH_minus_SH:red_minus_white", "FA_minus_FH:red_minus_white")
+data4mixedmodels_words_scr[,(ncol(data4mixedmodels_words_scr)+1):(ncol(data4mixedmodels_words_scr)+6)] <- mm_c2
+names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-5):ncol(data4mixedmodels_words_scr)] <- c("Grand Mean", "FH_minus_SH", "FA_minus_FH", "red_minus_white", "FH_minus_SH:red_minus_white", "FA_minus_FH:red_minus_white")
 
 
 # LMM only use trials that were preceded and followed by white cross (only 1277 trials are left; or only 1205 if incorrect word responses are also excluded)
@@ -1086,15 +1093,15 @@ names(data4mixedmodels_words_scr)[(ncol(data4mixedmodels_words_scr)-2):ncol(data
     }
   }
 
-LMM_scr_cross_clean <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + red_minus_white + FH_minus_SH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1 & data4mixedmodels_words_scr$followed_or_preceded_by_red_cross == FALSE,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+LMM_scr_cross_clean <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FA_minus_FH + red_minus_white || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1 & data4mixedmodels_words_scr$followed_or_preceded_by_red_cross == FALSE,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_cross_clean,dv.labels = "SCR [square root z transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
+tab_model(LMM_scr_cross_clean,dv.labels = "SCR [square root z transformed (µS)]", pred.labels = pl, wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 
 
 # LMM use all trials
-LMM_scr_cross <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white  || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
+LMM_scr_cross <- lmer(iscr_gng_resp_sqrt ~ FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white + FA_minus_FH:red_minus_white + (1 + FH_minus_SH + FA_minus_FH + red_minus_white + FH_minus_SH:red_minus_white || subjectID), data=data4mixedmodels_words_scr[data4mixedmodels_words_scr$word_accuracy==1,], REML = TRUE, control=lmerControl(optimizer="bobyqa"))
 
-tab_model(LMM_scr_cross,order.terms = c(1,6,4,3,5,2), dv.labels = "SCR [square root transformed (µS)]", pred.labels = pl,wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
+tab_model(LMM_scr_cross, dv.labels = "SCR [square root transformed (µS)]", pred.labels = pl, wrap.labels = 60, show.stat = TRUE, show.se = TRUE, string.se = "SE", show.loglik = TRUE, show.dev = TRUE, show.re.var = FALSE, show.ngroups = FALSE, show.icc = FALSE, show.r2 = TRUE)
 ```
 
 <br>
