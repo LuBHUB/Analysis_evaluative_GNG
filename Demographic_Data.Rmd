@@ -30,7 +30,7 @@ rm(list=ls())
 options(scipen = 999)
 
 # reading in datafile
-subject_data <- read.spss("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/participant_data.sav", to.data.frame = TRUE)
+subject_data <- read.spss("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/participant_data.sav", to.data.frame = TRUE)
 ```
 <br>
 <br>

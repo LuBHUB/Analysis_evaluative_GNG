@@ -22,10 +22,10 @@ rm(list=ls())
 options(scipen = 999)
 
 # reading in datafile
-datafiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = ".rda") 
+datafiles <- list.files("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = ".rda") 
 for (datafile in datafiles){  
   # appending full path to filename is necessary to open files in Rmd
-  filename <- paste0("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
+  filename <- paste0("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
   load(file = filename)}
 
 # prepare labels for tables
@@ -456,10 +456,10 @@ anova(LMM_rt_cov_error_rate,LMM_rt_cov_error_rate_red1)
 
 # Load ratings and merge to data4mixedmodels
 ratings  <- data.frame()  
-logfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
+logfiles <- list.files("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
 
 for (subject in logfiles){                                                                               
-  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 
+  setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 
   rating <- read.table(subject, skip = 575, fill = TRUE, header = TRUE, sep = ":", stringsAsFactors = FALSE)
   subjectID <-  factor(as.numeric(substr(subject,14,15)))
   

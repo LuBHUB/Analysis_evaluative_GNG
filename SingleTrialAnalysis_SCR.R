@@ -23,17 +23,17 @@
   ###################   Loop over Subjects to Preprocess Logfile Data and SCR Data for Statistical Analyses   ####################
   
   # Load logfiles and start loop
-  logfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
+  logfiles <- list.files("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
   
   for (subject in logfiles){                                                                               # loop reading txt-files as table, ommit first 58 lines and added lines after trials; use first line as header
-    setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 # path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
+    setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 # path to folder containing the log files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
     raw_log <- read.table(subject, skip = 58, fill = TRUE, header = TRUE, nrows = 516)
     name_of_subject <-  gsub("\\.txt*","",subject)
     rating <- read.table(subject, skip = 575, fill = TRUE, header = TRUE, sep = ":", stringsAsFactors = FALSE)
     
     
   # Load SCR files 
-  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed")               # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
+  setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed")               # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY logfiles 
   filename_scr <- paste0(name_of_subject,"_SCR_Export_era.xlsx")
   raw_scr      <- read.xlsx(filename_scr)
   
@@ -473,7 +473,7 @@
   
   ###################   Read in questionnaire data, merge with aggregated data   ####################
   
-  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
+  setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
   questionnaires           <- list.files(pattern = ".sav")                                                         # make sure that only one .sav file (= the current PEQ export) exists there!
   questionnaires           <- read.spss(questionnaires, to.data.frame = TRUE, add.undeclared.levels = "no")        # add.undeclared.levels required to prevent irrelevant warning message
   questionnaires           <- questionnaires[,c("CODE", "BD2SUMT0","BASO00T0","BASO01T0","BASO02T0","BASO03T0","BASO04T0","FMPO00T0","FMPO01T0","FMPO02T0","FMPO03T0","FMPO04T0","NNGO00T0","NNGO01T0","OCISUMT0", "OCIO00T0", "OCIO01T0","OCIO02T0","OCIO03T0","OCIO04T0","OCIO05T0","PANO00T0","PANO01T0","PSWSUMT0","STSSUMT0","STTSUMT0","TCISUMT0","TCIO00T0","TCIO01T0","TCIO02T0","TCIO03T0","WSTSUMT0")] # only keep relevant columns (I chose to keep sum scores instead of mean scores, because for BDI and OCI only sum scores are available and missing data are not possible because data aquired with tablet; except for NEO and BIS/BAS, according to manuals, scoring is based on sum scores; JK also used sum scores for NEO, BIS/BAS)
@@ -486,7 +486,7 @@
  
   ###################   Save df4save and data4mixedmodels   ####################
 
-  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")    # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
+  setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")    # setting a different folder as working directory to prevent saving stuff into the folder containing the logfiles
   date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
 
   filename_singletrial <- paste("Data_Single_Trial_For_",length(logfiles),"_subjects_",date_time, ".rda", sep = "")

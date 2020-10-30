@@ -3,4 +3,7 @@
 .RData
 .Ruserdata
 *.rda
-packrat/lib*/
+*.tiff
+*.jpg
+*.sav
+*.docx

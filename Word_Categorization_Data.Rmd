@@ -50,10 +50,10 @@ rm(list=ls())
 options(scipen = 999)
 
 # reading in datafile (only single trial data, not df4save)
-datafiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = "Data_Single_Trial") # replace pattern with .rda, if I also want to read in aggregated rda file or others
+datafiles <- list.files("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = "Data_Single_Trial") # replace pattern with .rda, if I also want to read in aggregated rda file or others
 for (datafile in datafiles){  
   # appending full path to filename is necessary to open files in Rmd
-  filename <- paste0("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
+  filename <- paste0("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
   load(file = filename)}
 
 
@@ -106,7 +106,7 @@ df_aggregated_per_subject$subjectID     <- factor(df_aggregated_per_subject$subj
 # https://stackoverflow.com/questions/33980316/why-does-the-mean-differ-using-summarysewithin 
 
 
-source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R") # summarySEwithin function returning unnormed means provided by R-cookbook: http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/
+source("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R") # summarySEwithin function returning unnormed means provided by R-cookbook: http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/
 df_aggregated_over_subjects_rt <- summarySEwithinO(data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], measurevar="word_rt", withinvars="condition", idvar="subjectID", conf.interval=.95)
 df_aggregated_over_subjects_rt$response_type <- factor(substr(df_aggregated_over_subjects_rt$condition, 11, 12), levels=c("FA","FH","SH","CI"))
 df_aggregated_over_subjects_rt$word_valence  <- factor(substr(df_aggregated_over_subjects_rt$condition, 1, 3))
@@ -142,10 +142,10 @@ df_wide <- df_wide[,c("subjectID","rt_priming_after_FA","rt_priming_after_FH","r
 descriptive_statistics <- stat.desc(df_wide,basic=F)
 
 # save aggregated df
-# setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")    
+# setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
 # date_time <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
 # filename_aggregated <- paste("Data_Aggregated_For_",nrow(df_wide),"_subjects_",date_time, ".rda", sep = "")
-# save(df_wide,file=filename_aggregated) 
+# save(df_wide,file=filename_aggregated)
 
 ```
 
@@ -602,8 +602,8 @@ I only print the output here, as running these two models takes ages. As mention
 For checks of distribution fit and assumptions, see GLMM script.
 **NOTE: When trying to replicate this GLMM for code publishing, I did not manage to obtain the same results. This model did not converge, so I needed to remove the random slope FA − FH for word stimuli, leading to slightly different estimates. These are now reported in the manuscript.**
 
-![GLMM RT full](P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/GLMM_rt_full.PNG)
-![GLMM RT full](P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/GLMM_rt_nested.PNG)
+![GLMM RT full](C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/GLMM_rt_full.PNG)
+![GLMM RT full](C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/GLMM_rt_nested.PNG)
 
 ```{rt GLMM, echo = TRUE} 
 # GLMM_rt_full <- glmer(word_rt ~ response_type*valence + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA + pos_minus_neg + FH_minus_SH:pos_minus_neg + # FA_minus_FH:pos_minus_neg + CI_minus_FA:pos_minus_neg || subjectID) + (1 + FH_minus_SH + FA_minus_FH + CI_minus_FA || word), # data=data4mixedmodels_words[data4mixedmodels_words$word_accuracy==1,], family = inverse.gaussian(link="identity"), # control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e6)))
@@ -928,7 +928,7 @@ df_aggregated_per_subject_and_response_type <- df_aggregated_per_subject %>%
    group_by(subjectID, response_type) %>%
    summarise(rt_inverse = mean(rt_inverse), percent_correct_responses = mean(percent_correct_responses))
 
-source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/pairwise.t.test.with.t.and.df.R")
+source("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/pairwise.t.test.with.t.and.df.R")
 result_rt <- pairwise.t.test.with.t.and.df(df_aggregated_per_subject_and_response_type$rt_inverse,df_aggregated_per_subject_and_response_type$response_type, p.adjust.method="holm",paired=TRUE)
 
 result_acc <- pairwise.t.test.with.t.and.df(df_aggregated_per_subject_and_response_type$percent_correct_responses,df_aggregated_per_subject_and_response_type$response_type, p.adjust.method="holm",paired=TRUE)
@@ -1454,7 +1454,7 @@ In the plot I changed the abbreviation from CI (correct inhibition) to IR (inhib
 # end_time - start_time # Time difference of 39 mins
 # Estimated_Means_Priming_RT$response_type <- factor(Estimated_Means_Priming_RT$response_type, levels = c("FA","FH","SH","CI"))
 # 
-# setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
+# setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
 # save(Estimated_Means_Priming_RT,file="Estimated_Means_Priming_RT.rda")
 # save(Estimated_Means_Priming_Acc,file="Estimated_Means_Priming_Acc.rda")
 # 

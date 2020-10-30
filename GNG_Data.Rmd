@@ -48,10 +48,10 @@ rm(list=ls())
 options(scipen = 999)
 
 # reading in datafile
-datafiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = "Data_Single_Trial") # replace pattern with .rda, if I also want to read in aggregated rda file
+datafiles <- list.files("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = "Data_Single_Trial") # replace pattern with .rda, if I also want to read in aggregated rda file
 for (datafile in datafiles){  
   # appending full path to filename is necessary to open files in Rmd
-  filename <- paste0("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
+  filename <- paste0("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
   load(file = filename)}
 
 
@@ -76,7 +76,7 @@ df_aggregated_per_subject_gng$response_type <- factor(df_aggregated_per_subject_
 
 
 # aggregating over subjects per condition and calculate SE/CI corrected for within design (only needed for barplots)
-source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R")
+source("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/summarySEwithinO.R")
 df_aggregated_over_subjects_gng_rt <- summarySEwithinO(data4mixedmodels_gng, measurevar="gng_rt", withinvars="response_type", idvar="subjectID", conf.interval=.95)
 df_aggregated_over_subjects_gng_rt$response_type <- factor(df_aggregated_over_subjects_gng_rt$response_type, levels=c("SH","FH","FA")) 
 
@@ -487,7 +487,7 @@ kable(round(anova_proportion_posthoc_response_type$p.value,digits=3), caption = 
 
 
 # Get t and p values for proportion
-source("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/pairwise.t.test.with.t.and.df.R")
+source("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/functions/pairwise.t.test.with.t.and.df.R")
 result <- pairwise.t.test.with.t.and.df(df_aggregated_per_subject_gng$proportion,df_aggregated_per_subject_gng$response_type, p.adjust.method="holm",paired=TRUE)
 
 t_values <- round(result[[5]],digits = 2)
@@ -726,7 +726,7 @@ Error bars depict 95% CI.
 # end_time = Sys.time()
 # end_time - start_time # Time difference of 9 mins
 # Estimated_Means_GNG_RT$response_type <- factor(Estimated_Means_GNG_RT$response_type, levels = c("FA","FH","SH"))
-# setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
+# setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses")
 # save(Estimated_Means_GNG_RT,file="Estimated_Means_GNG_RT.rda")
 
 load(file = "Estimated_Means_GNG_RT.rda")

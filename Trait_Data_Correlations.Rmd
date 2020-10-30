@@ -38,17 +38,17 @@ rm(list=ls())
 options(scipen = 999)
 
 # reading in datafile
-datafiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = ".rda") 
+datafiles <- list.files("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses", pattern = ".rda") 
 for (datafile in datafiles){  
   # appending full path to filename is necessary to open files in Rmd
-  filename <- paste0("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
+  filename <- paste0("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/5_Analyses/",datafile) 
   load(file = filename)}
 
 # reading in ratings
 ratings  <- data.frame()  
-logfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
+logfiles <- list.files("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral", pattern = ".txt")       
 for (subject in logfiles){                                                                               
-  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 
+  setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/6_Raw_Data_Behavioral")                 
   rating <- read.table(subject, skip = 575, fill = TRUE, header = TRUE, sep = ":", stringsAsFactors = FALSE)
   subjectID <-  factor(as.numeric(substr(subject,14,15)))
   
@@ -389,7 +389,7 @@ For normally distributed trait variables, Pearson correlations were calculated. 
 ```{r correlations}
 
 # create correlation matrices using my function "function_correlation_matrix_with_significance_levels.R"
-source("P:/Luisa_Balzus/1_PhD_Project/5_ModERN_Vorstudie/10_Single_Trial_Analysis_EEG_SCR_GNG/function_correlation_matrix_with_significance_levels.R")
+source("C:/Users/Luisa/PhD/1_PhD_Project/5_ModERN_Vorstudie/10_Single_Trial_Analysis_EEG_SCR_GNG/function_correlation_matrix_with_significance_levels.R")
 
 method <- "pearson"
 correlations_pearson <- correlations_with_significance_level(df_joined[,c("rt_priming_overall", "rt_priming_after_FA", "rt_priming_after_FH", "accuracy_priming_after_FA","accuracy_priming_after_FH", "accuracy_priming_overall","iscr_gng_resp_sqrt_z_score.FA", "iscr_gng_resp_sqrt_z_score.FH", "iscr_gng_resp_sqrt_z_score.SH","gng_error_rate", "fatigue", "BIS_Total", "BAS_Fun_Seeking", "BAS_Reward_Responsiveness", "FMPS_CMD", "FMPS_PST",  "FMPS_PER/Total", "NEO_Neuroticism","PANAS_Pos", "PSWQ_Total","STAI_Trait", "TCI_Harm_Avoidance_Total", "TCI_Fear_of_uncertainty", "TCI_Shyness", "TCI_Fatigability", "WST_Total")])

@@ -14,8 +14,8 @@
   ####################   load scr data   ####################
   
   # load SCR files (Ledalab output exported as .xls -> opening it requires readxl) 
-  scrfiles <- list.files("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export", pattern = ".xls")    # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY scr files 
-  setwd("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export")                              
+  scrfiles <- list.files("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export", pattern = ".xls")    # path to folder containing the scr files (use of forward slashes instead of backward slashes is required); should contain ONLY scr files 
+  setwd("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/8_SCR_Export")                              
   
   # loop reading SCR file
   for (subject in scrfiles){                                                                                         
@@ -91,5 +91,5 @@
   
   ####################   save preprocessed scr data as xlsx   ####################
 
-  write.xlsx(scr_final, paste0("P:/Luisa_Balzus/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed","/",subject,"x"))
+  write.xlsx(scr_final, paste0("C:/Users/Luisa/PhD/1_PhD_Project/6_ModERN_Behavioral_Study/9_SCR_Export_Preprocessed","/",subject,"x"))
 }
