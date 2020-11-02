@@ -2,8 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
+renv
 *.rda
 *.tiff
 *.jpg
 *.sav
 *.docx
+Thumbs.db
