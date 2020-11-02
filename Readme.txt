@@ -36,3 +36,13 @@ Estimated_Means_[...].rda files (3 of these exist) save the output of the emmean
 command which was used to backtransform the transformed model estimations to raw 
 values (running this script took quite a while, so I saved the output and read it in 
 in the Rmd files
+
+
+RENV PACKAGE FOR PROJECT-LOCAL DEPENDENCY MANAGEMENT
+
+The renv package records the exact versions of R packages used within the project and captures them within a lockfile to ensure that the environment is reproducible. 
+Renv creates the following files: renv folder, .Rprofile, renv.lock. Do not delete any of these files. 
+To initiate renv, renv::init() was run in the project. 
+After updating packages or installing new packages, update the renv.lock lockfile by running renv::snapshot(). 
+Use renv::restore() to restore the project library from the state of the previously-created lockfile renv.lock.
+When cloning the project repository, run renv::restore() to automatically install the appropriate version of all required packages into the project library.
